@@ -1,0 +1,15 @@
+# .NET
+windows/**/bin/
+windows/**/obj/
+windows/**/*.user
+windows/dist/
+.vs/
+# Xcode / SwiftPM
+macos/*.xcodeproj/
+macos/**/.build/
+macos/**/DerivedData/
+macos/**/xcuserdata/
+macos/build/
+# local
+tools/mac.local.ps1
+*.log
