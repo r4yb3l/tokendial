@@ -12,6 +12,9 @@ public static class HoverCard
     {
         var body = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
         var header = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 6) };
+        var mark = new MarkView(tile.Id, 16) { Fill = Theme.TextPrimary, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+        DockPanel.SetDock(mark, Dock.Left);
+        header.Children.Add(mark);
         var title = Text.Primary(tile.Name, 14, FontWeights.SemiBold);
         var account = tile.Account?.Summary;
         if (!string.IsNullOrEmpty(account))
