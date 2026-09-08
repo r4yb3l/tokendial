@@ -38,7 +38,7 @@ public static class Strings
         {
             requested = language;
             current = code == "en" ? baseCatalog : Catalog.Load(code);
-            culture = CultureInfo.GetCultureInfo(code == "en" ? "en-US" : code == "ar" ? "ar-SA" : code);
+            culture = CultureInfo.GetCultureInfo(code switch { "en" => "en-US", "ar" => "ar-SA", "es" => "es-ES", "fr" => "fr-FR", "de" => "de-DE", _ => code });
         }
         Changed?.Invoke();
     }

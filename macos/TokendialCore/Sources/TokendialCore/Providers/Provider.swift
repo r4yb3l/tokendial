@@ -44,7 +44,7 @@ public struct ProviderAccount: Equatable, Sendable {
         var parts: [String] = []
         if let label { parts.append(label) }
         if let plan { parts.append(plan.lowercased().capitalized) }
-        parts.append("via \(source)")
+        parts.append(Strings.t("copy.via", ["source": source]))
         return parts.joined(separator: " · ")
     }
 }
@@ -52,12 +52,13 @@ public struct ProviderAccount: Equatable, Sendable {
 /// What the user can do when a provider has no credential: open the owning app, or read a sentence.
 public enum SignInRoute: Equatable, Sendable {
     case openApp(appKey: String, name: String)
-    case guidance(String)
+    /// A catalogue key and its placeholders; resolved in the current language when shown.
+    case guidance(String, [String: String] = [:])
 
     public var explanation: String {
         switch self {
-        case .openApp(_, let name): return "Sign in with \(name) to read this account."
-        case .guidance(let text): return text
+        case .openApp(_, let name): return Strings.t("signin.openApp", ["name": name])
+        case .guidance(let key, let args): return Strings.t(key, args)
         }
     }
 }

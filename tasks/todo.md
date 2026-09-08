@@ -52,8 +52,9 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 ## 6b — Languages
 - [x] Shared catalogue docs/i18n (en, es, ar) with CLDR plurals and culture formats; C# loader, tests keep languages aligned
 - [x] Windows: every string through the catalogue, language selector with live switch, RTL for Arabic
-- [ ] fr, de, en-GB catalogues
-- [ ] Swift loader and macOS wiring
+- [x] fr, de, en-GB catalogues
+- [x] Swift loader, Copy and sign-in copy through the catalogue, tests (run by CI on macos)
+- [ ] macOS app wiring: language picker, settings and welcome strings, RTL
 
 ## 7 — Distribution
 - [x] `dotnet publish` single-file self-contained exe (77 MB) runs from `windows/dist`

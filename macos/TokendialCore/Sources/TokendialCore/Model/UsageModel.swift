@@ -52,16 +52,10 @@ public struct UsageWindow: Equatable, Codable, Sendable {
         if let f = usedFraction {
             let used = Int((f * 100).rounded(.toNearestOrAwayFromZero))
             let tilde = fidelity == .derived ? "~" : ""
-            return "\(tilde)\(used)% used · \(max(0, 100 - used))% left"
+            return tilde + Strings.t("copy.usedLeft", ["used": used, "left": max(0, 100 - used)])
         }
-        if let n = count {
-            switch n {
-            case 0: return "no requests today"
-            case 1: return "~1 request today"
-            default: return "~\(n) requests today"
-            }
-        }
-        return "No reading"
+        if let n = count { return Strings.plural("copy.requests", n) }
+        return Strings.t("copy.noReading")
     }
 }
 

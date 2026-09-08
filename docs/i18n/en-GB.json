@@ -1,0 +1,12 @@
+{
+  "language": "en-GB",
+  "name": "English (UK)",
+  "direction": "ltr",
+  "strings": {
+    "settings.delivery.bannersHint": "Top-right corner, in your system accent colour. Shown even under Do not disturb.",
+    "settings.delivery.systemHint": "Kept in the notification centre; silenced by Do not disturb.",
+    "welcome.found": "Found on this computer",
+    "settings.launchAtLogin": "Launch at login"
+  },
+  "labels": {}
+}

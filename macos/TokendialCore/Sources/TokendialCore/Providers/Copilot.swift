@@ -108,7 +108,7 @@ public final class CopilotProvider: UsageProvider {
 
     public var id: String { "copilot" }
     public var displayName: String { "GitHub Copilot" }
-    public var signIn: SignInRoute { .guidance("Sign in to GitHub Copilot in your editor or the Copilot CLI; the dial reads the token it stores.") }
+    public var signIn: SignInRoute { .guidance("signin.copilot") }
 
     public func account() -> ProviderAccount? {
         guard let credential = try? CopilotCredential.read(files) else { return nil }

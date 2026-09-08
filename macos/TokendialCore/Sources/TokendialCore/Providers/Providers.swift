@@ -98,7 +98,7 @@ public final class ClaudeProvider: UsageProvider {
 
     public var id: String { profile.id }
     public var displayName: String { profile.displayName }
-    public var signIn: SignInRoute { .guidance("Run `\(profile.signInCommand)` once; it signs in and refreshes the token this reads.") }
+    public var signIn: SignInRoute { .guidance("signin.claude", ["command": profile.signInCommand]) }
 
     public func account() -> ProviderAccount? {
         guard let credential = try? load() else { return nil }
@@ -272,7 +272,7 @@ public final class GrokProvider: UsageProvider {
 
     public var id: String { "grok" }
     public var displayName: String { "Grok" }
-    public var signIn: SignInRoute { .guidance("Run `grok login`; it signs in and refreshes the token this reads.") }
+    public var signIn: SignInRoute { .guidance("signin.grok") }
 
     public func account() -> ProviderAccount? {
         guard let credential = try? GrokCredential.read(file: file, now: now()) else { return nil }
@@ -329,7 +329,7 @@ public final class OpenCodeProvider: UsageProvider {
 
     public var id: String { "opencode" }
     public var displayName: String { "OpenCode" }
-    public var signIn: SignInRoute { .guidance("Connect the Go plan inside OpenCode (`opencode auth login`); the dial reads the key it stores.") }
+    public var signIn: SignInRoute { .guidance("signin.opencode") }
     public func account() -> ProviderAccount? { OpenCodeCredential.read(file: file) == nil ? nil : ProviderAccount(label: nil, plan: "Go", source: "OpenCode", manageURL: URL(string: "https://opencode.ai")) }
 
     public func read() async throws -> ProviderReading {
@@ -441,7 +441,7 @@ public final class GlmProvider: UsageProvider {
 
     public var id: String { "glm" }
     public var displayName: String { "GLM" }
-    public var signIn: SignInRoute { .guidance("Usage rides on a Z.ai GLM Coding Plan key held by a coding tool: Claude Code's settings.json, ZCode or OpenCode.") }
+    public var signIn: SignInRoute { .guidance("signin.glm") }
 
     public func account() -> ProviderAccount? {
         guard let credential = find() else { return nil }
