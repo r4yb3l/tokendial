@@ -6,6 +6,7 @@ using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
 using Tokendial.Core.Providers.Claude;
 using Tokendial.Core.Providers.Codex;
+using Tokendial.Core.Providers.Copilot;
 using Tokendial.Core.Providers.Cursor;
 using Tokendial.Core.Providers.Glm;
 using Tokendial.Core.Providers.Grok;
@@ -45,6 +46,7 @@ public class FixtureTests
         {
             ("claude", _) => ClaudeUsage.Parse(response),
             ("codex", _) => CodexUsage.Parse(response, now),
+            ("copilot", _) => CopilotUsage.Parse(response),
             ("cursor", _) => CursorUsage.Parse(response),
             ("glm", _) => GlmUsage.Parse(response),
             ("grok", _) => GrokUsage.Parse(response),

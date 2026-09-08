@@ -67,7 +67,7 @@ public sealed class ToastSink : IAlertSink
                 return ($"{name} is available again", $"{windowLabel} has reset");
             case AlertKind.Waiting:
                 var session = activity?.Sessions.FirstOrDefault(s => s.Id == alert.SessionId);
-                return ($"{name} is waiting for you", Join(session?.Where, session?.WaitingFor));
+                return ($"{name} is waiting for you", session is null ? "An agent is waiting for your input" : Join(session.Where, session.WaitingFor));
             default:
                 return (name, windowLabel);
         }
@@ -78,7 +78,7 @@ public sealed class ToastSink : IAlertSink
     private static string Humanize(string id) => id switch
     {
         _ when id.StartsWith("claude", StringComparison.Ordinal) => "Claude Code",
-        "codex" => "Codex", "cursor" => "Cursor", "antigravity" => "Antigravity", "glm" => "GLM", "grok" => "Grok", "opencode" => "OpenCode",
+        "codex" => "Codex", "copilot" => "GitHub Copilot", "cursor" => "Cursor", "antigravity" => "Antigravity", "glm" => "GLM", "grok" => "Grok", "opencode" => "OpenCode",
         _ => id
     };
 }

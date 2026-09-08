@@ -43,6 +43,9 @@ public sealed class AlertEngine
 
     public int EpochCount => state.Epochs.Count;
 
+    /// <summary>Sessions the engine still believes are waiting; the host reconciles them against what it can see.</summary>
+    public IReadOnlyList<(string Provider, string SessionId)> Waiting => state.Waiting.Select(w => (w.Provider, w.SessionId)).ToList();
+
     public IReadOnlyList<Alert> Reduce(AlertEvent e)
     {
         var candidates = new List<Alert>();

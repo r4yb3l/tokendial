@@ -94,6 +94,33 @@ public class CoordinatorTests
     }
 
     [Fact]
+    public void AWaitingSessionThatVanishedAcrossARestartIsClosed()
+    {
+        var clock = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var file = Path.Combine(Path.GetTempPath(), $"tokendial-{Guid.NewGuid():N}.json");
+        var sink = new RecordingSink();
+        try
+        {
+            using (var coordinator = new AlertCoordinator(sink, stateFile: file, now: () => clock))
+            {
+                coordinator.OnActivities(new Dictionary<string, Activity>
+                {
+                    ["claude"] = new(SessionState.Waiting, [new AgentSession("claude.1", "repo", "Terminal · repo", SessionState.Waiting, "needs you", clock)])
+                });
+            }
+            clock = clock.AddSeconds(5);
+            using (var coordinator = new AlertCoordinator(sink, stateFile: file, now: () => clock))
+            {
+                coordinator.OnActivities(new Dictionary<string, Activity>());
+                clock = clock.AddSeconds(30);
+                coordinator.Tick();
+                Assert.Empty(sink.Alerts);
+            }
+        }
+        finally { File.Delete(file); }
+    }
+
+    [Fact]
     public void SettingsRoundTrip()
     {
         var file = Path.Combine(Path.GetTempPath(), $"tokendial-settings-{Guid.NewGuid():N}.json");

@@ -34,6 +34,7 @@ public sealed record Tile(
     {
         _ when id.StartsWith("claude", StringComparison.Ordinal) => "CL",
         "codex" => "CX",
+        "copilot" => "CP",
         "cursor" => "CU",
         "antigravity" => "AG",
         "glm" => "GL",

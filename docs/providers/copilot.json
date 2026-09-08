@@ -1,0 +1,40 @@
+{
+  "id": "copilot",
+  "displayName": "GitHub Copilot",
+  "fidelity": "official",
+  "headline": "premium",
+  "credential": {
+    "macos": {
+      "kind": "file",
+      "path": "~/.config/github-copilot/apps.json",
+      "fields": { "token": "$['github.com:*'].oauth_token", "user": "$['github.com:*'].user" },
+      "notes": "One entry per OAuth app that signed in, keyed 'github.com:<client id>'. The older hosts.json keys entries by host only. As a last resort the GitHub CLI token in ~/.config/gh/hosts.yml (oauth_token) is tried; it may lack Copilot scope."
+    },
+    "windows": {
+      "kind": "file",
+      "path": "%LOCALAPPDATA%/github-copilot/apps.json",
+      "fields": { "token": "$['github.com:*'].oauth_token", "user": "$['github.com:*'].user" },
+      "notes": "Same shape; hosts.json alongside; the GitHub CLI token lives in %APPDATA%/GitHub CLI/hosts.yml."
+    }
+  },
+  "endpoints": [
+    {
+      "name": "usage",
+      "method": "GET",
+      "url": "https://api.github.com/copilot_internal/user",
+      "headers": { "Authorization": "token {token}", "Accept": "application/json", "Editor-Version": "vscode/1.104.0", "Editor-Plugin-Version": "copilot-chat/0.30.0", "User-Agent": "GitHubCopilotChat/0.30.0" },
+      "timeoutSeconds": 15
+    }
+  ],
+  "response": {
+    "windows": [
+      { "id": "premium", "label": "Premium requests", "usedPath": "$.quota_snapshots.premium_interactions.percent_remaining", "unit": "percentRemaining", "resetAtPath": "$.quota_reset_date", "resetUnit": "dateUtc", "notes": "usedFraction = 1 - percent_remaining / 100, clamped to [0, 1]. A snapshot with unlimited=true is not a window. remaining=0 with overage_permitted=false is a hard limit." },
+      { "id": "chat", "label": "Chat", "usedPath": "$.quota_snapshots.chat.percent_remaining", "unit": "percentRemaining", "resetAtPath": "$.quota_reset_date", "resetUnit": "dateUtc", "notes": "Only metered on the Free plan." },
+      { "id": "completions", "label": "Completions", "usedPath": "$.quota_snapshots.completions.percent_remaining", "unit": "percentRemaining", "resetAtPath": "$.quota_reset_date", "resetUnit": "dateUtc", "notes": "Only metered on the Free plan." }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "nothingMetered: no Copilot seat on this account", "404": "badResponse", "429": "rateLimited" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
+  "sessions": { "kind": "none", "notes": "Copilot's agents leave no readable trace on disk; usage only." },
+  "status": { "enabled": true, "termsRisk": "medium", "notice": "Uses the GitHub OAuth token the Copilot plugin stores; the endpoint is the one the editor status bar reads." }
+}

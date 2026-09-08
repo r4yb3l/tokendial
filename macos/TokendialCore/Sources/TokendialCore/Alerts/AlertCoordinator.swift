@@ -9,7 +9,6 @@ public final class AlertCoordinator {
     private let stateFile: URL?
     private var engine: AlertEngine
     private var wants: (AlertKind) -> Bool
-    private var known: [String: String] = [:]
     private var timer: DispatchSourceTimer?
 
     public init(sink: AlertSink, config: AlertConfig = .default, stateFile: URL? = nil, now: @escaping () -> Date = Date.init, wants: @escaping (AlertKind) -> Bool = { _ in true }) {
@@ -64,9 +63,8 @@ public final class AlertCoordinator {
                 apply(.session(at: at, provider: provider, sessionId: session.id, state: state))
             }
         }
-        let gone = lock.withLock { known.filter { seen[$0.key] == nil } }
-        for (id, provider) in gone { apply(.session(at: at, provider: provider, sessionId: id, state: .done)) }
-        lock.withLock { known = seen }
+        let stale = lock.withLock { engine.waiting.filter { seen[$0.sessionId] == nil } }
+        for entry in stale { apply(.session(at: at, provider: entry.provider, sessionId: entry.sessionId, state: .done)) }
     }
 
     public func onHover(_ on: Bool) { apply(.hover(at: now(), on: on)) }

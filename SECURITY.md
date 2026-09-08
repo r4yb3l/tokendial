@@ -26,6 +26,7 @@ usage endpoint. That is the whole threat surface, and these are the rules the co
 |---|---|---|
 | Claude Code | `~/.claude/.credentials.json` (OAuth access token) | `api.anthropic.com` |
 | Codex | `~/.codex/auth.json` (ChatGPT access token, account id) | `chatgpt.com` |
+| GitHub Copilot | `github-copilot/apps.json` (GitHub OAuth token), else the GitHub CLI token | `api.github.com` |
 | Cursor | `state.vscdb` in Cursor's global storage (session token) | `cursor.com` |
 | Antigravity | Credential Manager entry `gemini:antigravity`; the local language server | `cloudcode-pa.googleapis.com`, `127.0.0.1` |
 | GLM | Claude settings, ZCode or OpenCode config (API key) | `api.z.ai` or `open.bigmodel.cn` |

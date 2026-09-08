@@ -26,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Log.ui.info("Tokendial \(Self.version) starting")
 
         var providers: [UsageProvider] = ClaudeProfile.discover().map { ClaudeProvider(profile: $0, archive: archive) }
-        providers += [CodexProvider(archive: archive), CursorProvider(), AntigravityProvider(), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
+        providers += [CodexProvider(archive: archive), CopilotProvider(archive: archive), CursorProvider(), AntigravityProvider(), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
         store = UsageStore(providers: providers, archive: archive, disconnected: settings.disconnected, launcher: WorkspaceLauncher())
         hub = ActivityHub(monitors: ClaudeProfile.discover().map { ClaudeSessions(providerId: $0.id, directory: $0.sessionsDirectory) })
         store.isBusy = { [weak self] in self?.hub.anyWorking ?? false }

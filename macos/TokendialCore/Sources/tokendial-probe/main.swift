@@ -7,7 +7,7 @@ print("tokendial-probe starting; a Keychain prompt may appear on the Mac screen"
 /// Reads every provider once and prints what the dial would show. A diagnostic, not part of the app.
 let archive = ReadingArchive(directory: FileManager.default.temporaryDirectory.appendingPathComponent("tokendial-probe"))
 var providers: [UsageProvider] = ClaudeProfile.discover().map { ClaudeProvider(profile: $0, archive: archive) }
-providers += [CodexProvider(archive: archive), CursorProvider(), AntigravityProvider(), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
+providers += [CodexProvider(archive: archive), CopilotProvider(archive: archive), CursorProvider(), AntigravityProvider(), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
 
 let semaphore = DispatchSemaphore(value: 0)
 Task {

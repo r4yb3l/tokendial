@@ -35,6 +35,7 @@ struct Tile {
         if id.hasPrefix("claude") { return "CL" }
         switch id {
         case "codex": return "CX"
+        case "copilot": return "CP"
         case "cursor": return "CU"
         case "antigravity": return "AG"
         case "glm": return "GL"

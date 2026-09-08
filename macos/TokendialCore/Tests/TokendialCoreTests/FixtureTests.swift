@@ -34,6 +34,7 @@ final class FixtureTests: XCTestCase {
             switch (provider, name) {
             case ("claude", _): return try ClaudeUsage.parse(response)
             case ("codex", _): return try CodexUsage.parse(response, now: now)
+            case ("copilot", _): return try CopilotUsage.parse(response)
             case ("cursor", _): return try CursorUsage.parse(response)
             case ("glm", _): return try GlmUsage.parse(response)
             case ("grok", _): return try GrokUsage.parse(response)

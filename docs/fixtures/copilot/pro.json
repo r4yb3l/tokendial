@@ -1,0 +1,21 @@
+{
+  "note": "Copilot Pro: 300 premium requests a month, chat and completions unlimited. Only the premium window is metered.",
+  "response": {
+    "access_type_sku": "copilot_pro",
+    "copilot_plan": "individual_pro",
+    "chat_enabled": true,
+    "quota_reset_date": "2026-10-01",
+    "quota_snapshots": {
+      "chat": { "entitlement": 0, "remaining": 0, "percent_remaining": 100.0, "unlimited": true, "overage_count": 0, "overage_permitted": false, "quota_id": "chat" },
+      "completions": { "entitlement": 0, "remaining": 0, "percent_remaining": 100.0, "unlimited": true, "overage_count": 0, "overage_permitted": false, "quota_id": "completions" },
+      "premium_interactions": { "entitlement": 300, "remaining": 250, "percent_remaining": 83.33333, "unlimited": false, "overage_count": 0, "overage_permitted": false, "quota_id": "premium_interactions" }
+    }
+  },
+  "expected": {
+    "headline": "premium",
+    "plan": "Pro",
+    "windows": [
+      { "id": "premium", "label": "Premium requests", "usedFraction": 0.1666667, "resetsAt": "2026-10-01T00:00:00Z" }
+    ]
+  }
+}

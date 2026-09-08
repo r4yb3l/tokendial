@@ -26,6 +26,9 @@ public final class AlertEngine {
         return (try? encoder.encode(state)) ?? Data()
     }
 
+    /// Sessions the engine still believes are waiting; the host reconciles them against what it can see.
+    public var waiting: [(provider: String, sessionId: String)] { state.waiting.map { ($0.provider, $0.sessionId) } }
+
     public func reduce(_ event: AlertEvent) -> [Alert] {
         var candidates: [Alert] = []
         switch event {

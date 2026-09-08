@@ -85,13 +85,11 @@ public sealed class AlertCoordinator : IDisposable
                 }));
             }
         }
-        foreach (var (provider, id) in KnownSessions().Where(k => !seen.Contains(k.Id)).ToList())
+        IReadOnlyList<(string Provider, string SessionId)> waiting;
+        lock (gate) waiting = engine.Waiting;
+        foreach (var (provider, id) in waiting.Where(w => !seen.Contains(w.SessionId)))
             Apply(new AlertEvent.Session(at, provider, id, SessionActivity.Done));
-        lock (gate) known = seen.ToDictionary(id => id, id => activities.First(a => a.Value.Sessions.Any(s => s.Id == id)).Key);
     }
-
-    private Dictionary<string, string> known = new();
-    private IEnumerable<(string Provider, string Id)> KnownSessions() { lock (gate) return known.Select(k => (k.Value, k.Key)).ToList(); }
 
     public void OnHover(bool on) => Apply(new AlertEvent.Hover(now(), on));
 

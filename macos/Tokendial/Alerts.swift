@@ -16,7 +16,7 @@ enum AlertCopy {
         case .resetDone: return ("\(name) is available again", "\(windowLabel) has reset")
         case .waiting:
             let session = activity?.sessions.first { $0.id == alert.sessionId }
-            return ("\(name) is waiting for you", join(session?.location, session?.waitingFor))
+            return ("\(name) is waiting for you", session.map { join($0.location, $0.waitingFor) } ?? "An agent is waiting for your input")
         }
     }
 
@@ -24,7 +24,7 @@ enum AlertCopy {
 
     private static func humanize(_ id: String) -> String {
         if id.hasPrefix("claude") { return "Claude Code" }
-        switch id { case "codex": return "Codex"; case "cursor": return "Cursor"; case "antigravity": return "Antigravity"; case "glm": return "GLM"; case "grok": return "Grok"; case "opencode": return "OpenCode"; default: return id }
+        switch id { case "codex": return "Codex"; case "copilot": return "GitHub Copilot"; case "cursor": return "Cursor"; case "antigravity": return "Antigravity"; case "glm": return "GLM"; case "grok": return "Grok"; case "opencode": return "OpenCode"; default: return id }
     }
 }
 

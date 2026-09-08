@@ -13,7 +13,7 @@ See `docs/` for the provider and alert specifications both platforms follow.
 
 ## Providers
 
-Claude Code, Codex, Cursor, Antigravity, GLM (Z.ai Coding Plan), Grok, OpenCode Go. Each is
+Claude Code, Codex, GitHub Copilot, Cursor, Antigravity, GLM (Z.ai Coding Plan), Grok, OpenCode Go. Each is
 opt-in. Tokendial reads the sign-in each tool already stores on your machine and asks that
 tool's usage endpoint; it never writes credentials and never sends them anywhere else.
 

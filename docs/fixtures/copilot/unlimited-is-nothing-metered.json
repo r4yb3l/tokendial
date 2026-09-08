@@ -1,0 +1,15 @@
+{
+  "note": "Every snapshot unlimited: the account is readable and meters nothing.",
+  "response": {
+    "access_type_sku": "copilot_enterprise_seat",
+    "copilot_plan": "enterprise",
+    "chat_enabled": true,
+    "quota_reset_date": "2026-10-01",
+    "quota_snapshots": {
+      "chat": { "unlimited": true, "percent_remaining": 100.0 },
+      "completions": { "unlimited": true, "percent_remaining": 100.0 },
+      "premium_interactions": { "unlimited": true, "percent_remaining": 100.0 }
+    }
+  },
+  "expected": { "error": "nothingMetered" }
+}
