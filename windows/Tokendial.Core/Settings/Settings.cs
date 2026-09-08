@@ -11,6 +11,21 @@ public enum PanelMode
     Hidden
 }
 
+public enum DockEdge
+{
+    Top,
+    Bottom,
+    Left,
+    Right
+}
+
+public enum Appearance
+{
+    System,
+    Dark,
+    Light
+}
+
 public enum AlertDelivery
 {
     TokendialBanners,
@@ -25,6 +40,7 @@ public sealed class Settings
 
     public int Schema { get; set; } = CurrentSchema;
     public PanelMode Panel { get; set; } = PanelMode.ExpandOnHover;
+    public DockEdge Edge { get; set; } = DockEdge.Top;
     public HashSet<string> Disconnected { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Provider ids this install has seen. A provider added by an update joins connected only when its tool is signed in.</summary>
     public HashSet<string> Known { get; set; } = new(StringComparer.Ordinal);
@@ -41,6 +57,7 @@ public sealed class Settings
     public string? LastSeenVersion { get; set; }
     /// <summary>A code from Strings.Languages, or null to follow the system.</summary>
     public string? Language { get; set; }
+    public Appearance Appearance { get; set; } = Appearance.Dark;
 
     [JsonIgnore]
     public AlertConfig AlertConfig => AlertConfig.Default with

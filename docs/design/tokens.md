@@ -22,6 +22,24 @@ points; both platforms use them verbatim.
 Bands: `ample` below 0.50, `watch` from 0.50, `critical` from 0.80 (a step earlier
 than the usual 0.70, because the 80 % alert and the colour change should coincide).
 
+### Light look
+
+The table above is the dark look, the default when Windows apps are dark. A Theme setting
+(system / dark / light) picks the other one; both platforms carry both. The light values were
+derived from the dark mockup and are open to a design pass.
+
+| Token | Light value |
+|---|---|
+| `surface` | rgba(248, 249, 251, 0.80) |
+| `surfaceEdge` | rgba(15, 23, 42, 0.10) |
+| `track` | rgba(15, 23, 42, 0.12) |
+| `ample` / `watch` / `critical` | #10B981 / #F59E0B / #F43F5E (one step darker for contrast on white) |
+| `working` | #1B1F27 |
+| `textPrimary` / `textSecondary` / `textDisabled` | #1B1F27 / #5B6270 / #A3A9B4 |
+
+Settings windows: window #F4F6FA, cards white at 60–95 %, edges #D9DFE8, lines #C5CEDA, inks
+#0F172A / #1E293B / #334155 / #64748B / #94A3B8; the brand green and its tints do not change.
+
 ## Dial
 
 An arc of **240°** opening downward, from 150° to 30° (clockwise, 0° at 3 o'clock).
@@ -36,7 +54,11 @@ arc's end is the reading.
 | glyph | 11 pt provider mark centred in the dial | 16 pt provider mark above the label |
 | activity arc | none | 40 pt diameter, 2 pt stroke, inside the dial |
 
-## Dock (top edge)
+## Dock (screen edge)
+
+The dock hangs from one of the four screen edges (Position setting: top, bottom, left, right). Top and bottom are a row; left and right are a column of the same tiles, 136 pt across when expanded, with the sessions line under the cells. The trapezoid, hot zone, expansion and hover card all face the screen interior. The details below are written for the top edge.
+
+### Top edge
 
 The panel is not a floating pill: it hangs from the screen edge as a trapezoid. The top
 spans the full width flush with the edge and carries no outline; the sides slant inward

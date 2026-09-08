@@ -20,6 +20,22 @@ public static class Marks
     private static readonly Lazy<Dictionary<string, Mark>> Table = new(Load);
 
     /// <summary>The mark for a provider id; Claude profiles share the Claude mark.</summary>
+    private static readonly Dictionary<string, Color> Tints = new()
+    {
+        ["claude"] = Color.FromRgb(0xD9, 0x77, 0x57),
+        ["codex"] = Color.FromRgb(0x38, 0xBD, 0xF8),
+        ["copilot"] = Color.FromRgb(0xA7, 0x8B, 0xFA),
+        ["cursor"] = Color.FromRgb(0xE2, 0xE8, 0xF0),
+        ["antigravity"] = Color.FromRgb(0x60, 0xA5, 0xFA),
+        ["glm"] = Color.FromRgb(0x3B, 0x82, 0xF6),
+        ["grok"] = Color.FromRgb(0xF1, 0xF5, 0xF9),
+        ["opencode"] = Color.FromRgb(0xFB, 0xBF, 0x24)
+    };
+
+    /// <summary>The brand colour a provider's tile takes once it is connected; Claude profiles share Claude's.</summary>
+    public static Color Tint(string providerId) =>
+        Tints.GetValueOrDefault(providerId.StartsWith("claude", StringComparison.Ordinal) ? "claude" : providerId, Color.FromRgb(0xCB, 0xD5, 0xE1));
+
     public static Mark? For(string providerId)
     {
         var key = providerId.StartsWith("claude", StringComparison.Ordinal) ? "claude" : providerId;
@@ -73,6 +89,7 @@ public sealed class MarkView : FrameworkElement
 
     public MarkView(string providerId, double size)
     {
+        Fill = Theme.TextSecondary;
         mark = Marks.For(providerId);
         Width = Height = size;
         FlowDirection = FlowDirection.LeftToRight;

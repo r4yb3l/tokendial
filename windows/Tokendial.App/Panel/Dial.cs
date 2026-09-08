@@ -24,6 +24,8 @@ public sealed class Dial : FrameworkElement
     {
         Width = Height = diameter;
         Stroke = stroke;
+        Fill = Theme.TextDisabled;
+        Track = Theme.Track;
         FlowDirection = FlowDirection.LeftToRight;
         UseLayoutRounding = false;
         SnapsToDevicePixels = false;

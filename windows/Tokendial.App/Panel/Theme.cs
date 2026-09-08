@@ -8,22 +8,52 @@ namespace Tokendial.App.Panel;
 /// <summary>docs/design/tokens.md, as WPF resources. Frozen brushes; every number in device-independent points.</summary>
 public static class Theme
 {
-    public static readonly Brush Surface = Freeze(new SolidColorBrush(Color.FromArgb(128, 16, 17, 20)));
-    public static readonly Brush SurfaceEdge = Freeze(new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)));
-    public static readonly Brush CardSurface = Freeze(new SolidColorBrush(Color.FromArgb(235, 16, 17, 20)));
-    public static readonly Brush Track = Freeze(new SolidColorBrush(Color.FromArgb(41, 255, 255, 255)));
-    public static readonly Brush Ample = Freeze(new SolidColorBrush(Color.FromRgb(0x34, 0xD3, 0x99)));
-    public static readonly Brush Watch = Freeze(new SolidColorBrush(Color.FromRgb(0xFB, 0xBF, 0x24)));
-    public static readonly Brush Critical = Freeze(new SolidColorBrush(Color.FromRgb(0xFB, 0x71, 0x85)));
-    public static readonly Brush Working = Freeze(new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF7)));
-    public static readonly Brush Waiting = Watch;
-    public static readonly Brush TextPrimary = Freeze(new SolidColorBrush(Color.FromRgb(0xF5, 0xF5, 0xF7)));
-    public static readonly Brush TextSecondary = Freeze(new SolidColorBrush(Color.FromRgb(0x9A, 0x9D, 0xA6)));
-    public static readonly Brush TextDisabled = Freeze(new SolidColorBrush(Color.FromRgb(0x5C, 0x5F, 0x68)));
-    public static readonly Brush Hairline = Freeze(new SolidColorBrush(Color.FromArgb(28, 255, 255, 255)));
-    public static readonly Brush Transparent = Brushes.Transparent;
-    public static readonly Color AmpleColor = Color.FromRgb(0x34, 0xD3, 0x99);
-    public static readonly Color TextDisabledColor = Color.FromRgb(0x5C, 0x5F, 0x68);
+    /// <summary>One look for the dock and the card: surfaces, text inks and the band colours.</summary>
+    public sealed record Palette(Brush Surface, Brush SurfaceEdge, Brush CardSurface, Brush Track, Brush Ample, Brush Watch, Brush Critical, Brush Working,
+        Brush TextPrimary, Brush TextSecondary, Brush TextDisabled, Brush Hairline, Color AmpleColor, Color TextDisabledColor);
+
+    public static readonly Palette DarkPalette = new(
+        Surface: Rgba(16, 17, 20, 128), SurfaceEdge: Rgba(255, 255, 255, 20), CardSurface: Rgba(16, 17, 20, 235), Track: Rgba(255, 255, 255, 41),
+        Ample: Rgb(0x34, 0xD3, 0x99), Watch: Rgb(0xFB, 0xBF, 0x24), Critical: Rgb(0xFB, 0x71, 0x85), Working: Rgb(0xF5, 0xF5, 0xF7),
+        TextPrimary: Rgb(0xF5, 0xF5, 0xF7), TextSecondary: Rgb(0x9A, 0x9D, 0xA6), TextDisabled: Rgb(0x5C, 0x5F, 0x68), Hairline: Rgba(255, 255, 255, 28),
+        AmpleColor: Color.FromRgb(0x34, 0xD3, 0x99), TextDisabledColor: Color.FromRgb(0x5C, 0x5F, 0x68));
+
+    public static readonly Palette LightPalette = new(
+        Surface: Rgba(248, 249, 251, 204), SurfaceEdge: Rgba(15, 23, 42, 26), CardSurface: Rgba(252, 252, 253, 245), Track: Rgba(15, 23, 42, 31),
+        Ample: Rgb(0x10, 0xB9, 0x81), Watch: Rgb(0xF5, 0x9E, 0x0B), Critical: Rgb(0xF4, 0x3F, 0x5E), Working: Rgb(0x1B, 0x1F, 0x27),
+        TextPrimary: Rgb(0x1B, 0x1F, 0x27), TextSecondary: Rgb(0x5B, 0x62, 0x70), TextDisabled: Rgb(0xA3, 0xA9, 0xB4), Hairline: Rgba(15, 23, 42, 26),
+        AmpleColor: Color.FromRgb(0x10, 0xB9, 0x81), TextDisabledColor: Color.FromRgb(0xA3, 0xA9, 0xB4));
+
+    private static Palette current = DarkPalette;
+
+    public static bool Dark { get; private set; } = true;
+
+    /// <summary>Switch the look. Elements built afterwards pick it up; live ones are rebuilt by their windows.</summary>
+    public static void Use(bool dark)
+    {
+        Dark = dark;
+        current = dark ? DarkPalette : LightPalette;
+    }
+
+    public static Brush Surface => current.Surface;
+    public static Brush SurfaceEdge => current.SurfaceEdge;
+    public static Brush CardSurface => current.CardSurface;
+    public static Brush Track => current.Track;
+    public static Brush Ample => current.Ample;
+    public static Brush Watch => current.Watch;
+    public static Brush Critical => current.Critical;
+    public static Brush Working => current.Working;
+    public static Brush Waiting => current.Watch;
+    public static Brush TextPrimary => current.TextPrimary;
+    public static Brush TextSecondary => current.TextSecondary;
+    public static Brush TextDisabled => current.TextDisabled;
+    public static Brush Hairline => current.Hairline;
+    public static Brush Transparent => Brushes.Transparent;
+    public static Color AmpleColor => current.AmpleColor;
+    public static Color TextDisabledColor => current.TextDisabledColor;
+
+    private static Brush Rgb(byte r, byte g, byte b) => Freeze(new SolidColorBrush(Color.FromRgb(r, g, b)));
+    private static Brush Rgba(byte r, byte g, byte b, byte a) => Freeze(new SolidColorBrush(Color.FromArgb(a, r, g, b)));
 
     public static readonly FontFamily Font = new("Segoe UI Variable Text, Segoe UI Variable, Segoe UI");
     public static readonly FontFamily DisplayFont = new("Segoe UI Variable Display, Segoe UI Variable, Segoe UI");
@@ -38,6 +68,8 @@ public static class Theme
     public const double ExpandedHeight = 132;
     public const double ExpandedPadding = 20;
     public const double CellWidth = 96;
+    public const double CellHeight = 96;
+    public const double CellGap = 14;
     public const double ExpandedDial = 56;
     public const double ExpandedStroke = 6;
     public const double ActivityDial = 40;
