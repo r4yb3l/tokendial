@@ -32,7 +32,7 @@ public sealed class SettingsWindow
         this.launchAtLogin = launchAtLogin;
         this.testAlert = testAlert;
         this.version = version;
-        window = Chrome.Frame(Strings.T("settings.title"), 560, 760, Build());
+        window = Chrome.Frame(Strings.T("settings.title"), 1040, 820, Build());
         window.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         window.Closed += (_, _) => Closed?.Invoke();
         store.Changed += OnStoreChanged;
@@ -64,15 +64,24 @@ public sealed class SettingsWindow
     private UIElement Build()
     {
         building = true;
-        var page = new StackPanel { Margin = new Thickness(20, 18, 20, 18) };
+        var page = new Grid { Margin = new Thickness(20, 18, 20, 18) };
+        page.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        page.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
+        page.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var left = new StackPanel();
+        var right = new StackPanel();
+        Grid.SetColumn(left, 0);
+        Grid.SetColumn(right, 2);
+        page.Children.Add(left);
+        page.Children.Add(right);
         if (providersList.Parent is Border oldSection) oldSection.Child = null;
-        page.Children.Add(Chrome.Section(Strings.T("settings.providers"), Strings.T("settings.providersHint"), Detach(providersList)));
+        left.Children.Add(Chrome.Section(Strings.T("settings.providers"), Strings.T("settings.providersHint"), Detach(providersList)));
 
         var panel = new StackPanel();
         panel.Children.Add(Chrome.Radio("panel", Strings.T("settings.panel.hover"), settings.Panel == PanelMode.ExpandOnHover, () => SetPanel(PanelMode.ExpandOnHover), Strings.T("settings.panel.hoverHint")));
         panel.Children.Add(Chrome.Radio("panel", Strings.T("settings.panel.always"), settings.Panel == PanelMode.AlwaysExpanded, () => SetPanel(PanelMode.AlwaysExpanded)));
         panel.Children.Add(Chrome.Radio("panel", Strings.T("settings.panel.hidden"), settings.Panel == PanelMode.Hidden, () => SetPanel(PanelMode.Hidden), Strings.T("settings.panel.hiddenHint")));
-        page.Children.Add(Chrome.Section(Strings.T("settings.panel"), null, panel));
+        right.Children.Add(Chrome.Section(Strings.T("settings.panel"), null, panel));
 
         var alerts = new StackPanel();
         alerts.Children.Add(Chrome.Check(Strings.T("settings.thresholds"), settings.AlertThresholds, v => { settings.AlertThresholds = v; Save(); }, Strings.T("settings.thresholdsHint")));
@@ -95,28 +104,30 @@ public sealed class SettingsWindow
         test.Margin = new Thickness(0, 10, 0, 0);
         test.HorizontalAlignment = HorizontalAlignment.Left;
         alerts.Children.Add(test);
-        page.Children.Add(Chrome.Section(Strings.T("settings.alerts"), Strings.T("settings.alertsHint"), alerts));
+        right.Children.Add(Chrome.Section(Strings.T("settings.alerts"), Strings.T("settings.alertsHint"), alerts));
 
         var general = new StackPanel();
         general.Children.Add(Chrome.Check(Strings.T("settings.launchAtLogin"), settings.LaunchAtLogin, v => { settings.LaunchAtLogin = v; launchAtLogin(v); Save(); }));
-        var languages = new ComboBox { Width = 200, SelectedIndex = 0, Foreground = Theme.TextPrimary };
-        languages.Items.Add(Strings.T("settings.language.system"));
-        foreach (var (code, name) in Strings.Languages)
+        var languages = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
+        void AddLanguage(string? code, string name)
         {
-            languages.Items.Add(name);
-            if (settings.Language == code) languages.SelectedIndex = languages.Items.Count - 1;
+            var radio = Chrome.Radio("language", name, settings.Language == code, () =>
+            {
+                if (building || settings.Language == code) return;
+                settings.Language = code;
+                save();
+                LanguageChanged?.Invoke(code);
+            });
+            radio.Margin = new Thickness(0, 2, 18, 2);
+            languages.Children.Add(radio);
         }
-        languages.SelectionChanged += (_, _) =>
-        {
-            if (building) return;
-            var code = languages.SelectedIndex <= 0 ? null : Strings.Languages[languages.SelectedIndex - 1].Code;
-            if (code == settings.Language) return;
-            settings.Language = code;
-            save();
-            LanguageChanged?.Invoke(code);
-        };
-        general.Children.Add(Chrome.Row(Strings.T("settings.language"), languages));
-        page.Children.Add(Chrome.Section(Strings.T("settings.startup"), null, general));
+        AddLanguage(null, Strings.T("settings.language.system"));
+        foreach (var (code, name) in Strings.Languages) AddLanguage(code, name);
+        var languageBlock = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
+        languageBlock.Children.Add(Chrome.Label(Strings.T("settings.language")));
+        languageBlock.Children.Add(languages);
+        general.Children.Add(languageBlock);
+        left.Children.Add(Chrome.Section(Strings.T("settings.startup"), null, general));
 
         var about = new StackPanel();
         about.Children.Add(Chrome.Body(Strings.T("settings.aboutLine", ("version", version))));
@@ -125,7 +136,7 @@ public sealed class SettingsWindow
         links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
         links.Children.Add(Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial"))));
         about.Children.Add(links);
-        page.Children.Add(Chrome.Section(Strings.T("settings.about"), null, about));
+        left.Children.Add(Chrome.Section(Strings.T("settings.about"), null, about));
         building = false;
         return Chrome.Scroll(page);
     }
