@@ -43,13 +43,13 @@
         "id": "primary",
         "label": "5h limit",
         "usedFraction": 0.25,
-        "resetsAt": "2027-01-14T14:16:40Z"
+        "resetsAt": "2027-01-15T08:16:40Z"
       },
       {
         "id": "secondary",
         "label": "Weekly limit",
         "usedFraction": 0.1,
-        "resetsAt": "2027-01-21T12:40:00Z"
+        "resetsAt": "2027-01-22T06:40:00Z"
       }
     ]
   }

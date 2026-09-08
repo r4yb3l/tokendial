@@ -34,13 +34,13 @@
         "id": "session",
         "label": "Current session",
         "usedFraction": 0.01,
-        "resetsAt": "2026-09-05T05:41:35.358Z"
+        "resetsAt": "2026-09-06T00:21:35.358Z"
       },
       {
         "id": "weekly",
         "label": "Weekly",
         "usedFraction": 0.17,
-        "resetsAt": "2026-09-10T02:11:19.999Z"
+        "resetsAt": "2026-09-10T20:51:19.999Z"
       }
     ]
   }
