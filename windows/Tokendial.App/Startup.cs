@@ -2,6 +2,7 @@ using System.IO;
 using System.Diagnostics;
 using Microsoft.Win32;
 using Tokendial.Core.Diagnostics;
+using Tokendial.Core.Install;
 using Tokendial.Core.Providers;
 
 namespace Tokendial.App;
@@ -35,15 +36,10 @@ public static class LaunchAtLogin
     }
 }
 
-/// <summary>Finds and starts the coding tools a sign-in route points at.</summary>
+/// <summary>Finds and starts the coding tools a sign-in route points at, from the install recipes' detect rules.</summary>
 public sealed class AppLauncher : IAppLauncher
 {
-    private static readonly Dictionary<string, string[]> Known = new()
-    {
-        ["cursor"] = [Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "cursor", "Cursor.exe")],
-        ["antigravity"] = [Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Antigravity", "Antigravity.exe")],
-        ["codex"] = []
-    };
+    private readonly ToolLocator locator = new();
 
     public bool IsInstalled(string appKey) => Resolve(appKey) is not null;
 
@@ -63,21 +59,7 @@ public sealed class AppLauncher : IAppLauncher
         }
     }
 
-    private static string? Resolve(string appKey)
-    {
-        if (Known.TryGetValue(appKey, out var paths) && paths.FirstOrDefault(File.Exists) is string found) return found;
-        var names = ProviderCatalog.AppCommands.GetValueOrDefault(appKey) ?? [];
-        var path = Environment.GetEnvironmentVariable("PATH") ?? "";
-        foreach (var directory in path.Split(';', StringSplitOptions.RemoveEmptyEntries))
-        {
-            foreach (var name in names)
-            {
-                var candidate = Path.Combine(directory.Trim(), name);
-                if (File.Exists(candidate)) return candidate;
-            }
-        }
-        return null;
-    }
+    private string? Resolve(string appKey) => InstallCatalog.For(appKey) is InstallRecipe recipe ? locator.Resolve(recipe.Here.Detect) : null;
 }
 
 /// <summary>Rolling text log under %LOCALAPPDATA%\Tokendial\logs. Debug lines only with TOKENDIAL_DEBUG set.</summary>

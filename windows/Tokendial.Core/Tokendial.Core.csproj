@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="../../docs/i18n/*.json" LogicalName="i18n/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../docs/providers/*.json" LogicalName="providers/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

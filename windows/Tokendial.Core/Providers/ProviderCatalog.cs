@@ -40,12 +40,4 @@ public static class ProviderCatalog
         list.Add(new GrokSessions());
         return list;
     }
-
-    /// <summary>Which app to launch for a sign-in route, by the executable Windows knows it as.</summary>
-    public static readonly IReadOnlyDictionary<string, string[]> AppCommands = new Dictionary<string, string[]>
-    {
-        ["codex"] = ["codex.exe", "codex.cmd", "codex"],
-        ["cursor"] = ["Cursor.exe", "cursor.cmd", "cursor"],
-        ["antigravity"] = ["Antigravity.exe", "antigravity"]
-    };
 }
