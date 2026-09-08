@@ -30,27 +30,39 @@ arc's end is the reading.
 
 | Token | Compact | Expanded |
 |---|---|---|
-| diameter | 18 | 56 |
+| diameter | 24 | 56 |
 | stroke | 3 | 6 |
 | label | none | percent, 15 pt semibold, centred inside the opening |
-| glyph | none | 16 pt provider mark above the label |
+| glyph | 11 pt provider mark centred in the dial | 16 pt provider mark above the label |
 | activity arc | none | 40 pt diameter, 2 pt stroke, inside the dial |
 
-## Capsule (top edge)
+## Dock (top edge)
+
+The panel is not a floating pill: it hangs from the screen edge as a trapezoid. The top
+spans the full width flush with the edge and carries no outline; the sides slant inward
+by `slant` over the height; the bottom is straight with rounded corners. Content sits
+inside the bottom width, so the slant is extra room on each side.
 
 | Token | Value |
 |---|---|
-| compact height | 28 |
+| slant | 14 |
+| bottom corner radius | 17 compact, 20 expanded |
+| edge hairline | sides and bottom only |
+
+## Capsule metrics
+
+| Token | Value |
+|---|---|
+| compact height | 34 |
 | compact horizontal padding | 14 |
 | compact dial spacing | 10 |
 | expanded height | 132 |
 | expanded horizontal padding | 20 |
 | expanded cell width | 96 |
-| corner radius | 14 compact, 20 expanded |
 | hot zone below the capsule | 24 |
 | distance below a hardware notch | 0 (the capsule shares its bottom edge) |
 
-Compact shows one 18 pt dial per connected provider with a reading; a provider
+Compact shows one 24 pt dial per connected provider with its mark inside; a provider
 without a reading shows a hollow track in `textDisabled`. Expanded shows one cell
 per provider: dial, provider name, headline window label, and a thin 3 pt bar per
 secondary window. Live sessions appear as a one-line list under the cells, with

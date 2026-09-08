@@ -37,6 +37,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="../../docs/design/marks/normalized/marks.json" LogicalName="marks.json" />
+    <EmbeddedResource Include="../../docs/design/marks/normalized/opencode.png" LogicalName="opencode.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Tokendial.Core\Tokendial.Core.csproj" />
   </ItemGroup>
 

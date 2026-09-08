@@ -25,6 +25,8 @@ public sealed class PanelWindow : Window
     private readonly Canvas root = new() { UseLayoutRounding = false };
     private readonly Border capsule;
     private readonly Grid capsuleContent = new() { UseLayoutRounding = false };
+    private readonly System.Windows.Shapes.Path dockFill = new() { Fill = Theme.Surface, Stretch = Stretch.None, UseLayoutRounding = false, IsHitTestVisible = true };
+    private readonly System.Windows.Shapes.Path dockEdge = new() { Stroke = Theme.SurfaceEdge, StrokeThickness = 1, Stretch = Stretch.None, UseLayoutRounding = false, IsHitTestVisible = false };
     private readonly PanelContent content = new();
     private readonly DispatcherTimer hoverTimer = new(DispatcherPriority.Background);
     private readonly DispatcherTimer pinTimer = new(DispatcherPriority.Background);
@@ -53,15 +55,17 @@ public sealed class PanelWindow : Window
         UseLayoutRounding = false;
         TextOptions.SetTextFormattingMode(this, TextFormattingMode.Ideal);
 
+        var shell = new Grid { UseLayoutRounding = false };
+        shell.Children.Add(dockFill);
+        shell.Children.Add(dockEdge);
+        capsuleContent.Margin = new Thickness(Theme.DockSlant, 0, Theme.DockSlant, 0);
+        shell.Children.Add(capsuleContent);
         capsule = new Border
         {
-            Background = Theme.Surface,
-            BorderBrush = Theme.SurfaceEdge,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(Theme.CompactRadius),
-            Width = PanelContent.CompactWidth(0),
+            Background = Brushes.Transparent,
+            Width = PanelContent.CompactWidth(0) + 2 * Theme.DockSlant,
             Height = Theme.CompactHeight,
-            Child = capsuleContent,
+            Child = shell,
             UseLayoutRounding = false,
             SnapsToDevicePixels = false
         };
@@ -69,7 +73,13 @@ public sealed class PanelWindow : Window
         content.Expanded.Opacity = 0;
         content.Expanded.Visibility = Visibility.Collapsed;
         capsuleContent.Children.Add(content.Expanded);
-        capsule.SizeChanged += (_, _) => Canvas.SetLeft(capsule, (root.Width - capsule.ActualWidth) / 2);
+        capsule.SizeChanged += (_, e) =>
+        {
+            Canvas.SetLeft(capsule, (root.Width - capsule.ActualWidth) / 2);
+            var radius = expanded ? Theme.ExpandedRadius : Theme.CompactRadius;
+            dockFill.Data = DockShape.Fill(e.NewSize.Width, e.NewSize.Height, Theme.DockSlant, radius);
+            dockEdge.Data = DockShape.Edge(e.NewSize.Width, e.NewSize.Height, Theme.DockSlant, radius);
+        };
         capsule.MouseRightButtonUp += (_, e) => { e.Handled = true; SettingsRequested?.Invoke(); };
         content.CellClicked += id => ProviderClicked?.Invoke(id);
         Canvas.SetTop(capsule, 0);
@@ -138,7 +148,7 @@ public sealed class PanelWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd == IntPtr.Zero) return;
         screen = Native.PrimaryScreen();
-        var widthDip = PanelContent.ExpandedWidth(Math.Max(model.Tiles.Count, 1)) + 2 * Theme.ExpandedPadding;
+        var widthDip = PanelContent.ExpandedWidth(Math.Max(model.Tiles.Count, 1)) + 2 * Theme.ExpandedPadding + 2 * Theme.DockSlant;
         var heightDip = Theme.ExpandedHeight + Theme.HotZone + CardReserve;
         root.Width = widthDip;
         root.Height = heightDip;
@@ -195,9 +205,8 @@ public sealed class PanelWindow : Window
     private void Resize(bool animate)
     {
         var n = Math.Max(model.Tiles.Count, 0);
-        var width = expanded ? PanelContent.ExpandedWidth(n) : PanelContent.CompactWidth(n);
+        var width = (expanded ? PanelContent.ExpandedWidth(n) : PanelContent.CompactWidth(n)) + 2 * Theme.DockSlant;
         var height = expanded ? Theme.ExpandedHeight : Theme.CompactHeight;
-        capsule.CornerRadius = new CornerRadius(expanded ? Theme.ExpandedRadius : Theme.CompactRadius);
         var duration = animate ? Theme.DurationOf(Theme.Expand) : new Duration(TimeSpan.Zero);
         if (duration.TimeSpan == TimeSpan.Zero)
         {

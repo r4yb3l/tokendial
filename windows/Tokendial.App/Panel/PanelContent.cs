@@ -11,6 +11,7 @@ namespace Tokendial.App.Panel;
 public sealed class PanelContent
 {
     private readonly Dictionary<string, Dial> compactDials = new();
+    private readonly Dictionary<string, MarkView> compactMarks = new();
     private readonly Dictionary<string, Cell> cells = new();
     private readonly List<string> order = new();
 
@@ -59,6 +60,7 @@ public sealed class PanelContent
             mini.Hollow = !tile.HasReading;
             mini.Fill = Theme.Of(tile.Band);
             Glide(mini, fraction, animate);
+            compactMarks[tile.Id].Fill = tile.HasReading ? Theme.TextSecondary : Theme.TextDisabled;
             cells[tile.Id].Apply(tile, fraction, animate, i);
         }
         mutedBadge.Visibility = model.Muted > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -77,6 +79,7 @@ public sealed class PanelContent
         CompactRow.Children.Clear();
         cellRow.Children.Clear();
         compactDials.Clear();
+        compactMarks.Clear();
         cells.Clear();
         if (model.Tiles.Count == 0)
         {
@@ -86,9 +89,14 @@ public sealed class PanelContent
         for (var i = 0; i < model.Tiles.Count; i++)
         {
             var tile = model.Tiles[i];
-            var mini = new Dial(Theme.CompactDial, Theme.CompactStroke) { Margin = new Thickness(i == 0 ? 0 : Theme.CompactSpacing, 0, 0, 0), ToolTip = null };
+            var mini = new Dial(Theme.CompactDial, Theme.CompactStroke);
+            var mark = new MarkView(tile.Id, Theme.CompactMark) { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            var host = new Grid { Width = Theme.CompactDial, Height = Theme.CompactDial, Margin = new Thickness(i == 0 ? 0 : Theme.CompactSpacing, 0, 0, 0) };
+            host.Children.Add(mini);
+            host.Children.Add(mark);
             compactDials[tile.Id] = mini;
-            CompactRow.Children.Add(mini);
+            compactMarks[tile.Id] = mark;
+            CompactRow.Children.Add(host);
             var cell = new Cell(tile.Id, tile.Mark);
             cell.Root.MouseLeftButtonUp += (_, _) => CellClicked?.Invoke(tile.Id);
             cells[tile.Id] = cell;

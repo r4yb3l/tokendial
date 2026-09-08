@@ -26,10 +26,11 @@ public static class Theme
     public static readonly FontFamily Font = new("Segoe UI Variable Text, Segoe UI Variable, Segoe UI");
     public static readonly FontFamily DisplayFont = new("Segoe UI Variable Display, Segoe UI Variable, Segoe UI");
 
-    public const double CompactHeight = 28;
+    public const double CompactHeight = 34;
     public const double CompactPadding = 14;
     public const double CompactSpacing = 10;
-    public const double CompactDial = 18;
+    public const double CompactDial = 24;
+    public const double CompactMark = 11;
     public const double CompactStroke = 3;
     public const double ExpandedHeight = 132;
     public const double ExpandedPadding = 20;
@@ -38,9 +39,10 @@ public static class Theme
     public const double ExpandedStroke = 6;
     public const double ActivityDial = 40;
     public const double ActivityStroke = 2;
-    public const double CompactRadius = 14;
+    public const double CompactRadius = 17;
     public const double ExpandedRadius = 20;
     public const double HotZone = 24;
+    public const double DockSlant = 14;
     public const double CardWidth = 280;
     public const double CardRadius = 16;
     public const double CardPadding = 14;
