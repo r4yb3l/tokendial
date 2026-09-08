@@ -1,0 +1,222 @@
+---
+import Hero from './Hero.astro';
+import Section from './Section.astro';
+import Mark from './Mark.astro';
+import Dial from './Dial.astro';
+import { list, useTranslations, type Locale } from '../i18n';
+import { links } from '../data/links';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const providers = ['claude', 'codex', 'copilot', 'cursor', 'antigravity', 'glm', 'grok', 'opencode'] as const;
+const tints: Record<(typeof providers)[number], string> = {
+  claude: '#d97757', codex: '#38bdf8', copilot: '#a78bfa', cursor: '#e2e8f0',
+  antigravity: '#60a5fa', glm: '#3b82f6', grok: '#f1f5f9', opencode: '#fbbf24'
+};
+const why = list(locale, 'why');
+const steps = list(locale, 'how');
+const alerts = list(locale, 'alerts');
+const dock = list(locale, 'dock');
+const whyIcons = [
+  'M3 5h18v10H3zM8 19h8M12 15v4',
+  'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zM16 3l2 2M8 3 6 5',
+  'M21 12a8 8 0 0 1-8 8H8l-5 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8zM9 12h.01M13 12h.01'
+];
+const alertIcons = [
+  'M12 3v18M5 12h14',
+  'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+  'M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 0 0-4-5.7V5a2 2 0 1 0-4 0v.3C7.7 6.2 6 8.4 6 11v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1',
+  'M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'
+];
+const alertColors = ['#34d399', '#fbbf24', '#34d399', '#fb7185'];
+const securityPoints = [t('security.1'), t('security.2'), t('security.3'), t('security.4')];
+const installPoints = [t('install.1'), t('install.2'), t('install.3')];
+---
+
+<Hero locale={locale} />
+
+<Section id="why" eyebrow={t('why.eyebrow')} title={t('why.title')} lead={t('why.lead')}>
+  <div class="grid gap-4 md:grid-cols-3">
+    {why.map((item, i) => (
+      <article class="card reveal p-6" style={`transition-delay:${i * 60}ms`}>
+        <span class="grid size-10 place-items-center rounded-xl bg-brand-500/10 text-brand-400">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={whyIcons[i]} /></svg>
+        </span>
+        <h3 class="mt-5 text-lg font-semibold text-slate-100">{item.title}</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-400">{item.body}</p>
+      </article>
+    ))}
+  </div>
+</Section>
+
+<Section id="how" eyebrow={t('how.eyebrow')} title={t('how.title')}>
+  <ol class="grid gap-4 md:grid-cols-3">
+    {steps.map((step, i) => (
+      <li class="card reveal p-6" style={`transition-delay:${i * 60}ms`}>
+        <span class="inline-grid size-9 place-items-center rounded-lg bg-ink-800 font-mono text-sm text-brand-400">{i + 1}</span>
+        <h3 class="mt-5 text-lg font-semibold text-slate-100">{step.title}</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-400">{step.body}</p>
+      </li>
+    ))}
+  </ol>
+</Section>
+
+<Section id="providers" eyebrow={t('providers.eyebrow')} title={t('providers.title')} lead={t('providers.lead')}>
+  <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="list">
+    {providers.map((id, i) => (
+      <li class="card reveal flex items-center gap-4 p-4" style={`transition-delay:${i * 40}ms`}>
+        <span class="grid size-11 shrink-0 place-items-center rounded-xl border" style={`color:${tints[id]};background:${tints[id]}22;border-color:${tints[id]}55`}>
+          <Mark id={id} size={20} />
+        </span>
+        <div class="min-w-0">
+          <p class="font-semibold text-slate-100">{t(`providers.${id}`)}</p>
+          <p class="text-xs text-slate-400">{t(`providers.${id}.detail`)}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+</Section>
+
+<Section id="alerts" eyebrow={t('alerts.eyebrow')} title={t('alerts.title')} lead={t('alerts.lead')}>
+  <ul class="grid gap-4 sm:grid-cols-2" role="list">
+    {alerts.map((alert, i) => (
+      <li class="card reveal flex gap-4 p-6" style={`transition-delay:${i * 60}ms`}>
+        <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-ink-800" style={`color:${alertColors[i]}`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={alertIcons[i]} /></svg>
+        </span>
+        <div>
+          <h3 class="font-semibold text-slate-100">{alert.title}</h3>
+          <p class="mt-1 text-sm leading-relaxed text-slate-400">{alert.body}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+</Section>
+
+<Section id="dock" eyebrow={t('dock.eyebrow')} title={t('dock.title')}>
+  <div class="grid gap-4 md:grid-cols-3">
+    {dock.map((item, i) => (
+      <article class="card reveal overflow-hidden" style={`transition-delay:${i * 60}ms`}>
+        <div class="ltr grid h-36 place-items-center border-b border-ink-700/50 bg-ink-950/60 p-6">
+          {i === 0 && (
+            <div class="flex items-end gap-3">
+              {[['top', 'inset-x-3 top-0 h-2 rounded-b'], ['bottom', 'inset-x-3 bottom-0 h-2 rounded-t'], ['left', 'inset-y-3 left-0 w-2 rounded-r'], ['right', 'inset-y-3 right-0 w-2 rounded-l']].map(([, cls]) => (
+                <div class="relative h-14 w-20 rounded-md border border-ink-600/60 bg-ink-800">
+                  <div class:list={['absolute bg-brand-400/80', cls]}></div>
+                </div>
+              ))}
+            </div>
+          )}
+          {i === 1 && (
+            <div class="flex gap-3">
+              <div class="relative h-16 w-24 rounded-md border border-ink-600/60 bg-[#101114] p-2"><div class="mx-auto h-2 w-12 rounded-b bg-[#f5f5f7]/25"></div><Dial size={24} stroke={3} fraction={0.41} class="mx-auto mt-2" animate={false} /></div>
+              <div class="relative h-16 w-24 rounded-md border border-slate-300 bg-[#f4f6fa] p-2"><div class="mx-auto h-2 w-12 rounded-b bg-[#0f172a]/20"></div><Dial size={24} stroke={3} fraction={0.41} color="#10b981" track="rgb(15 23 42 / 0.12)" class="mx-auto mt-2" animate={false} /></div>
+            </div>
+          )}
+          {i === 2 && (
+            <div class="flex flex-wrap justify-center gap-2 text-xs">
+              {['English', 'English (UK)', 'Español', 'Français', 'Deutsch', 'العربية'].map((name) => (
+                <span class="rounded-lg border border-ink-600/60 bg-ink-800 px-2.5 py-1 text-slate-300">{name}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div class="p-6">
+          <h3 class="font-semibold text-slate-100">{item.title}</h3>
+          <p class="mt-1 text-sm leading-relaxed text-slate-400">{item.body}</p>
+        </div>
+      </article>
+    ))}
+  </div>
+</Section>
+
+<Section id="install" eyebrow={t('install.eyebrow')} title={t('install.title')} lead={t('install.lead')}>
+  <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <ul class="reveal space-y-3" role="list">
+      {installPoints.map((point) => (
+        <li class="flex gap-3 text-slate-300">
+          <svg class="mt-1 shrink-0 text-brand-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7" /></svg>
+          <span class="leading-relaxed">{point}</span>
+        </li>
+      ))}
+    </ul>
+    <div class="reveal min-w-0 space-y-3">
+      <div class="card flex items-center gap-4 p-4">
+        <span class="grid size-9 shrink-0 place-items-center rounded-lg border border-ink-700 bg-ink-750 text-slate-400"><Mark id="grok" size={16} /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-slate-200">{t('providers.grok')}</p>
+          <ol class="mt-1.5 flex items-center gap-2 text-[11px]" aria-label="Steps">
+            {[t('install.step.install'), t('install.step.signin'), t('install.step.ready')].map((step, i) => (
+              <>
+                {i > 0 && <span class="h-px w-4 bg-ink-600" aria-hidden="true"></span>}
+                <li class:list={['flex items-center gap-1.5', i === 0 ? 'text-slate-100' : 'text-slate-500']}>
+                  <span class:list={['size-2 rounded-full border', i === 0 ? 'border-slate-100 bg-slate-100' : 'border-slate-500']} aria-hidden="true"></span>
+                  {step}
+                </li>
+              </>
+            ))}
+          </ol>
+        </div>
+        <span class="btn-primary pointer-events-none !min-h-9 !px-3.5 text-xs" aria-hidden="true">{t('install.step.install')}</span>
+      </div>
+      <div class="ltr card overflow-hidden font-mono text-[12px] leading-relaxed">
+        <div class="flex items-center gap-1.5 border-b border-ink-700/60 px-4 py-2.5 text-[11px] text-slate-500">
+          <span class="size-2.5 rounded-full bg-ink-600"></span><span class="size-2.5 rounded-full bg-ink-600"></span><span class="size-2.5 rounded-full bg-ink-600"></span>
+          <span class="ms-2">Tokendial · Grok</span>
+        </div>
+        <pre class="overflow-x-auto p-4 text-slate-400 whitespace-pre"><span class="text-slate-500">Installer from xAI · https://docs.x.ai/build/cli/reference</span>
+<span class="text-watch">&gt; irm https://x.ai/cli/install.ps1 | iex</span>
+<span class="text-brand-400">Installed.</span>
+<span class="text-slate-500">Grok opens the browser to sign in with your xAI account.</span>
+<span class="text-watch">&gt; grok login</span>
+<span class="text-brand-400">Done. You can close this window.</span></pre>
+      </div>
+    </div>
+  </div>
+</Section>
+
+<Section id="security" eyebrow={t('security.eyebrow')} title={t('security.title')}>
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+    <ul class="reveal grid gap-3 sm:grid-cols-2" role="list">
+      {securityPoints.map((point) => (
+        <li class="card flex gap-3 p-5">
+          <svg class="mt-0.5 shrink-0 text-brand-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.4 8.6 8 9.9 4.6-1.3 8-4.9 8-9.9V6z" /><path d="m9 12 2 2 4-4" /></svg>
+          <p class="text-sm leading-relaxed text-slate-300">{point}</p>
+        </li>
+      ))}
+    </ul>
+    <div class="reveal card min-w-0 flex flex-col justify-between gap-6 p-6">
+      <div class="ltr rounded-xl bg-ink-950/70 p-4 font-mono text-[12px] leading-relaxed text-slate-400">
+        <p class="text-slate-500">$ cat docs/providers/claude.json | jq .endpoints[0].url</p>
+        <p class="text-brand-400">"https://api.anthropic.com/api/oauth/usage"</p>
+        <p class="mt-3 text-slate-500">$ grep -c AllowAutoRedirect windows/Tokendial.Core/Providers/Json.cs</p>
+        <p class="text-brand-400">1 <span class="text-slate-500">// false</span></p>
+      </div>
+      <a href={links.security} class="btn-secondary self-start" rel="noopener">
+        {t('security.link')}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rtl:-scale-x-100" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+      </a>
+    </div>
+  </div>
+</Section>
+
+<section class="py-20 md:py-28">
+  <div class="mx-auto max-w-6xl px-5">
+    <div class="reveal card relative overflow-hidden p-10 text-center md:p-16">
+      <div class="absolute inset-0 bg-[radial-gradient(40rem_16rem_at_50%_120%,rgb(16_185_129/0.18),transparent_60%)]" aria-hidden="true"></div>
+      <div class="relative">
+        <h2 class="text-3xl font-semibold tracking-tight text-slate-100 md:text-5xl">{t('cta.title')}</h2>
+        <p class="mx-auto mt-4 max-w-xl text-lg text-slate-400">{t('cta.lead')}</p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+          <a href={links.releases} class="btn-primary" rel="noopener">{t('hero.windows')}</a>
+          <a href={links.releases} class="btn-secondary" rel="noopener">{t('hero.macos')}</a>
+          <a href={links.repo} class="btn-secondary" rel="noopener">{t('hero.source')}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

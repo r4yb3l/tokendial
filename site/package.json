@@ -1,0 +1,20 @@
+{
+  "name": "tokendial-site",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "tokendial.app — the marketing site for Tokendial",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/inter": "^5.2.5",
+    "@tailwindcss/vite": "^4.1.11",
+    "astro": "^5.12.0",
+    "tailwindcss": "^4.1.11"
+  }
+}

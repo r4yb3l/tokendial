@@ -1,0 +1,36 @@
+---
+import { localeNames, locales, pathFor, useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<details class="group relative">
+  <summary class="btn-secondary !min-h-10 list-none !px-3 text-slate-300" aria-label={t('nav.language')}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+    <span class="hidden text-xs font-medium md:inline">{localeNames[locale]}</span>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-open:rotate-180" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+  </summary>
+  <ul class="card absolute end-0 top-12 z-50 min-w-44 overflow-hidden p-1.5" role="list">
+    {locales.map((code) => (
+      <li>
+        <a
+          href={pathFor(code)}
+          hreflang={code}
+          lang={code}
+          aria-current={code === locale ? 'page' : undefined}
+          class:list={[
+            'flex min-h-10 items-center justify-between gap-3 rounded-lg px-3 text-sm transition-colors hover:bg-ink-800',
+            code === locale ? 'text-brand-400' : 'text-slate-300'
+          ]}
+        >
+          <span>{localeNames[code]}</span>
+          {code === locale && <span class="size-1.5 rounded-full bg-brand-400" aria-hidden="true"></span>}
+        </a>
+      </li>
+    ))}
+  </ul>
+</details>

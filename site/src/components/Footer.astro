@@ -1,0 +1,29 @@
+---
+import Logo from './Logo.astro';
+import { useTranslations, type Locale } from '../i18n';
+import { links } from '../data/links';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<footer class="border-t border-ink-700/40">
+  <div class="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-[1fr_auto]">
+    <div class="max-w-xl space-y-4">
+      <div class="flex items-center gap-2.5 font-semibold text-slate-100">
+        <Logo size={24} />
+        <span>Tokendial</span>
+      </div>
+      <p class="text-sm text-slate-400">{t('footer.made')}</p>
+      <p class="text-xs leading-relaxed text-slate-500">{t('footer.disclaimer')}</p>
+    </div>
+    <nav aria-label="Footer" class="flex flex-wrap gap-x-6 gap-y-2 text-sm md:flex-col">
+      <a class="text-slate-400 hover:text-slate-100" href={links.repo} rel="noopener">{t('footer.source')}</a>
+      <a class="text-slate-400 hover:text-slate-100" href={links.security} rel="noopener">{t('footer.security')}</a>
+      <a class="text-slate-400 hover:text-slate-100" href={links.issues} rel="noopener">{t('footer.issues')}</a>
+    </nav>
+  </div>
+</footer>

@@ -1,0 +1,23 @@
+---
+import { Image } from 'astro:assets';
+import marks from '../data/marks.json';
+import opencode from '../assets/marks/opencode.png';
+
+interface Props {
+  id: keyof typeof marks;
+  size?: number;
+  class?: string;
+}
+const { id, size = 20, class: className = '' } = Astro.props;
+const mark = marks[id] as { viewBox?: number[]; shapes?: { d: string; opacity: number; fillRule: string }[]; raster?: string };
+---
+
+{mark.shapes && mark.viewBox ? (
+  <svg width={size} height={size} viewBox={mark.viewBox.join(' ')} class={className} aria-hidden="true" focusable="false">
+    {mark.shapes.map((shape) => (
+      <path d={shape.d} fill="currentColor" fill-rule={shape.fillRule === 'evenodd' ? 'evenodd' : 'nonzero'} opacity={shape.opacity} />
+    ))}
+  </svg>
+) : (
+  <Image src={opencode} width={size} height={size} alt="" class:list={['object-contain', className]} style={`width:${size}px;height:${size}px`} />
+)}

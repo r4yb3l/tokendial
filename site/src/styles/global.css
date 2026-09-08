@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Cascadia Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-ink-950: #0b0e14;
+  --color-ink-900: #11151d;
+  --color-ink-800: #171c26;
+  --color-ink-750: #1d2331;
+  --color-ink-700: #262f40;
+  --color-ink-600: #384358;
+
+  --color-brand-400: #34d399;
+  --color-brand-500: #10b981;
+  --color-brand-600: #059669;
+
+  --color-watch: #fbbf24;
+  --color-critical: #fb7185;
+
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-ink-950 text-slate-300 font-sans antialiased;
+  background-image:
+    radial-gradient(60rem 30rem at 50% -10rem, rgb(16 185 129 / 0.10), transparent 60%),
+    radial-gradient(40rem 24rem at 90% 20rem, rgb(56 67 88 / 0.25), transparent 60%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: rgb(16 185 129 / 0.35);
+}
+
+.card {
+  @apply rounded-2xl border border-ink-700/60 bg-ink-900/70 backdrop-blur;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 20px 40px -30px rgb(0 0 0 / 0.8);
+}
+
+.eyebrow {
+  @apply inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-xs font-medium text-brand-400;
+}
+
+.btn {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-colors duration-200 cursor-pointer;
+}
+
+.btn-primary {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-colors duration-200 cursor-pointer bg-brand-500 text-[#062b1f] hover:bg-brand-400;
+}
+
+.btn-secondary {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-colors duration-200 cursor-pointer border border-ink-600/70 bg-ink-800 text-slate-200 hover:bg-ink-750;
+}
+
+.js .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 500ms var(--ease-out-expo), transform 600ms var(--ease-out-expo);
+}
+
+.js .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.dial-arc {
+  transition: stroke-dashoffset 900ms var(--ease-out-expo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+  .dial-arc { transition: none; }
+  .pulse { animation: none !important; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.pulse {
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+/* The dock demo is laid out at 560×350 and scaled down with its container, so nothing is clipped on phones. */
+.scene-frame {
+  container-type: inline-size;
+}
+
+.scene {
+  width: 560px;
+  height: 350px;
+  transform-origin: 0 0;
+  transform: scale(calc(100cqw / 560px));
+}
+
+[dir='rtl'] .ltr {
+  direction: ltr;
+}

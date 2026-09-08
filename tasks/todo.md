@@ -70,6 +70,12 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [ ] Light palette reviewed by design (current one is derived from the dark mockup)
 - [ ] macOS settings to the same tokens
 
+## 9 — Website (tokendial.app)
+- [x] Astro + Tailwind v4 static site in `site/`, six languages with RTL, dock drawn from the app tokens and marks, OG image, sitemap, security headers
+- [x] Copy aimed at vibecoders (why / how / providers / alerts / dock / install assistant / security)
+- [ ] Cloudflare Pages project connected to the repo, `tokendial.app` domain attached (user)
+- [ ] Download links point at GitHub Releases; publish a first release and make the repo public before launch
+
 ## 8 — Install assistant (Windows first)
 - [x] docs/providers: `install` block in the schema and in seven specs (glm has none)
 - [x] docs/i18n: `install.*` strings in en, es, fr, de, ar

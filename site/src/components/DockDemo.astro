@@ -1,0 +1,105 @@
+---
+/** The dock as it looks on screen, drawn from the app's own tokens: a compact row at the edge, the expanded row under the cursor, and a banner. */
+import Dial from './Dial.astro';
+import Mark from './Mark.astro';
+import { useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+
+const band = (f: number) => (f < 0.5 ? '#34d399' : f < 0.8 ? '#fbbf24' : '#fb7185');
+const tiles = [
+  { id: 'claude', name: t('providers.claude'), fraction: 0.41, label: t('demo.window.session'), bars: [0.22, 0.61], waiting: true },
+  { id: 'codex', name: t('providers.codex'), fraction: 0.12, label: t('demo.window.5h'), bars: [0.34] },
+  { id: 'copilot', name: t('providers.copilot'), fraction: 0.63, label: t('demo.window.premium'), bars: [] },
+  { id: 'cursor', name: t('providers.cursor'), fraction: 0.87, label: t('demo.window.included'), bars: [0.12] }
+] as const;
+
+const slant = 14;
+const compactWidth = 2 * 14 + tiles.length * 24 + (tiles.length - 1) * 10 + 2 * slant;
+const expandedWidth = tiles.length * 96 + 2 * 20 + 2 * slant;
+
+function trapezoid(width: number, height: number, radius: number): string {
+  const r = radius;
+  const k = slant / Math.hypot(slant, height);
+  const kx = k * r;
+  const ky = (height / Math.hypot(slant, height)) * r;
+  return [
+    `M 0 0 H ${width}`,
+    `L ${width - slant + kx} ${height - ky}`,
+    `Q ${width - slant} ${height} ${width - slant - r} ${height}`,
+    `H ${slant + r}`,
+    `Q ${slant} ${height} ${slant - kx} ${height - ky}`,
+    'Z'
+  ].join(' ');
+}
+---
+
+<div class="ltr scene-frame relative mx-auto aspect-[16/10] w-full max-w-[560px] overflow-hidden rounded-2xl border border-ink-700/60 bg-[#0d1017] shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)]" role="img" aria-label={t('demo.caption')}>
+  <div class="absolute inset-0 bg-[radial-gradient(40rem_20rem_at_30%_120%,rgb(16_185_129/0.10),transparent_60%),radial-gradient(30rem_18rem_at_90%_-10%,rgb(56_67_88/0.35),transparent_60%)]"></div>
+  <div class="absolute inset-x-0 top-0 h-px bg-white/10"></div>
+  <div class="scene absolute inset-0">
+
+  <!-- compact dock, flush with the top edge -->
+  <div class="absolute start-1/2 top-0 -translate-x-1/2" style={`width:${compactWidth}px;height:34px`}>
+    <svg class="absolute inset-0" width={compactWidth} height="34" viewBox={`0 0 ${compactWidth} 34`} aria-hidden="true">
+      <path d={trapezoid(compactWidth, 34, 17)} fill="rgb(16 17 20 / 0.72)" />
+      <path d={trapezoid(compactWidth, 34, 17).replace(/^M 0 0 H \S+ /, `M ${compactWidth} 0 `)} fill="none" stroke="rgb(255 255 255 / 0.08)" />
+    </svg>
+    <div class="absolute inset-x-[14px] inset-y-0 flex items-center justify-center gap-[10px]">
+      {tiles.map((tile) => (
+        <div class="relative size-6">
+          <Dial size={24} stroke={3} fraction={tile.fraction} color={band(tile.fraction)} animate={false} />
+          <span class:list={['absolute inset-0 grid place-items-center text-slate-300', tile.waiting && 'pulse text-brand-400']}>
+            <Mark id={tile.id} size={11} />
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- banner, top right -->
+  <div class="absolute end-4 top-12 flex w-[220px] items-start gap-3 rounded-xl border border-white/10 bg-brand-500/85 p-3 text-[#062b1f] shadow-lg backdrop-blur">
+    <div class="relative mt-0.5 size-8 shrink-0">
+      <Dial size={32} stroke={3} fraction={0.41} color="#062b1f" track="rgb(6 43 31 / 0.25)" animate={false} />
+      <span class="absolute inset-0 grid place-items-center"><Mark id="claude" size={13} /></span>
+    </div>
+    <div class="min-w-0">
+      <p class="truncate text-[12px] font-semibold leading-tight">{t('demo.banner.title')}</p>
+      <p class="mt-0.5 truncate text-[11px] leading-tight opacity-80">{t('demo.banner.body')}</p>
+    </div>
+  </div>
+
+  <!-- expanded dock, as under the cursor -->
+  <div class="reveal absolute start-1/2 top-[34%] -translate-x-1/2" style={`width:${expandedWidth}px;height:132px`}>
+    <svg class="absolute inset-0" width={expandedWidth} height="132" viewBox={`0 0 ${expandedWidth} 132`} aria-hidden="true">
+      <path d={trapezoid(expandedWidth, 132, 20)} fill="rgb(16 17 20 / 0.92)" />
+      <path d={trapezoid(expandedWidth, 132, 20).replace(/^M 0 0 H \S+ /, `M ${expandedWidth} 0 `)} fill="none" stroke="rgb(255 255 255 / 0.08)" />
+    </svg>
+    <div class="absolute inset-x-[34px] top-[10px] flex">
+      {tiles.map((tile) => (
+        <div class="flex w-24 flex-col items-center">
+          <div class="relative size-14">
+            <Dial size={56} stroke={6} fraction={tile.fraction} color={band(tile.fraction)} />
+            <span class:list={['absolute inset-x-0 top-[11px] grid place-items-center text-slate-300', tile.waiting && 'pulse text-brand-400']}>
+              <Mark id={tile.id} size={13} />
+            </span>
+            <span class="absolute inset-x-0 top-[25px] text-center text-[15px] font-semibold tabular-nums text-slate-100" style="font-family:var(--font-sans)">{Math.round(tile.fraction * 100)}%</span>
+          </div>
+          <span class="mt-0.5 text-[11px] font-semibold text-slate-100">{tile.name}</span>
+          <span class="text-[10px] text-slate-400">{tile.label}</span>
+          <div class="mt-1 w-[60px] space-y-[2px]">
+            {tile.bars.map((bar) => (
+              <div class="h-[3px] overflow-hidden rounded-full bg-white/15"><div class="h-full rounded-full" style={`width:${Math.round(bar * 100)}%;background:${band(bar)}`}></div></div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+    <p class="absolute inset-x-0 bottom-[12px] text-center text-[11px] text-brand-400">{t('demo.session')}</p>
+  </div>
+  </div>
+</div>
