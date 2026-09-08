@@ -8,6 +8,7 @@ using Tokendial.App.Tray;
 using Tokendial.App.Windows;
 using Tokendial.Core.Alerts;
 using Tokendial.Core.Diagnostics;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Sessions;
 using Tokendial.Core.Settings;
@@ -47,6 +48,7 @@ public sealed class App : Application
     {
         base.OnStartup(e);
         Log.Ui.Info($"Tokendial {Version} starting");
+        Strings.Use(settings.Language);
         Sqlite.SweepCache();
 
         var providers = ProviderCatalog.Providers(archive);
@@ -69,6 +71,7 @@ public sealed class App : Application
         tray.ShowRequested += () => panel.Flash(TimeSpan.FromSeconds(6));
         tray.RefreshRequested += () => store.PollNow();
         tray.SettingsRequested += ShowSettings;
+        tray.TestAlertRequested += TestAlert;
         tray.QuitRequested += Quit;
 
         store.Changed += () => Dispatcher.BeginInvoke(DispatcherPriority.Background, OnStoreChanged);
@@ -90,6 +93,7 @@ public sealed class App : Application
         SystemEvents.UserPreferenceChanged += (_, args) => { if (args.Category is UserPreferenceCategory.Desktop or UserPreferenceCategory.General) Dispatcher.BeginInvoke(panel.Reposition); };
 
         panel.Show();
+        panel.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         panel.SetMode(settings.Panel);
         RefreshModel();
 
@@ -167,7 +171,7 @@ public sealed class App : Application
 
     private static string Tooltip(PanelModel model)
     {
-        if (model.Tiles.Count == 0) return "Tokendial · no providers connected";
+        if (model.Tiles.Count == 0) return Strings.T("tray.noProviders");
         var lines = model.Tiles.Where(t => t.HasReading).Select(t => $"{t.Name} {Math.Round((t.Fraction ?? 0) * 100):0}%");
         return "Tokendial\n" + string.Join("\n", lines);
     }
@@ -194,9 +198,21 @@ public sealed class App : Application
             settingsWindow = new SettingsWindow(settings, store, Save, LaunchAtLogin.Set, TestAlert, Version);
             settingsWindow.PanelModeChanged += mode => panel.SetMode(mode);
             settingsWindow.AlertsChanged += config => alerts.Reconfigure(config, settings.Wants);
+            settingsWindow.LanguageChanged += ApplyLanguage;
             settingsWindow.Closed += () => settingsWindow = null;
         }
         settingsWindow.Show();
+    }
+
+    /// <summary>The user picked a language: every visible label is rebuilt in place.</summary>
+    private void ApplyLanguage(string? code)
+    {
+        Strings.Use(code);
+        panel.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        panel.Relocalize();
+        tray.Relocalize();
+        settingsWindow?.Relocalize();
+        RefreshModel();
     }
 
     /// <summary>A sample threshold alert straight to the sink, so the user sees what one looks like without waiting to cross 50%.</summary>

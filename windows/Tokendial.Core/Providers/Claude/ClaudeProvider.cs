@@ -157,7 +157,7 @@ public sealed class ClaudeProvider : IUsageProvider, IDisposable
     public ClaudeProfile Profile { get; }
     public string Id => Profile.Id;
     public string DisplayName => Profile.DisplayName;
-    public SignInRoute SignIn => new SignInRoute.Guidance($"Run `{Profile.SignInCommand}` once; it signs in and refreshes the token this reads.");
+    public SignInRoute SignIn => new SignInRoute.Guidance("signin.claude", ("command", Profile.SignInCommand));
 
     public ProviderAccount? Account()
     {

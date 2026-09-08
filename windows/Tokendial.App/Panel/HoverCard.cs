@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Sessions;
 
@@ -31,13 +32,13 @@ public static class HoverCard
         switch (tile.Reading.Status)
         {
             case ReadingStatus.NeedsSignIn:
-                body.Children.Add(Wrap(Text.Secondary("Not signed in.", 12)));
+                body.Children.Add(Wrap(Text.Secondary(Strings.T("card.notSignedIn"), 12)));
                 break;
             case ReadingStatus.Unsupported u:
                 body.Children.Add(Wrap(Text.Secondary(u.Why, 12)));
                 break;
             case ReadingStatus.Failed f:
-                body.Children.Add(Wrap(Text.Secondary($"Could not read usage ({f.Why}). Showing nothing rather than a guess.", 12)));
+                body.Children.Add(Wrap(Text.Secondary(Strings.T("card.failed", ("why", f.Why)), 12)));
                 break;
         }
 
@@ -49,7 +50,7 @@ public static class HoverCard
             resetBlock.Margin = new Thickness(8, 0, 0, 0);
             DockPanel.SetDock(resetBlock, Dock.Right);
             row.Children.Add(resetBlock);
-            row.Children.Add(Text.Primary(window.Label, 12));
+            row.Children.Add(Text.Primary(Strings.Label(window.Label), 12));
             body.Children.Add(row);
             if (window.UsedFraction is double fraction)
             {
@@ -65,11 +66,11 @@ public static class HoverCard
 
         if (tile.Reading.Status is ReadingStatus.Stale stale && stale.Since > DateTimeOffset.MinValue)
         {
-            body.Children.Add(WithMargin(Text.Disabled($"Last read {Copy.Ago(stale.Since, now)}", 11), new Thickness(0, 8, 0, 0)));
+            body.Children.Add(WithMargin(Text.Disabled(Strings.T("card.lastRead", ("ago", Copy.Ago(stale.Since, now))), 11), new Thickness(0, 8, 0, 0)));
         }
         if (tile.Reading.Fidelity == Fidelity.Derived)
         {
-            body.Children.Add(WithMargin(Text.Disabled("Derived from local activity, not published by the provider", 11), new Thickness(0, 6, 0, 0)));
+            body.Children.Add(WithMargin(Text.Disabled(Strings.T("card.derived"), 11), new Thickness(0, 6, 0, 0)));
         }
 
         if (tile.Activity is Activity activity && activity.Sessions.Count > 0)
@@ -98,7 +99,7 @@ public static class HoverCard
             Background = session.State == SessionState.Waiting ? Theme.Waiting : session.State == SessionState.Working ? Theme.Working : Theme.TextDisabled };
         DockPanel.SetDock(dot, Dock.Left);
         row.Children.Add(dot);
-        var when = Text.Secondary(session.State == SessionState.Waiting ? $"waiting {Copy.Elapsed(session.Since, now)}" : Copy.Elapsed(session.Since, now), 11, TextAlignment.Right);
+        var when = Text.Secondary(session.State == SessionState.Waiting ? Strings.T("card.waiting", ("elapsed", Copy.Elapsed(session.Since, now))) : Copy.Elapsed(session.Since, now), 11, TextAlignment.Right);
         when.Margin = new Thickness(8, 0, 0, 0);
         DockPanel.SetDock(when, Dock.Right);
         row.Children.Add(when);

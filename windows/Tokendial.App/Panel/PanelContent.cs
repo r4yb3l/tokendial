@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Sessions;
 
@@ -42,6 +43,9 @@ public sealed class PanelContent
 
     public static double CompactWidth(int n) => n == 0 ? 2 * Theme.CompactPadding + 40 : 2 * Theme.CompactPadding + n * Theme.CompactDial + (n - 1) * Theme.CompactSpacing;
     public static double ExpandedWidth(int n) => Math.Max(2 * Theme.ExpandedPadding + Math.Max(n, 1) * Theme.CellWidth, Theme.CardWidth + 2 * Theme.ExpandedPadding);
+
+    /// <summary>Forces every label to be built again in the current language.</summary>
+    public void Relocalize() => order.Clear();
 
     public void Apply(PanelModel model, DateTimeOffset now, bool animate)
     {
@@ -84,7 +88,7 @@ public sealed class PanelContent
         if (model.Tiles.Count == 0)
         {
             CompactRow.Children.Add(Text.Disabled("Tokendial", 11));
-            cellRow.Children.Add(new Border { Width = Theme.CellWidth * 2, Child = Text.Secondary("No providers connected. Right-click for settings.", 11, TextAlignment.Center), VerticalAlignment = VerticalAlignment.Center });
+            cellRow.Children.Add(new Border { Width = Theme.CellWidth * 2, Child = Text.Secondary(Strings.T("panel.noProviders"), 11, TextAlignment.Center), VerticalAlignment = VerticalAlignment.Center });
         }
         for (var i = 0; i < model.Tiles.Count; i++)
         {
@@ -107,18 +111,18 @@ public sealed class PanelContent
 
     public static string SessionsCopy(IReadOnlyList<AgentSession> sessions, DateTimeOffset now)
     {
-        if (sessions.Count == 0) return "No agents running";
+        if (sessions.Count == 0) return Strings.T("panel.noAgents");
         var waiting = sessions.Where(s => s.State == SessionState.Waiting).ToList();
         if (waiting.Count > 0)
         {
             var first = waiting[0];
-            var rest = waiting.Count > 1 ? $" and {waiting.Count - 1} more" : "";
-            return $"{first.Name} is waiting for you ({Copy.Elapsed(first.Since, now)}){rest}";
+            var rest = waiting.Count > 1 ? Strings.Plural("panel.waitingMore", waiting.Count - 1) : "";
+            return Strings.T("panel.waiting", ("name", first.Name), ("elapsed", Copy.Elapsed(first.Since, now))) + rest;
         }
         var working = sessions.Where(s => s.State == SessionState.Working).ToList();
-        if (working.Count == 1) return $"{working[0].Name} working · {Copy.Elapsed(working[0].Since, now)}";
-        if (working.Count > 1) return $"{working.Count} agents working · {string.Join(", ", working.Take(3).Select(s => s.Name))}";
-        return $"{sessions.Count} idle session{(sessions.Count == 1 ? "" : "s")}";
+        if (working.Count == 1) return Strings.T("panel.workingOne", ("name", working[0].Name), ("elapsed", Copy.Elapsed(working[0].Since, now)));
+        if (working.Count > 1) return Strings.T("panel.workingMany", ("n", working.Count), ("names", string.Join(", ", working.Take(3).Select(s => s.Name))));
+        return Strings.Plural("panel.idle", sessions.Count);
     }
 
     /// <summary>One provider in the expanded capsule: dial with mark and percent, name, headline label, thin bars for the other windows.</summary>
@@ -137,6 +141,7 @@ public sealed class PanelContent
         {
             Id = id;
             mark = new MarkView(id, Theme.ExpandedMark) { HorizontalAlignment = HorizontalAlignment.Center };
+            percent.FlowDirection = FlowDirection.LeftToRight;
             var stack = new StackPanel { Width = Theme.CellWidth, UseLayoutRounding = false };
             var dialHost = new Grid { Width = Theme.ExpandedDial, Height = Theme.ExpandedDial, HorizontalAlignment = HorizontalAlignment.Center };
             dialHost.Children.Add(dial);

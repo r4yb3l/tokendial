@@ -1,3 +1,5 @@
+using Tokendial.Core.I18n;
+
 namespace Tokendial.Core.Model;
 
 /// <summary>Whether a number came from the vendor or was worked out locally. Derived readings are shown with a tilde and no dial arc.</summary>
@@ -51,10 +53,10 @@ public sealed record UsageWindow(string Id, string Label, double? UsedFraction =
         {
             var used = (int)Math.Round(f * 100, MidpointRounding.AwayFromZero);
             var tilde = fidelity == Fidelity.Derived ? "~" : "";
-            return $"{tilde}{used}% used · {Math.Max(0, 100 - used)}% left";
+            return tilde + Strings.T("copy.usedLeft", ("used", used), ("left", Math.Max(0, 100 - used)));
         }
-        if (Count is int n) return n switch { 0 => "no requests today", 1 => "~1 request today", _ => $"~{n} requests today" };
-        return "No reading";
+        if (Count is int n) return Strings.Plural("copy.requests", n);
+        return Strings.T("copy.noReading");
     }
 }
 

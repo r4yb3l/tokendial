@@ -1,78 +1,39 @@
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Tokendial.App.Panel;
 using Tokendial.Core.Alerts;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Settings;
 using Tokendial.Core.Store;
 
 namespace Tokendial.App.Windows;
 
-/// <summary>Providers, panel, alerts and startup. Every change saves immediately and takes effect through the host.</summary>
+/// <summary>Providers, panel, alerts, language and startup. Every change saves immediately and takes effect through the host.</summary>
 public sealed class SettingsWindow
 {
     private readonly Settings settings;
     private readonly UsageStore store;
     private readonly Action save;
+    private readonly Action<bool> launchAtLogin;
+    private readonly Action testAlert;
+    private readonly string version;
     private readonly Window window;
     private readonly StackPanel providersList = new();
+    private bool building;
 
     public SettingsWindow(Settings settings, UsageStore store, Action save, Action<bool> launchAtLogin, Action testAlert, string version)
     {
         this.settings = settings;
         this.store = store;
         this.save = save;
-
-        var page = new StackPanel { Margin = new Thickness(20, 18, 20, 18) };
-        page.Children.Add(Chrome.Section("Providers",
-            "Tokendial reads the sign-in each coding tool already keeps on this PC and asks that tool's usage endpoint. Nothing is written back and nothing leaves the machine except that request.",
-            providersList));
-
-        var panel = new StackPanel();
-        panel.Children.Add(Chrome.Radio("panel", "Expand when the cursor reaches the top edge", settings.Panel == PanelMode.ExpandOnHover, () => SetPanel(PanelMode.ExpandOnHover), "A compact row of dials otherwise."));
-        panel.Children.Add(Chrome.Radio("panel", "Always expanded", settings.Panel == PanelMode.AlwaysExpanded, () => SetPanel(PanelMode.AlwaysExpanded)));
-        panel.Children.Add(Chrome.Radio("panel", "Hidden", settings.Panel == PanelMode.Hidden, () => SetPanel(PanelMode.Hidden), "Alerts and the tray icon only."));
-        page.Children.Add(Chrome.Section("Panel", null, panel));
-
-        var alerts = new StackPanel();
-        alerts.Children.Add(Chrome.Check("Usage thresholds", settings.AlertThresholds, v => { settings.AlertThresholds = v; Save(); }, "Once per threshold per window."));
-        alerts.Children.Add(Chrome.Row("Thresholds (%)", Chrome.Field(string.Join(", ", settings.Thresholds), text =>
-        {
-            var parsed = text.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries).Select(t => int.TryParse(t, out var n) ? n : -1).Where(n => n is > 0 and <= 100).Distinct().OrderBy(n => n).ToList();
-            if (parsed.Count > 0) { settings.Thresholds = parsed; Save(); }
-        }), "Comma-separated, for the headline window of each provider."));
-        alerts.Children.Add(Chrome.Check("Reset soon and available again", settings.AlertResetSoon, v => { settings.AlertResetSoon = v; Save(); }, "Before a window you have leaned on resets, and once a limit lifts."));
-        alerts.Children.Add(Chrome.Row("Lead time (minutes)", Chrome.Field(settings.ResetLeadMinutes.ToString(), text => { if (int.TryParse(text, out var n) && n is >= 1 and <= 120) { settings.ResetLeadMinutes = n; Save(); } }, 80)));
-        alerts.Children.Add(Chrome.Check("An agent is waiting for you", settings.AlertWaiting, v => { settings.AlertWaiting = v; Save(); }, "Repeats every five minutes while it keeps waiting."));
-        alerts.Children.Add(Chrome.Row("After waiting (seconds)", Chrome.Field(settings.WaitingDebounceSeconds.ToString(), text => { if (int.TryParse(text, out var n) && n is >= 5 and <= 600) { settings.WaitingDebounceSeconds = n; Save(); } }, 80)));
-        alerts.Children.Add(Chrome.Check("Limit reached", settings.AlertLimit, v => { settings.AlertLimit = v; Save(); }, "With the time it lifts."));
-        var delivery = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
-        delivery.Children.Add(Chrome.Radio("delivery", "Tokendial banners", settings.Delivery == AlertDelivery.TokendialBanners, () => SetDelivery(AlertDelivery.TokendialBanners), "Top-right corner, in your Windows accent colour. Shown even under Do not disturb."));
-        delivery.Children.Add(Chrome.Radio("delivery", "Windows notifications", settings.Delivery == AlertDelivery.WindowsToasts, () => SetDelivery(AlertDelivery.WindowsToasts), "Kept in the notification centre; silenced by Do not disturb."));
-        delivery.Children.Add(Chrome.Radio("delivery", "Windows notifications, banners when Windows is silent", settings.Delivery == AlertDelivery.WindowsThenBanners, () => SetDelivery(AlertDelivery.WindowsThenBanners)));
-        alerts.Children.Add(delivery);
-        var test = Chrome.Button("Send a test alert", testAlert);
-        test.Margin = new Thickness(0, 10, 0, 0);
-        test.HorizontalAlignment = HorizontalAlignment.Left;
-        alerts.Children.Add(test);
-        page.Children.Add(Chrome.Section("Alerts", "Silent while the panel is expanded under your cursor. At most one alert per provider each minute.", alerts));
-
-        var general = new StackPanel();
-        general.Children.Add(Chrome.Check("Launch at login", settings.LaunchAtLogin, v => { settings.LaunchAtLogin = v; launchAtLogin(v); Save(); }));
-        page.Children.Add(Chrome.Section("Startup", null, general));
-
-        var about = new StackPanel();
-        about.Children.Add(Chrome.Body($"Tokendial {version} · MIT License"));
-        var links = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
-        links.Children.Add(Chrome.Button("Website", () => Open("https://tokendial.app")));
-        links.Children.Add(Chrome.Button("Source and issues", () => Open("https://github.com/r4yb3l-qa/tokendial")));
-        links.Children.Add(Chrome.Button("Open log folder", () => Open(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial"))));
-        about.Children.Add(links);
-        page.Children.Add(Chrome.Section("About", null, about));
-
-        window = Chrome.Frame("Tokendial settings", 560, 720, Chrome.Scroll(page));
+        this.launchAtLogin = launchAtLogin;
+        this.testAlert = testAlert;
+        this.version = version;
+        window = Chrome.Frame(Strings.T("settings.title"), 560, 760, Build());
+        window.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         window.Closed += (_, _) => Closed?.Invoke();
         store.Changed += OnStoreChanged;
         RefreshProviders();
@@ -81,6 +42,7 @@ public sealed class SettingsWindow
     public event Action? Closed;
     public event Action<PanelMode>? PanelModeChanged;
     public event Action<AlertConfig>? AlertsChanged;
+    public event Action<string?>? LanguageChanged;
 
     public void Show()
     {
@@ -90,9 +52,94 @@ public sealed class SettingsWindow
 
     public void Close() => window.Close();
 
+    /// <summary>The language changed: rebuild every label in place.</summary>
+    public void Relocalize()
+    {
+        window.Title = Strings.T("settings.title");
+        window.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        window.Content = Build();
+        RefreshProviders();
+    }
+
+    private UIElement Build()
+    {
+        building = true;
+        var page = new StackPanel { Margin = new Thickness(20, 18, 20, 18) };
+        if (providersList.Parent is Border oldSection) oldSection.Child = null;
+        page.Children.Add(Chrome.Section(Strings.T("settings.providers"), Strings.T("settings.providersHint"), Detach(providersList)));
+
+        var panel = new StackPanel();
+        panel.Children.Add(Chrome.Radio("panel", Strings.T("settings.panel.hover"), settings.Panel == PanelMode.ExpandOnHover, () => SetPanel(PanelMode.ExpandOnHover), Strings.T("settings.panel.hoverHint")));
+        panel.Children.Add(Chrome.Radio("panel", Strings.T("settings.panel.always"), settings.Panel == PanelMode.AlwaysExpanded, () => SetPanel(PanelMode.AlwaysExpanded)));
+        panel.Children.Add(Chrome.Radio("panel", Strings.T("settings.panel.hidden"), settings.Panel == PanelMode.Hidden, () => SetPanel(PanelMode.Hidden), Strings.T("settings.panel.hiddenHint")));
+        page.Children.Add(Chrome.Section(Strings.T("settings.panel"), null, panel));
+
+        var alerts = new StackPanel();
+        alerts.Children.Add(Chrome.Check(Strings.T("settings.thresholds"), settings.AlertThresholds, v => { settings.AlertThresholds = v; Save(); }, Strings.T("settings.thresholdsHint")));
+        alerts.Children.Add(Chrome.Row(Strings.T("settings.thresholdsField"), Chrome.Field(string.Join(", ", settings.Thresholds), text =>
+        {
+            var parsed = text.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries).Select(t => int.TryParse(t, out var n) ? n : -1).Where(n => n is > 0 and <= 100).Distinct().OrderBy(n => n).ToList();
+            if (parsed.Count > 0) { settings.Thresholds = parsed; Save(); }
+        }), Strings.T("settings.thresholdsFieldHint")));
+        alerts.Children.Add(Chrome.Check(Strings.T("settings.resetSoon"), settings.AlertResetSoon, v => { settings.AlertResetSoon = v; Save(); }, Strings.T("settings.resetSoonHint")));
+        alerts.Children.Add(Chrome.Row(Strings.T("settings.leadTime"), Chrome.Field(settings.ResetLeadMinutes.ToString(), text => { if (int.TryParse(text, out var n) && n is >= 1 and <= 120) { settings.ResetLeadMinutes = n; Save(); } }, 80)));
+        alerts.Children.Add(Chrome.Check(Strings.T("settings.waiting"), settings.AlertWaiting, v => { settings.AlertWaiting = v; Save(); }, Strings.T("settings.waitingHint")));
+        alerts.Children.Add(Chrome.Row(Strings.T("settings.afterWaiting"), Chrome.Field(settings.WaitingDebounceSeconds.ToString(), text => { if (int.TryParse(text, out var n) && n is >= 5 and <= 600) { settings.WaitingDebounceSeconds = n; Save(); } }, 80)));
+        alerts.Children.Add(Chrome.Check(Strings.T("settings.limit"), settings.AlertLimit, v => { settings.AlertLimit = v; Save(); }, Strings.T("settings.limitHint")));
+        var delivery = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
+        delivery.Children.Add(Chrome.Radio("delivery", Strings.T("settings.delivery.banners"), settings.Delivery == AlertDelivery.TokendialBanners, () => SetDelivery(AlertDelivery.TokendialBanners), Strings.T("settings.delivery.bannersHint")));
+        delivery.Children.Add(Chrome.Radio("delivery", Strings.T("settings.delivery.system"), settings.Delivery == AlertDelivery.WindowsToasts, () => SetDelivery(AlertDelivery.WindowsToasts), Strings.T("settings.delivery.systemHint")));
+        delivery.Children.Add(Chrome.Radio("delivery", Strings.T("settings.delivery.both"), settings.Delivery == AlertDelivery.WindowsThenBanners, () => SetDelivery(AlertDelivery.WindowsThenBanners)));
+        alerts.Children.Add(delivery);
+        var test = Chrome.Button(Strings.T("settings.testAlert"), testAlert);
+        test.Margin = new Thickness(0, 10, 0, 0);
+        test.HorizontalAlignment = HorizontalAlignment.Left;
+        alerts.Children.Add(test);
+        page.Children.Add(Chrome.Section(Strings.T("settings.alerts"), Strings.T("settings.alertsHint"), alerts));
+
+        var general = new StackPanel();
+        general.Children.Add(Chrome.Check(Strings.T("settings.launchAtLogin"), settings.LaunchAtLogin, v => { settings.LaunchAtLogin = v; launchAtLogin(v); Save(); }));
+        var languages = new ComboBox { Width = 200, SelectedIndex = 0, Foreground = Theme.TextPrimary };
+        languages.Items.Add(Strings.T("settings.language.system"));
+        foreach (var (code, name) in Strings.Languages)
+        {
+            languages.Items.Add(name);
+            if (settings.Language == code) languages.SelectedIndex = languages.Items.Count - 1;
+        }
+        languages.SelectionChanged += (_, _) =>
+        {
+            if (building) return;
+            var code = languages.SelectedIndex <= 0 ? null : Strings.Languages[languages.SelectedIndex - 1].Code;
+            if (code == settings.Language) return;
+            settings.Language = code;
+            save();
+            LanguageChanged?.Invoke(code);
+        };
+        general.Children.Add(Chrome.Row(Strings.T("settings.language"), languages));
+        page.Children.Add(Chrome.Section(Strings.T("settings.startup"), null, general));
+
+        var about = new StackPanel();
+        about.Children.Add(Chrome.Body(Strings.T("settings.aboutLine", ("version", version))));
+        var links = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
+        links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.app")));
+        links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
+        links.Children.Add(Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial"))));
+        about.Children.Add(links);
+        page.Children.Add(Chrome.Section(Strings.T("settings.about"), null, about));
+        building = false;
+        return Chrome.Scroll(page);
+    }
+
+    private static T Detach<T>(T element) where T : FrameworkElement
+    {
+        if (element.Parent is System.Windows.Controls.Panel parent) parent.Children.Remove(element);
+        else if (element.Parent is Decorator decorator) decorator.Child = null;
+        return element;
+    }
+
     private void SetPanel(PanelMode mode)
     {
-        if (settings.Panel == mode) return;
+        if (building || settings.Panel == mode) return;
         settings.Panel = mode;
         Save();
         PanelModeChanged?.Invoke(mode);
@@ -100,13 +147,14 @@ public sealed class SettingsWindow
 
     private void SetDelivery(AlertDelivery delivery)
     {
-        if (settings.Delivery == delivery) return;
+        if (building || settings.Delivery == delivery) return;
         settings.Delivery = delivery;
         save();
     }
 
     private void Save()
     {
+        if (building) return;
         save();
         AlertsChanged?.Invoke(settings.AlertConfig);
     }
@@ -121,6 +169,7 @@ public sealed class SettingsWindow
         {
             var grid = new Grid { Margin = new Thickness(0, 5, 0, 5) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -130,23 +179,26 @@ public sealed class SettingsWindow
             toggle.Unchecked += (_, _) => Connect(summary.Id, false);
             grid.Children.Add(toggle);
 
+            var mark = new MarkView(summary.Id, 18) { Fill = connected ? Theme.TextPrimary : Theme.TextDisabled, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+            Grid.SetColumn(mark, 1);
+            grid.Children.Add(mark);
+
             var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(Chrome.Label(summary.Name));
-            var detail = Detail(summary, connected ? readings.GetValueOrDefault(summary.Id) : null);
-            var detailBlock = Chrome.Body(detail);
+            var detailBlock = Chrome.Body(Detail(summary, connected ? readings.GetValueOrDefault(summary.Id) : null));
             detailBlock.FontSize = 11;
             text.Children.Add(detailBlock);
-            Grid.SetColumn(text, 1);
+            Grid.SetColumn(text, 2);
             grid.Children.Add(text);
 
             var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             if (connected && summary.Account is null && summary.SignIn is SignInRoute.OpenApp app)
-                actions.Children.Add(Chrome.Button($"Open {app.Name}", () => store.OpenSource(summary.Id)));
+                actions.Children.Add(Chrome.Button(Strings.T("settings.open", ("name", app.Name)), () => store.OpenSource(summary.Id)));
             if (connected && summary.Account?.ManageUrl is Uri manage)
-                actions.Children.Add(Chrome.Button("Manage", () => Open(manage.ToString())));
+                actions.Children.Add(Chrome.Button(Strings.T("settings.manage"), () => Open(manage.ToString())));
             if (connected)
-                actions.Children.Add(Chrome.Button("Refresh", () => _ = store.Poll(summary.Id)));
-            Grid.SetColumn(actions, 2);
+                actions.Children.Add(Chrome.Button(Strings.T("settings.refresh"), () => _ = store.Poll(summary.Id)));
+            Grid.SetColumn(actions, 3);
             grid.Children.Add(actions);
             providersList.Children.Add(grid);
         }
@@ -154,22 +206,23 @@ public sealed class SettingsWindow
 
     private static string Detail(ProviderSummary summary, Core.Model.ProviderReading? reading)
     {
-        if (!summary.Connected) return "Off";
+        if (!summary.Connected) return Strings.T("status.off");
         var account = summary.Account?.Summary;
         var status = reading?.Status switch
         {
-            Core.Model.ReadingStatus.Live => reading.HasReading ? reading.HeadlineText : "Connected",
+            Core.Model.ReadingStatus.Live => reading.HasReading ? reading.HeadlineText : Strings.T("status.connected"),
             Core.Model.ReadingStatus.NeedsSignIn => summary.SignIn.Explanation,
             Core.Model.ReadingStatus.Unsupported u => u.Why,
-            Core.Model.ReadingStatus.Failed f => $"Unavailable ({f.Why})",
-            Core.Model.ReadingStatus.Stale s when s.Since > DateTimeOffset.MinValue => $"Last read {Core.Model.Copy.Ago(s.Since, DateTimeOffset.UtcNow)}",
-            _ => summary.Account is null ? summary.SignIn.Explanation : "Waiting for the first reading"
+            Core.Model.ReadingStatus.Failed f => Strings.T("card.unavailable", ("why", f.Why)),
+            Core.Model.ReadingStatus.Stale s when s.Since > DateTimeOffset.MinValue => Strings.T("card.lastRead", ("ago", Core.Model.Copy.Ago(s.Since, DateTimeOffset.UtcNow))),
+            _ => summary.Account is null ? summary.SignIn.Explanation : Strings.T("status.waitingFirst")
         };
         return string.IsNullOrEmpty(account) ? status : $"{account} · {status}";
     }
 
     private void Connect(string id, bool on)
     {
+        if (building) return;
         if (on) { settings.Disconnected.Remove(id); store.Connect(id); }
         else { settings.Disconnected.Add(id); store.Disconnect(id); }
         settings.Known.Add(id);

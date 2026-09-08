@@ -1,3 +1,4 @@
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 
 namespace Tokendial.Core.Providers;
@@ -44,7 +45,7 @@ public sealed record ProviderAccount(string? Label, string? Plan, string Source,
             var parts = new List<string>();
             if (Label is not null) parts.Add(Label);
             if (Plan is not null) parts.Add(System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(Plan.ToLowerInvariant()));
-            parts.Add($"via {Source}");
+            parts.Add(Strings.T("copy.via", ("source", Source)));
             return string.Join(" · ", parts);
         }
     }
@@ -54,12 +55,13 @@ public sealed record ProviderAccount(string? Label, string? Plan, string Source,
 public abstract record SignInRoute
 {
     public sealed record OpenApp(string AppKey, string Name) : SignInRoute;
-    public sealed record Guidance(string Text) : SignInRoute;
+    /// <summary>A catalogue key and its placeholders; resolved in the current language when shown.</summary>
+    public sealed record Guidance(string Key, params (string Name, object? Value)[] Args) : SignInRoute;
 
     public string Explanation => this switch
     {
-        OpenApp app => $"Sign in with {app.Name} to read this account.",
-        Guidance g => g.Text,
+        OpenApp app => Strings.T("signin.openApp", ("name", app.Name)),
+        Guidance g => Strings.T(g.Key, g.Args),
         _ => ""
     };
 }

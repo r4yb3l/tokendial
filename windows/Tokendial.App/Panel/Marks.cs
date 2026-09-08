@@ -75,6 +75,7 @@ public sealed class MarkView : FrameworkElement
     {
         mark = Marks.For(providerId);
         Width = Height = size;
+        FlowDirection = FlowDirection.LeftToRight;
         IsHitTestVisible = false;
         UseLayoutRounding = false;
     }

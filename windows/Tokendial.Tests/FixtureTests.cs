@@ -88,6 +88,7 @@ public class FixtureTests
     }
 }
 
+[Collection("language")]
 public class CopyTests
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.FromUnixTimeSeconds(1_700_000_000);

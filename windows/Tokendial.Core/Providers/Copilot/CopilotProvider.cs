@@ -133,7 +133,7 @@ public sealed class CopilotProvider : IUsageProvider, IDisposable
 
     public string Id => "copilot";
     public string DisplayName => "GitHub Copilot";
-    public SignInRoute SignIn => new SignInRoute.Guidance("Sign in to GitHub Copilot in your editor or the Copilot CLI; the dial reads the token it stores.");
+    public SignInRoute SignIn => new SignInRoute.Guidance("signin.copilot");
 
     public ProviderAccount? Account()
     {

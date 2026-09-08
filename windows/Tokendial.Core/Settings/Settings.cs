@@ -39,6 +39,8 @@ public sealed class Settings
     public int ResetLeadMinutes { get; set; } = 10;
     public int WaitingDebounceSeconds { get; set; } = 20;
     public string? LastSeenVersion { get; set; }
+    /// <summary>A code from Strings.Languages, or null to follow the system.</summary>
+    public string? Language { get; set; }
 
     [JsonIgnore]
     public AlertConfig AlertConfig => AlertConfig.Default with

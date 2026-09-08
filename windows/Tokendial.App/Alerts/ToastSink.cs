@@ -2,6 +2,7 @@ using Microsoft.Toolkit.Uwp.Notifications;
 using Tokendial.App.Interop;
 using Tokendial.Core.Alerts;
 using Tokendial.Core.Diagnostics;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Sessions;
 
@@ -53,21 +54,21 @@ public sealed class ToastSink : IAlertSink
     {
         var name = reading?.DisplayName ?? Humanize(alert.Provider);
         var window = alert.Window is null ? null : reading?.Windows.FirstOrDefault(w => w.Id == alert.Window);
-        var windowLabel = window?.Label ?? "Usage";
+        var windowLabel = window is null ? Strings.T("alert.usage") : Strings.Label(window.Label);
         var reset = (window?.ResetsAt ?? alert.ResetsAt) is DateTimeOffset at ? Copy.Reset(at, now) : null;
         switch (alert.Kind)
         {
             case AlertKind.Threshold:
-                return ($"{name} at {alert.Pct}%", Join(windowLabel, reset));
+                return (Strings.T("alert.threshold.title", ("name", name), ("pct", alert.Pct ?? 0)), Join(windowLabel, reset));
             case AlertKind.Limit:
-                return ($"{name} limit reached", Join(windowLabel, reset ?? "Waiting for the window to reset"));
+                return (Strings.T("alert.limit.title", ("name", name)), Join(windowLabel, reset ?? Strings.T("alert.limit.waiting")));
             case AlertKind.ResetSoon:
-                return ($"{name} resets soon", Join(windowLabel, reset, alert.Pct is int p ? $"{p}% used" : null));
+                return (Strings.T("alert.resetSoon.title", ("name", name)), Join(windowLabel, reset, alert.Pct is int p ? Strings.T("alert.resetSoon.used", ("pct", p)) : null));
             case AlertKind.ResetDone:
-                return ($"{name} is available again", $"{windowLabel} has reset");
+                return (Strings.T("alert.resetDone.title", ("name", name)), Strings.T("alert.resetDone.body", ("window", windowLabel)));
             case AlertKind.Waiting:
                 var session = activity?.Sessions.FirstOrDefault(s => s.Id == alert.SessionId);
-                return ($"{name} is waiting for you", session is null ? "An agent is waiting for your input" : Join(session.Where, session.WaitingFor));
+                return (Strings.T("alert.waiting.title", ("name", name)), session is null ? Strings.T("alert.waiting.body") : Join(session.Where, session.WaitingFor));
             default:
                 return (name, windowLabel);
         }

@@ -94,7 +94,7 @@ public sealed class GrokProvider : IUsageProvider, IDisposable
 
     public string Id => "grok";
     public string DisplayName => "Grok";
-    public SignInRoute SignIn => new SignInRoute.Guidance("Run `grok login`; it signs in and refreshes the token this reads.");
+    public SignInRoute SignIn => new SignInRoute.Guidance("signin.grok");
 
     public ProviderAccount? Account()
     {

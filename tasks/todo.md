@@ -49,6 +49,12 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] First run: detected tools, opt-in, absent tools listed
 - [x] Launch at login via HKCU Run
 
+## 6b — Languages
+- [x] Shared catalogue docs/i18n (en, es, ar) with CLDR plurals and culture formats; C# loader, tests keep languages aligned
+- [x] Windows: every string through the catalogue, language selector with live switch, RTL for Arabic
+- [ ] fr, de, en-GB catalogues
+- [ ] Swift loader and macOS wiring
+
 ## 7 — Distribution
 - [x] `dotnet publish` single-file self-contained exe (77 MB) runs from `windows/dist`
 - [ ] Code signing, installer (Velopack), GitHub Release, tokendial.app page

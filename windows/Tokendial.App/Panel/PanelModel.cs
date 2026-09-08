@@ -1,3 +1,4 @@
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Sessions;
@@ -19,14 +20,14 @@ public sealed record Tile(
     public Band? Band => Reading.Band;
     public bool HasReading => Reading.HasReading && Reading.Status is not ReadingStatus.NeedsSignIn and not ReadingStatus.Unsupported;
     public IEnumerable<UsageWindow> Secondary => Reading.Windows.Where(w => w.Id != Headline?.Id);
-    public string HeadlineLabel => Headline?.Label ?? StatusLabel;
+    public string HeadlineLabel => Headline is UsageWindow w ? Strings.Label(w.Label) : StatusLabel;
 
     public string StatusLabel => Reading.Status switch
     {
-        ReadingStatus.NeedsSignIn => "Sign in",
-        ReadingStatus.Unsupported => "Nothing metered",
-        ReadingStatus.Failed => "Unavailable",
-        ReadingStatus.Stale when !Reading.HasReading => InFlight ? "Reading…" : "No reading yet",
+        ReadingStatus.NeedsSignIn => Strings.T("status.signIn"),
+        ReadingStatus.Unsupported => Strings.T("status.nothingMetered"),
+        ReadingStatus.Failed => Strings.T("status.unavailable"),
+        ReadingStatus.Stale when !Reading.HasReading => InFlight ? Strings.T("status.reading") : Strings.T("status.noReadingYet"),
         _ => ""
     };
 

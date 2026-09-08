@@ -11,4 +11,8 @@
     <PackageReference Include="System.Management" Version="10.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="../../docs/i18n/*.json" LogicalName="i18n/%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

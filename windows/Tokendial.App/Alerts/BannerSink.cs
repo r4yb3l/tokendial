@@ -48,6 +48,7 @@ public sealed class BannerSink : IAlertSink
         dispatcher.BeginInvoke(() =>
         {
             host ??= new BannerHost();
+            host.FlowDirection = Core.I18n.Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
             host.Add(new Banner(title, body, fraction, alert.Kind, alert.Provider, () => Opened?.Invoke(alert)));
         });
     }

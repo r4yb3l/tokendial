@@ -164,7 +164,7 @@ public sealed class GlmProvider : IUsageProvider, IDisposable
 
     public string Id => "glm";
     public string DisplayName => "GLM";
-    public SignInRoute SignIn => new SignInRoute.Guidance("Usage rides on a Z.ai GLM Coding Plan key held by a coding tool: Claude Code's settings.json, ZCode or OpenCode.");
+    public SignInRoute SignIn => new SignInRoute.Guidance("signin.glm");
 
     public ProviderAccount? Account()
     {

@@ -133,6 +133,14 @@ public sealed class PanelWindow : Window
         Reconcile();
     }
 
+    /// <summary>Rebuild every label in the current language on the next update.</summary>
+    public void Relocalize()
+    {
+        content.Relocalize();
+        HideCard();
+        Update(model);
+    }
+
     public void Update(PanelModel next)
     {
         var countChanged = next.Tiles.Count != model.Tiles.Count;

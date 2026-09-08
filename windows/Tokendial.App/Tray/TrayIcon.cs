@@ -1,6 +1,7 @@
 using Forms = System.Windows.Forms;
 using Drawing = System.Drawing;
 using Tokendial.App.Interop;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 
 namespace Tokendial.App.Tray;
@@ -9,10 +10,11 @@ namespace Tokendial.App.Tray;
 public sealed class TrayIcon : IDisposable
 {
     private readonly Forms.NotifyIcon icon = new() { Visible = false, Text = "Tokendial" };
-    private readonly Forms.ToolStripMenuItem showItem = new("Show panel");
-    private readonly Forms.ToolStripMenuItem refreshItem = new("Refresh now");
-    private readonly Forms.ToolStripMenuItem settingsItem = new("Settings…");
-    private readonly Forms.ToolStripMenuItem quitItem = new("Quit Tokendial");
+    private readonly Forms.ToolStripMenuItem showItem = new();
+    private readonly Forms.ToolStripMenuItem refreshItem = new();
+    private readonly Forms.ToolStripMenuItem settingsItem = new();
+    private readonly Forms.ToolStripMenuItem testItem = new();
+    private readonly Forms.ToolStripMenuItem quitItem = new();
     private Drawing.Icon? current;
 
     public TrayIcon()
@@ -22,13 +24,16 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(refreshItem);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add(settingsItem);
+        menu.Items.Add(testItem);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add(quitItem);
         icon.ContextMenuStrip = menu;
         showItem.Click += (_, _) => ShowRequested?.Invoke();
         refreshItem.Click += (_, _) => RefreshRequested?.Invoke();
         settingsItem.Click += (_, _) => SettingsRequested?.Invoke();
+        testItem.Click += (_, _) => TestAlertRequested?.Invoke();
         quitItem.Click += (_, _) => QuitRequested?.Invoke();
+        Relocalize();
         icon.DoubleClick += (_, _) => SettingsRequested?.Invoke();
         icon.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) ShowRequested?.Invoke(); };
         Update(null, "Tokendial");
@@ -38,7 +43,18 @@ public sealed class TrayIcon : IDisposable
     public event Action? ShowRequested;
     public event Action? RefreshRequested;
     public event Action? SettingsRequested;
+    public event Action? TestAlertRequested;
     public event Action? QuitRequested;
+
+    public void Relocalize()
+    {
+        showItem.Text = Strings.T("tray.show");
+        refreshItem.Text = Strings.T("tray.refresh");
+        settingsItem.Text = Strings.T("tray.settings");
+        testItem.Text = Strings.T("tray.testAlert");
+        quitItem.Text = Strings.T("tray.quit");
+        icon.ContextMenuStrip!.RightToLeft = Strings.RightToLeft ? Forms.RightToLeft.Yes : Forms.RightToLeft.No;
+    }
 
     public void Update(double? worstFraction, string tooltip)
     {

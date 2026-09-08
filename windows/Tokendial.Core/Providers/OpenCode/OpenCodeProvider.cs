@@ -73,7 +73,7 @@ public sealed class OpenCodeProvider : IUsageProvider, IDisposable
 
     public string Id => "opencode";
     public string DisplayName => "OpenCode";
-    public SignInRoute SignIn => new SignInRoute.Guidance("Connect the Go plan inside OpenCode (`opencode auth login`); the notch reads the key it stores.");
+    public SignInRoute SignIn => new SignInRoute.Guidance("signin.opencode");
     public ProviderAccount? Account() => OpenCodeCredential.Read(file) is null ? null : new ProviderAccount(null, "Go", "OpenCode", new Uri("https://opencode.ai"));
 
     public async Task<ProviderReading> ReadAsync(CancellationToken cancellationToken = default)
