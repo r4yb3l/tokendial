@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Tokendial.Core/Tokendial.Core.csproj" />
+  <Project Path="Tokendial.Tests/Tokendial.Tests.csproj" />
+</Solution>

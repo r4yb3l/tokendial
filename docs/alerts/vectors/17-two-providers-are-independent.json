@@ -23,7 +23,7 @@
       }
     },
     {
-      "t": 2,
+      "t": 70,
       "event": {
         "kind": "usage",
         "provider": "codex",
@@ -49,7 +49,7 @@
       "pct": 80
     },
     {
-      "t": 2,
+      "t": 70,
       "kind": "threshold",
       "provider": "codex",
       "window": "primary",

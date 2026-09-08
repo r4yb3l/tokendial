@@ -47,7 +47,9 @@ from the last sample. A new epoch clears every fired flag: thresholds re-arm,
   once per epoch. Marks every threshold fired.
 - **resetSoon** `(provider, window, resetsAt)`. On `tick` or `usage`, when
   `resetsAt - t <= resetLeadSeconds`, `resetsAt > t`, the epoch's last
-  `usedPct >= resetLeadMinPct`, once per epoch.
+  `usedPct >= resetLeadMinPct`, once per epoch. Not emitted in an epoch where
+  `limit` fired: that alert already named the unblock time, and `resetDone`
+  follows.
 - **resetDone** `(provider, window)`. When `t >= resetsAt` for an epoch in
   which `limit` fired, once; then the epoch is closed.
 - **waiting** `(provider, sessionId)`. A session entering `waiting` starts a
@@ -58,12 +60,15 @@ from the last sample. A new epoch clears every fired flag: thresholds re-arm,
 ## Cross-cutting rules
 
 - **Hover**: while `hover on`, `threshold` alerts are marked fired but not
-  emitted (the user is looking). `limit`, `resetSoon`, `resetDone` and `waiting`
-  are *held* and emitted, in order, on the next `hover off`.
+  emitted (the user is looking). Every other kind is *held* and emitted, in
+  order, on the next `hover off`.
+- **Time checks** (`resetSoon`, `resetDone`, `waiting` deadlines) run on every
+  event, not only on `tick`, using that event's `t`.
 - **Cooldown**: at most one emitted alert per provider per
-  `perProviderCooldownSeconds`; later ones in the window are dropped, except
-  `limit` and `waiting`, which are held until the cooldown ends and emitted on
-  the next event.
+  `perProviderCooldownSeconds`. A `threshold` that lands inside the cooldown is
+  dropped (it stays marked fired); every other kind is *held* until the cooldown
+  ends and emitted on the next event. Releasing held alerts does not start a
+  new cooldown.
 - **Restart**: state is persisted after every reduction and reloaded before the
   `restart` event, so nothing fires twice across a relaunch. Epochs whose
   `resetsAt` is more than 24 h in the past are pruned on `restart`.

@@ -30,7 +30,7 @@
       }
     },
     {
-      "t": 30,
+      "t": 90,
       "event": {
         "kind": "usage",
         "provider": "claude",
@@ -49,7 +49,7 @@
       "pct": 50
     },
     {
-      "t": 30,
+      "t": 90,
       "kind": "threshold",
       "provider": "claude",
       "window": "session",
