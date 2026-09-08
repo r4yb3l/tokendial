@@ -50,9 +50,9 @@
               "id": { "type": "string" },
               "label": { "type": "string" },
               "usedPath": { "type": "string", "description": "JSON path to the used fraction or percent." },
-              "unit": { "enum": ["fraction", "percent", "remainingFraction", "usedOverLimit", "count"] },
+              "unit": { "enum": ["fraction", "percent", "percentRemaining", "remainingFraction", "usedOverLimit", "count"] },
               "resetAtPath": { "type": "string" },
-              "resetUnit": { "enum": ["iso8601", "epochSeconds", "epochMillis", "afterSeconds"] },
+              "resetUnit": { "enum": ["iso8601", "dateUtc", "epochSeconds", "epochMillis", "afterSeconds"] },
               "notes": { "type": "string" }
             }
           }
@@ -85,6 +85,7 @@
         "notes": { "type": "string" }
       }
     },
+    "install": { "$ref": "#/$defs/install" },
     "status": {
       "type": "object",
       "required": ["enabled"],
@@ -97,6 +98,44 @@
     }
   },
   "$defs": {
+    "install": {
+      "type": "object",
+      "description": "How the assistant installs the tool that owns the credential and signs it in, per OS. Commands are the vendor's own; the app shows them before running them in a visible terminal and never fetches them from the network.",
+      "required": ["vendor", "docsUrl", "windows", "macos"],
+      "additionalProperties": false,
+      "properties": {
+        "vendor": { "type": "string" },
+        "docsUrl": { "type": "string", "format": "uri" },
+        "windows": { "$ref": "#/$defs/installPlatform" },
+        "macos": { "$ref": "#/$defs/installPlatform" }
+      }
+    },
+    "installPlatform": {
+      "type": "object",
+      "required": ["kind", "detect", "install"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["cli", "app"], "description": "cli: the terminal chains the sign-in command after installing. app: signing in means opening the desktop app." },
+        "detect": {
+          "type": "object",
+          "properties": {
+            "commands": { "type": "array", "items": { "type": "string" }, "description": "Executable names looked up on PATH, including the process, user and machine PATH." },
+            "paths": { "type": "array", "items": { "type": "string" }, "description": "Absolute locations with ~, %VAR% and one * per segment allowed." }
+          }
+        },
+        "requires": { "type": "array", "items": { "enum": ["winget", "brew"] } },
+        "install": { "type": "string", "description": "The exact shell line, PowerShell on Windows and zsh on macOS." },
+        "signIn": {
+          "type": "object",
+          "required": ["command", "hint"],
+          "properties": {
+            "command": { "type": "string" },
+            "hint": { "type": "string", "description": "Catalogue key of the sentence shown before the command runs." }
+          }
+        },
+        "downloadUrl": { "type": "string", "format": "uri" }
+      }
+    },
     "credential": {
       "type": "object",
       "required": ["kind"],

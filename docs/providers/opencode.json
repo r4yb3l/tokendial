@@ -37,5 +37,23 @@
   "errors": { "401": "needsAuth", "403": "nothingMetered", "429": "rateLimited" },
   "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
   "sessions": { "kind": "none" },
-  "status": { "enabled": true, "termsRisk": "low", "notice": "Plan is always 'Go'." }
+  "status": { "enabled": true, "termsRisk": "low", "notice": "Plan is always 'Go'." },
+  "install": {
+    "vendor": "OpenCode",
+    "docsUrl": "https://opencode.ai/docs/",
+    "windows": {
+      "kind": "cli",
+      "detect": {"commands": ["opencode.exe", "opencode.cmd"], "paths": ["%LOCALAPPDATA%/Microsoft/WinGet/Packages/SST.opencode_*/opencode.exe", "~/.opencode/bin/opencode.exe"]},
+      "requires": ["winget"],
+      "install": "winget install SST.opencode --accept-source-agreements --accept-package-agreements",
+      "signIn": {"command": "opencode auth login", "hint": "install.hint.opencode"}
+    },
+    "macos": {
+      "kind": "cli",
+      "detect": {"commands": ["opencode"], "paths": ["~/.opencode/bin/opencode", "~/.local/bin/opencode", "/opt/homebrew/bin/opencode", "/usr/local/bin/opencode"]},
+      "requires": [],
+      "install": "curl -fsSL https://opencode.ai/install | bash",
+      "signIn": {"command": "opencode auth login", "hint": "install.hint.opencode"}
+    }
+  }
 }

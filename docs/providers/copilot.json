@@ -33,8 +33,26 @@
       { "id": "completions", "label": "Completions", "usedPath": "$.quota_snapshots.completions.percent_remaining", "unit": "percentRemaining", "resetAtPath": "$.quota_reset_date", "resetUnit": "dateUtc", "notes": "Only metered on the Free plan." }
     ]
   },
-  "errors": { "401": "needsAuth", "403": "nothingMetered: no Copilot seat on this account", "404": "badResponse", "429": "rateLimited" },
+  "errors": { "401": "needsAuth", "403": "nothingMetered", "404": "badResponse", "429": "rateLimited" },
   "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
   "sessions": { "kind": "none", "notes": "Copilot's agents leave no readable trace on disk; usage only." },
-  "status": { "enabled": true, "termsRisk": "medium", "notice": "Uses the GitHub OAuth token the Copilot plugin stores; the endpoint is the one the editor status bar reads." }
+  "status": { "enabled": true, "termsRisk": "medium", "notice": "Uses the GitHub OAuth token the Copilot plugin stores; the endpoint is the one the editor status bar reads. A 403 means the account has no Copilot seat." },
+  "install": {
+    "vendor": "GitHub",
+    "docsUrl": "https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli",
+    "windows": {
+      "kind": "cli",
+      "detect": {"commands": ["copilot.exe", "copilot.cmd"], "paths": ["%LOCALAPPDATA%/Microsoft/WinGet/Packages/GitHub.Copilot_*/copilot.exe"]},
+      "requires": ["winget"],
+      "install": "winget install GitHub.Copilot --accept-source-agreements --accept-package-agreements",
+      "signIn": {"command": "copilot", "hint": "install.hint.copilot"}
+    },
+    "macos": {
+      "kind": "cli",
+      "detect": {"commands": ["copilot"], "paths": ["~/.local/bin/copilot", "/opt/homebrew/bin/copilot", "/usr/local/bin/copilot"]},
+      "requires": [],
+      "install": "curl -fsSL https://gh.io/copilot-install | bash",
+      "signIn": {"command": "copilot", "hint": "install.hint.copilot"}
+    }
+  }
 }

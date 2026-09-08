@@ -44,5 +44,23 @@
     "staleSeconds": 900,
     "notes": "Polled every 2 s (the writes land in the WAL sidecar). Fields: composerId, hasBlockingPendingActions | hasPendingPlan → waiting; unfinishedRunAt (set while a run is in flight, but it is the composer's creation time) plus conversationCheckpointLastUpdatedAt | lastUpdatedAt within 15 minutes and not before the editor's own start time → busy; otherwise dropped. Timestamps in epoch millis. The editor start time is the oldest Cursor process."
   },
-  "status": { "enabled": true, "termsRisk": "high", "notice": "Reuses the editor's browser session cookie against cursor.com." }
+  "status": { "enabled": true, "termsRisk": "high", "notice": "Reuses the editor's browser session cookie against cursor.com." },
+  "install": {
+    "vendor": "Cursor",
+    "docsUrl": "https://cursor.com/docs/get-started/installation",
+    "windows": {
+      "kind": "app",
+      "detect": {"commands": ["Cursor.exe"], "paths": ["%LOCALAPPDATA%/Programs/cursor/Cursor.exe"]},
+      "requires": ["winget"],
+      "install": "winget install Anysphere.Cursor --accept-source-agreements --accept-package-agreements",
+      "downloadUrl": "https://cursor.com/downloads"
+    },
+    "macos": {
+      "kind": "app",
+      "detect": {"commands": [], "paths": ["/Applications/Cursor.app", "~/Applications/Cursor.app"]},
+      "requires": ["brew"],
+      "install": "brew install --cask cursor",
+      "downloadUrl": "https://cursor.com/downloads"
+    }
+  }
 }

@@ -16,7 +16,7 @@ jobs:
           node-version: 22
       - name: Validate provider specs against the schema
         run: |
-          npx --yes ajv-cli@5 validate --spec=draft2020 -s docs/providers/schema.json -d "docs/providers/!(schema).json"
+          npx --yes -p ajv-cli@5 -p ajv-formats@3 ajv validate --spec=draft2020 -c ajv-formats -s docs/providers/schema.json -d "docs/providers/!(schema).json"
       - name: Every fixture and vector parses
         run: |
           for f in $(find docs/fixtures docs/alerts/vectors -name '*.json'); do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || exit 1; done

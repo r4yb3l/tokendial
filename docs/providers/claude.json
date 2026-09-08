@@ -48,5 +48,23 @@
     "staleSeconds": 0,
     "notes": "One file per running process: pid, cwd, name, entrypoint (cli | claude-vscode | claude-desktop | local-agent), status (busy | waiting | idle) or tempo (active | blocked), statusUpdatedAt/updatedAt in epoch millis, startedAt in epoch millis, procStart as a UTC ctime string, waitingFor/needs. Trust the file only while the pid is alive and its start time is within 5 minutes of startedAt."
   },
-  "status": { "enabled": true, "termsRisk": "low", "notice": "Reads the token Claude Code stores; never refreshes or writes it." }
+  "status": { "enabled": true, "termsRisk": "low", "notice": "Reads the token Claude Code stores; never refreshes or writes it." },
+  "install": {
+    "vendor": "Anthropic",
+    "docsUrl": "https://code.claude.com/docs/en/setup",
+    "windows": {
+      "kind": "cli",
+      "detect": {"commands": ["claude.exe", "claude.cmd"], "paths": ["~/.local/bin/claude.exe", "%LOCALAPPDATA%/Microsoft/WinGet/Packages/Anthropic.ClaudeCode_*/claude.exe"]},
+      "requires": [],
+      "install": "irm https://claude.ai/install.ps1 | iex",
+      "signIn": {"command": "claude", "hint": "install.hint.claude"}
+    },
+    "macos": {
+      "kind": "cli",
+      "detect": {"commands": ["claude"], "paths": ["~/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]},
+      "requires": [],
+      "install": "curl -fsSL https://claude.ai/install.sh | bash",
+      "signIn": {"command": "claude", "hint": "install.hint.claude"}
+    }
+  }
 }

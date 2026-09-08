@@ -65,5 +65,23 @@
     "staleSeconds": 45,
     "notes": "Step statuses all read DONE because a step is written once finished; the transcript's modification time is the only live signal. One busy session at most, never waiting."
   },
-  "status": { "enabled": true, "termsRisk": "medium", "notice": "Talks to Antigravity's own language server and to Google's internal Cloud Code endpoints with the token Antigravity holds." }
+  "status": { "enabled": true, "termsRisk": "medium", "notice": "Talks to Antigravity's own language server and to Google's internal Cloud Code endpoints with the token Antigravity holds." },
+  "install": {
+    "vendor": "Google",
+    "docsUrl": "https://antigravity.google/docs/getting-started",
+    "windows": {
+      "kind": "app",
+      "detect": {"commands": ["Antigravity.exe"], "paths": ["%LOCALAPPDATA%/Programs/Antigravity/Antigravity.exe"]},
+      "requires": ["winget"],
+      "install": "winget install Google.Antigravity --accept-source-agreements --accept-package-agreements",
+      "downloadUrl": "https://antigravity.google/download"
+    },
+    "macos": {
+      "kind": "app",
+      "detect": {"commands": [], "paths": ["/Applications/Antigravity.app", "~/Applications/Antigravity.app"]},
+      "requires": ["brew"],
+      "install": "brew install --cask antigravity",
+      "downloadUrl": "https://antigravity.google/download"
+    }
+  }
 }

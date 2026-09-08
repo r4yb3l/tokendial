@@ -42,5 +42,23 @@
     "staleSeconds": 45,
     "notes": "A row is live when its pid is alive (start time within 5 minutes of opened_at), its session directory is found (encoded cwd first, then a scan for the id), and updates.jsonl was written within 45 s. Many sessions allowed; never waiting."
   },
-  "status": { "enabled": true, "termsRisk": "medium" }
+  "status": { "enabled": true, "termsRisk": "medium" },
+  "install": {
+    "vendor": "xAI",
+    "docsUrl": "https://docs.x.ai/build/cli/reference",
+    "windows": {
+      "kind": "cli",
+      "detect": {"commands": ["grok.exe", "grok.cmd"], "paths": ["~/.grok/bin/grok.exe", "%LOCALAPPDATA%/Microsoft/WinGet/Packages/xAI.GrokBuild_*/grok.exe"]},
+      "requires": [],
+      "install": "irm https://x.ai/cli/install.ps1 | iex",
+      "signIn": {"command": "grok login", "hint": "install.hint.grok"}
+    },
+    "macos": {
+      "kind": "cli",
+      "detect": {"commands": ["grok"], "paths": ["~/.grok/bin/grok", "~/.local/bin/grok", "/opt/homebrew/bin/grok", "/usr/local/bin/grok"]},
+      "requires": [],
+      "install": "curl -fsSL https://x.ai/cli/install.sh | bash",
+      "signIn": {"command": "grok login", "hint": "install.hint.grok"}
+    }
+  }
 }

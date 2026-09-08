@@ -41,5 +41,23 @@
     "staleSeconds": 8,
     "notes": "No status field exists; a rollout file or catalogue row written within 8 seconds means a turn is running. One session at most, the newest of the two sources. Never 'waiting'."
   },
-  "status": { "enabled": true, "termsRisk": "medium", "notice": "Uses the ChatGPT session the Codex CLI holds." }
+  "status": { "enabled": true, "termsRisk": "medium", "notice": "Uses the ChatGPT session the Codex CLI holds." },
+  "install": {
+    "vendor": "OpenAI",
+    "docsUrl": "https://developers.openai.com/codex/cli",
+    "windows": {
+      "kind": "cli",
+      "detect": {"commands": ["codex.exe", "codex.cmd"], "paths": ["%LOCALAPPDATA%/Programs/OpenAI/Codex/bin/codex.exe"]},
+      "requires": [],
+      "install": "irm https://chatgpt.com/codex/install.ps1 | iex",
+      "signIn": {"command": "codex login", "hint": "install.hint.codex"}
+    },
+    "macos": {
+      "kind": "cli",
+      "detect": {"commands": ["codex"], "paths": ["~/.local/bin/codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex"]},
+      "requires": [],
+      "install": "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+      "signIn": {"command": "codex login", "hint": "install.hint.codex"}
+    }
+  }
 }
