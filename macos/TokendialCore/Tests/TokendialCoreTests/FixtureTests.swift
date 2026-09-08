@@ -85,6 +85,10 @@ final class CopyTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
     private let utc = TimeZone(identifier: "UTC")!
 
+    override func setUpWithError() throws {
+        Strings.load(from: try Docs.path("i18n"), language: "en")
+    }
+
     func testResetCopyFollowsTheRules() {
         XCTAssertEqual("Resets in 51 min", Copy.reset(now.addingTimeInterval(51 * 60), now: now))
         XCTAssertEqual("Resets in 50 min", Copy.reset(now.addingTimeInterval(50 * 60 + 20), now: now))
