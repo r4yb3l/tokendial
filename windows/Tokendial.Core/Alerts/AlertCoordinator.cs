@@ -27,6 +27,7 @@ public sealed class AlertCoordinator : IDisposable
         this.stateFile = stateFile;
         this.wants = wants ?? (_ => true);
         engine = LoadEngine(stateFile, config ?? AlertConfig.Default);
+        Log.Alerts.Info($"state: {engine.EpochCount} epoch(s) from {(stateFile is null ? "memory" : Path.GetFileName(stateFile))}");
         Apply(new AlertEvent.Restart(this.now()));
     }
 

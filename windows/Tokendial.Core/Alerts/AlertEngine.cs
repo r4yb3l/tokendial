@@ -41,6 +41,8 @@ public sealed class AlertEngine
 
     public string Save() => JsonSerializer.Serialize(state, Json);
 
+    public int EpochCount => state.Epochs.Count;
+
     public IReadOnlyList<Alert> Reduce(AlertEvent e)
     {
         var candidates = new List<Alert>();
