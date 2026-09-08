@@ -1,0 +1,36 @@
+---
+import PostCard from './PostCard.astro';
+import { blogPath, posts, sections } from '../blog';
+import { useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const all = await posts(locale);
+const grouped = sections.map((section) => ({ section, items: all.filter((p) => p.data.section === section) })).filter((g) => g.items.length > 0);
+---
+
+<section class="mx-auto max-w-6xl px-5 py-12 md:py-16">
+  <div class="max-w-2xl">
+    <span class="eyebrow">{t('blog.eyebrow')}</span>
+    <h1 class="mt-4 text-4xl font-semibold tracking-tight text-slate-100 md:text-5xl">{t('blog.title')}</h1>
+    <p class="mt-4 text-lg leading-relaxed text-slate-400">{t('blog.lead')}</p>
+    <a href={`${blogPath(locale)}/rss.xml`} class="mt-4 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-100">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" /></svg>
+      {t('blog.rss')}
+    </a>
+  </div>
+  {grouped.map(({ section, items }) => (
+    <div class="mt-14">
+      <div class="flex items-baseline justify-between gap-4">
+        <h2 class="text-xl font-semibold text-slate-100">{t(`blog.section.${section}`)}</h2>
+        <p class="hidden text-sm text-slate-500 sm:block">{t(`blog.section.${section}.lead`)}</p>
+      </div>
+      <div class="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {items.map((post) => <PostCard post={post} locale={locale} />)}
+      </div>
+    </div>
+  ))}
+</section>

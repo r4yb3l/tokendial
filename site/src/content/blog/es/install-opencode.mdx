@@ -1,0 +1,54 @@
+---
+title: "Cómo instalar OpenCode y ponerlo en el dial"
+description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+date: 2026-09-08
+section: install
+provider: opencode
+---
+
+OpenCode es un agente de programación de código abierto que funciona con muchos proveedores. Tokendial sigue el plan OpenCode Go, que tiene una ventana mensual.
+
+Tokendial lee la clave del plan Go que OpenCode guarda al conectarlo y pide a opencode.ai el consumo del mes.
+
+## Instalar en Windows
+
+Abre PowerShell y ejecuta el comando que publica OpenCode:
+
+```powershell
+winget install SST.opencode --accept-source-agreements --accept-package-agreements
+```
+
+`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
+
+## Instalar en macOS
+
+En Terminal, ejecuta el comando que publica OpenCode:
+
+```bash
+curl -fsSL https://opencode.ai/install | bash
+```
+
+## Iniciar sesión
+
+Una vez instalado, inicia sesión con la propia herramienta:
+
+```bash
+opencode auth login
+```
+
+OpenCode pregunta qué proveedor conectar: elige OpenCode y sigue el inicio de sesión que ofrece.
+
+## Qué lee Tokendial
+
+Tras iniciar sesión, OpenCode guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+
+- Windows: `~/.local/share/opencode/auth.json`
+- macOS: `~/.local/share/opencode/auth.json`
+
+El dial muestra la **ventana mensual**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+
+## O deja que lo haga Tokendial
+
+Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+
+Documentación oficial: [https://opencode.ai/docs/](https://opencode.ai/docs/).

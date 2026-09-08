@@ -1,0 +1,52 @@
+---
+title: "How to install Codex and put it on the dial"
+description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+date: 2026-09-08
+section: install
+provider: codex
+---
+
+Codex is OpenAI's coding agent. Signed in with your ChatGPT account it shares that account's limits: a five-hour window and a weekly one.
+
+Tokendial reads the session Codex stores and asks OpenAI for the two windows, exactly as Codex's own status line does.
+
+## Install on Windows
+
+Open PowerShell and run the command OpenAI publishes:
+
+```powershell
+irm https://chatgpt.com/codex/install.ps1 | iex
+```
+
+## Install on macOS
+
+In Terminal, run the command OpenAI publishes:
+
+```bash
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+```
+
+## Sign in
+
+Once installed, sign in with the tool itself:
+
+```bash
+codex login
+```
+
+Codex opens the browser to sign in with your ChatGPT account.
+
+## What Tokendial reads
+
+After the sign-in, Codex keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+
+- Windows: `~/.codex/auth.json`
+- macOS: `~/.codex/auth.json`
+
+The dial shows the **5-hour** window. Hover it to see the other windows and when each one resets.
+
+## Or let Tokendial do it
+
+If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+
+Official documentation: [https://developers.openai.com/codex/cli](https://developers.openai.com/codex/cli).

@@ -1,0 +1,52 @@
+---
+title: "Cómo instalar Antigravity y ponerlo en el dial"
+description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+date: 2026-09-08
+section: install
+provider: antigravity
+---
+
+Antigravity es el IDE de Google centrado en agentes. Inicias sesión con una cuenta de Google dentro de la app, y la cuota viene en cubos semanales por grupo de modelos.
+
+Tokendial lee la credencial que Antigravity guarda en el almacén de credenciales del sistema y consulta los mismos puntos de cuota que el IDE.
+
+## Instalar en Windows
+
+El camino más rápido es el Administrador de paquetes de Windows, que descarga el instalador oficial:
+
+```powershell
+winget install Google.Antigravity --accept-source-agreements --accept-package-agreements
+```
+
+`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
+
+También puedes descargar el instalador desde [la página oficial](https://antigravity.google/download).
+
+## Instalar en macOS
+
+Con Homebrew instalado:
+
+```bash
+brew install --cask antigravity
+```
+
+También puedes descargar el instalador desde [la página oficial](https://antigravity.google/download).
+
+## Iniciar sesión
+
+Abre Antigravity e inicia sesión con tu cuenta dentro de la app. No hace falta nada más.
+
+## Qué lee Tokendial
+
+Tras iniciar sesión, Antigravity guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+
+- Windows: Credential Manager entry `gemini:antigravity`
+- macOS: Keychain item `gemini`
+
+El dial muestra la **cuota semanal**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+
+## O deja que lo haga Tokendial
+
+Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+
+Documentación oficial: [https://antigravity.google/docs/getting-started](https://antigravity.google/docs/getting-started).

@@ -5,6 +5,8 @@ import Mark from './Mark.astro';
 import Dial from './Dial.astro';
 import { list, useTranslations, type Locale } from '../i18n';
 import { links } from '../data/links';
+import PostCard from './PostCard.astro';
+import { blogPath, posts } from '../blog';
 
 interface Props {
   locale: Locale;
@@ -35,6 +37,7 @@ const alertIcons = [
 const alertColors = ['#34d399', '#fbbf24', '#34d399', '#fb7185'];
 const securityPoints = [t('security.1'), t('security.2'), t('security.3'), t('security.4')];
 const installPoints = [t('install.1'), t('install.2'), t('install.3')];
+const latest = (await posts(locale)).slice(0, 3);
 ---
 
 <Hero locale={locale} />
@@ -202,6 +205,16 @@ const installPoints = [t('install.1'), t('install.2'), t('install.3')];
       </a>
     </div>
   </div>
+</Section>
+
+<Section id="blog" eyebrow={t('community.eyebrow')} title={t('community.title')} lead={t('community.lead')}>
+  <div class="grid gap-4 md:grid-cols-3">
+    {latest.map((post) => <div class="reveal"><PostCard post={post} locale={locale} /></div>)}
+  </div>
+  <a href={blogPath(locale)} class="btn-secondary mt-8">
+    {t('community.all')}
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rtl:-scale-x-100" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+  </a>
 </Section>
 
 <section class="py-12 md:py-16">

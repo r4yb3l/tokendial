@@ -1,0 +1,49 @@
+---
+import Base from './Base.astro';
+import Mark from '../components/Mark.astro';
+import PostCard from '../components/PostCard.astro';
+import { blogPath, posts, readingMinutes, slugOf, type Post } from '../blog';
+import { useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  post: Post;
+}
+const { locale, post } = Astro.props;
+const t = useTranslations(locale);
+const date = post.data.date.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const updated = post.data.updated?.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+const related = (await posts(locale)).filter((p) => p.id !== post.id && p.data.section === post.data.section).slice(0, 3);
+const provider = post.data.provider as Parameters<typeof Mark>[0]['id'] | undefined;
+---
+
+<Base locale={locale} title={`${post.data.title} — Tokendial`} description={post.data.description} path={blogPath(locale, slugOf(post))}>
+  <article class="mx-auto max-w-3xl px-5 py-12 md:py-16">
+    <a href={blogPath(locale)} class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-100">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rtl:-scale-x-100" aria-hidden="true"><path d="M19 12H5m6 6-6-6 6-6" /></svg>
+      {t('blog.back')}
+    </a>
+    <header class="mt-6">
+      <div class="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+        <span class="eyebrow">{t(`blog.section.${post.data.section}`)}</span>
+        {provider && <span class="grid size-7 place-items-center rounded-lg bg-ink-800 text-slate-300"><Mark id={provider} size={14} /></span>}
+        <time datetime={post.data.date.toISOString()}>{date}</time>
+        {updated && <span>· {t('blog.updated', { date: updated })}</span>}
+        <span>· {t('blog.minutes', { n: readingMinutes(post.body) })}</span>
+      </div>
+      <h1 class="mt-5 text-3xl font-semibold tracking-tight text-slate-100 md:text-5xl md:leading-[1.1]">{post.data.title}</h1>
+      <p class="mt-5 text-lg leading-relaxed text-slate-400">{post.data.description}</p>
+    </header>
+    <div class="prose prose-tokendial mt-10 max-w-none prose-headings:tracking-tight">
+      <slot />
+    </div>
+  </article>
+  {related.length > 0 && (
+    <aside class="mx-auto max-w-6xl px-5 pb-16">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">{t('blog.related')}</h2>
+      <div class="mt-5 grid gap-4 md:grid-cols-3">
+        {related.map((p) => <PostCard post={p} locale={locale} compact />)}
+      </div>
+    </aside>
+  )}
+</Base>

@@ -1,0 +1,52 @@
+---
+title: "How to install Claude Code and put it on the dial"
+description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+date: 2026-09-08
+section: install
+provider: claude
+---
+
+Claude Code is Anthropic's coding agent for the terminal. It runs on the Claude Pro, Max and Team plans, and its limits come in windows: a five-hour session window and weekly windows, some of them per model.
+
+Tokendial reads the token Claude Code stores after you sign in and asks the same usage endpoint Claude Code's own `/usage` command asks.
+
+## Install on Windows
+
+Open PowerShell and run the command Anthropic publishes:
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+## Install on macOS
+
+In Terminal, run the command Anthropic publishes:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+## Sign in
+
+Once installed, sign in with the tool itself:
+
+```bash
+claude
+```
+
+Claude Code opens in the terminal and sends you to the browser to sign in. Come back once it says you are logged in.
+
+## What Tokendial reads
+
+After the sign-in, Claude Code keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+
+- Windows: `~/.claude/.credentials.json`
+- macOS: Keychain item `Claude Code-credentials`
+
+The dial shows the **current session** window. Hover it to see the other windows and when each one resets.
+
+## Or let Tokendial do it
+
+If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+
+Official documentation: [https://code.claude.com/docs/en/setup](https://code.claude.com/docs/en/setup).

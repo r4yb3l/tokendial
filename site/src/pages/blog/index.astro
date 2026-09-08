@@ -1,0 +1,11 @@
+---
+import Base from '../../layouts/Base.astro';
+import BlogIndex from '../../components/BlogIndex.astro';
+import { useTranslations } from '../../i18n';
+
+const t = useTranslations('en');
+---
+
+<Base locale="en" title={`${t('blog.title')} — Tokendial`} description={t('blog.lead')} path="/blog">
+  <BlogIndex locale="en" />
+</Base>

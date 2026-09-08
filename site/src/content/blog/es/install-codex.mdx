@@ -1,0 +1,52 @@
+---
+title: "Cómo instalar Codex y ponerlo en el dial"
+description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+date: 2026-09-08
+section: install
+provider: codex
+---
+
+Codex es el agente de programación de OpenAI. Con tu cuenta de ChatGPT comparte sus límites: una ventana de cinco horas y una semanal.
+
+Tokendial lee la sesión que Codex guarda y pregunta a OpenAI por las dos ventanas, igual que hace la propia barra de estado de Codex.
+
+## Instalar en Windows
+
+Abre PowerShell y ejecuta el comando que publica OpenAI:
+
+```powershell
+irm https://chatgpt.com/codex/install.ps1 | iex
+```
+
+## Instalar en macOS
+
+En Terminal, ejecuta el comando que publica OpenAI:
+
+```bash
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+```
+
+## Iniciar sesión
+
+Una vez instalado, inicia sesión con la propia herramienta:
+
+```bash
+codex login
+```
+
+Codex abre el navegador para iniciar sesión con tu cuenta de ChatGPT.
+
+## Qué lee Tokendial
+
+Tras iniciar sesión, Codex guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+
+- Windows: `~/.codex/auth.json`
+- macOS: `~/.codex/auth.json`
+
+El dial muestra la ventana de **5 horas**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+
+## O deja que lo haga Tokendial
+
+Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+
+Documentación oficial: [https://developers.openai.com/codex/cli](https://developers.openai.com/codex/cli).

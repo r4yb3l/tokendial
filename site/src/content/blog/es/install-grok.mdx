@@ -1,0 +1,52 @@
+---
+title: "Cómo instalar Grok y ponerlo en el dial"
+description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+date: 2026-09-08
+section: install
+provider: grok
+---
+
+Grok Build es el CLI de programación de xAI. Inicia sesión con tu cuenta de xAI y mide el consumo por ventana.
+
+Tokendial lee el token que el CLI guarda tras `grok login` y pide a xAI el consumo actual.
+
+## Instalar en Windows
+
+Abre PowerShell y ejecuta el comando que publica xAI:
+
+```powershell
+irm https://x.ai/cli/install.ps1 | iex
+```
+
+## Instalar en macOS
+
+En Terminal, ejecuta el comando que publica xAI:
+
+```bash
+curl -fsSL https://x.ai/cli/install.sh | bash
+```
+
+## Iniciar sesión
+
+Una vez instalado, inicia sesión con la propia herramienta:
+
+```bash
+grok login
+```
+
+Grok abre el navegador para iniciar sesión con tu cuenta de xAI.
+
+## Qué lee Tokendial
+
+Tras iniciar sesión, Grok guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+
+- Windows: `~/.grok/auth.json`
+- macOS: `~/.grok/auth.json`
+
+El dial muestra la **ventana actual**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+
+## O deja que lo haga Tokendial
+
+Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+
+Documentación oficial: [https://docs.x.ai/build/cli/reference](https://docs.x.ai/build/cli/reference).

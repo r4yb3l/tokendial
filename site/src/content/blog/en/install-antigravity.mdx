@@ -1,0 +1,52 @@
+---
+title: "How to install Antigravity and put it on the dial"
+description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+date: 2026-09-08
+section: install
+provider: antigravity
+---
+
+Antigravity is Google's agent-first IDE. You sign in with a Google account inside the app, and quota comes as weekly buckets per model group.
+
+Tokendial reads the credential Antigravity keeps in the system credential store and asks the same quota endpoints the IDE asks.
+
+## Install on Windows
+
+The quickest path is the Windows Package Manager, which downloads the official installer:
+
+```powershell
+winget install Google.Antigravity --accept-source-agreements --accept-package-agreements
+```
+
+`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
+
+You can also download the installer from [the official page](https://antigravity.google/download).
+
+## Install on macOS
+
+With Homebrew installed:
+
+```bash
+brew install --cask antigravity
+```
+
+You can also download the installer from [the official page](https://antigravity.google/download).
+
+## Sign in
+
+Open Antigravity and sign in to your account inside the app. Nothing else is needed.
+
+## What Tokendial reads
+
+After the sign-in, Antigravity keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+
+- Windows: Credential Manager entry `gemini:antigravity`
+- macOS: Keychain item `gemini`
+
+The dial shows the **weekly quota**. Hover it to see the other windows and when each one resets.
+
+## Or let Tokendial do it
+
+If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+
+Official documentation: [https://antigravity.google/docs/getting-started](https://antigravity.google/docs/getting-started).

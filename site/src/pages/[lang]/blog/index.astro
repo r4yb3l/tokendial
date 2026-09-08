@@ -1,0 +1,18 @@
+---
+import Base from '../../../layouts/Base.astro';
+import BlogIndex from '../../../components/BlogIndex.astro';
+import { blogLocales, blogPath } from '../../../blog';
+import { defaultLocale, isLocale, useTranslations } from '../../../i18n';
+
+export function getStaticPaths() {
+  return blogLocales.filter((code) => code !== defaultLocale).map((code) => ({ params: { lang: code } }));
+}
+
+const { lang } = Astro.params;
+if (!isLocale(lang)) return Astro.redirect('/blog');
+const t = useTranslations(lang);
+---
+
+<Base locale={lang} title={`${t('blog.title')} — Tokendial`} description={t('blog.lead')} path={blogPath(lang)}>
+  <BlogIndex locale={lang} />
+</Base>

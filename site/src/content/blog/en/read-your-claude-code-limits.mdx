@@ -1,0 +1,36 @@
+---
+title: "How to read your Claude Code limits"
+description: "Session window, weekly windows, per-model windows: what each one means, when it resets, and which one the dial shows."
+date: 2026-09-08
+section: save-tokens
+provider: claude
+---
+
+Claude Code does not have one limit. It has several windows that fill and empty on their own schedules, and the one that stops you is rarely the one you were watching. Here is how to read them.
+
+## The session window
+
+Every message you send counts against a rolling **five-hour window**. It opens with your first message and closes five hours later, whatever you did in between. Run three heavy agent turns in the first twenty minutes and you may spend the rest of the window waiting.
+
+This is the window Tokendial puts on the dial by default, because it is the one that interrupts a working afternoon.
+
+## The weekly windows
+
+On top of the session, Anthropic meters a **seven-day window across all models**, and on some plans **per-model weekly windows** (Opus, Sonnet, or a plan-specific model). These reset once a week at a fixed time, not from your first message.
+
+Hitting a weekly window feels different: the session dial can be green and Claude Code still refuses. When that happens, hover the dial. The card lists every window with its own bar and reset time, so you can see which one is actually full.
+
+## Reading the card
+
+- **Current session** is the five-hour window. Under an hour to the reset, the card says "Resets in 51 min"; further away it gives the day and time.
+- **All models** is the weekly window every message counts towards.
+- **Opus**, **Sonnet** or a named model are the per-model weekly windows. Empty ones are not shown.
+- A tilde before a number means the value was worked out locally rather than published by Anthropic.
+
+## Three habits that help
+
+1. **Look before the long task.** If the session is at 70 % and the reset is 40 minutes away, that refactor can wait 40 minutes and start with a full window.
+2. **Let the 80 % alert do its job.** Tokendial warns you once per window when you cross 50, 80 and 95 %. At 80 % is when to finish the thought, not start a new one.
+3. **Watch the weekly bar on Mondays.** A weekly window that resets mid-week means a slow Monday can be a fast Thursday, or the other way round.
+
+None of this needs a terminal: the dial is always at the edge of the screen, and the card is one hover away.

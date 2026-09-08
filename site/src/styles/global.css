@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/inter';
+@plugin '@tailwindcss/typography';
 
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
@@ -209,4 +210,43 @@ body {
 
 [dir='rtl'] .ltr {
   direction: ltr;
+}
+
+/* Article typography on the site palette, in both looks. */
+.prose-tokendial {
+  --tw-prose-body: var(--color-slate-300);
+  --tw-prose-headings: var(--color-slate-100);
+  --tw-prose-lead: var(--color-slate-400);
+  --tw-prose-links: var(--color-brand-400);
+  --tw-prose-bold: var(--color-slate-100);
+  --tw-prose-counters: var(--color-slate-400);
+  --tw-prose-bullets: var(--color-ink-600);
+  --tw-prose-hr: var(--color-ink-700);
+  --tw-prose-quotes: var(--color-slate-200);
+  --tw-prose-quote-borders: var(--color-brand-500);
+  --tw-prose-captions: var(--color-slate-400);
+  --tw-prose-code: var(--color-slate-100);
+  --tw-prose-pre-code: #e2e8f0;
+  --tw-prose-pre-bg: #0b0e14;
+  --tw-prose-th-borders: var(--color-ink-600);
+  --tw-prose-td-borders: var(--color-ink-700);
+}
+
+.prose-tokendial :where(code):not(:where(pre *)) {
+  @apply rounded-md bg-ink-800 px-1.5 py-0.5 font-normal;
+}
+
+.prose-tokendial :where(code):not(:where(pre *))::before,
+.prose-tokendial :where(code):not(:where(pre *))::after {
+  content: none;
+}
+
+.prose-tokendial :where(pre) {
+  @apply rounded-xl border border-ink-700/60;
+  direction: ltr;
+  text-align: left;
+}
+
+.prose-tokendial :where(a) {
+  text-decoration-color: color-mix(in oklab, var(--color-brand-400) 40%, transparent);
 }

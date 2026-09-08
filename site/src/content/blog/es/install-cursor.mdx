@@ -1,0 +1,52 @@
+---
+title: "Cómo instalar Cursor y ponerlo en el dial"
+description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+date: 2026-09-08
+section: install
+provider: cursor
+---
+
+Cursor es un editor de escritorio, así que no hay CLI con el que iniciar sesión: instalas la app e inicias sesión dentro. Su consumo viene como uso incluido en tu plan, más uso bajo demanda si lo activas.
+
+Tokendial lee la sesión que el editor guarda en su base de datos local y pide a cursor.com el mismo resumen que muestra el editor.
+
+## Instalar en Windows
+
+El camino más rápido es el Administrador de paquetes de Windows, que descarga el instalador oficial:
+
+```powershell
+winget install Anysphere.Cursor --accept-source-agreements --accept-package-agreements
+```
+
+`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
+
+También puedes descargar el instalador desde [la página oficial](https://cursor.com/downloads).
+
+## Instalar en macOS
+
+Con Homebrew instalado:
+
+```bash
+brew install --cask cursor
+```
+
+También puedes descargar el instalador desde [la página oficial](https://cursor.com/downloads).
+
+## Iniciar sesión
+
+Abre Cursor e inicia sesión con tu cuenta dentro de la app. No hace falta nada más.
+
+## Qué lee Tokendial
+
+Tras iniciar sesión, Cursor guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+
+- Windows: `%APPDATA%/Cursor/User/globalStorage/state.vscdb`
+- macOS: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`
+
+El dial muestra el **uso incluido**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+
+## O deja que lo haga Tokendial
+
+Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+
+Documentación oficial: [https://cursor.com/docs/get-started/installation](https://cursor.com/docs/get-started/installation).

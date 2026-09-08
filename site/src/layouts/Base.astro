@@ -6,12 +6,18 @@ import { dir, lang, locales, pathFor, useTranslations, type Locale } from '../i1
 
 interface Props {
   locale: Locale;
+  title?: string;
+  description?: string;
+  /** The page's path for this locale; alternates are derived by swapping the locale prefix. Defaults to the landing. */
+  path?: string;
 }
 
-const { locale } = Astro.props;
+const { locale, title, description, path } = Astro.props;
 const t = useTranslations(locale);
 const site = Astro.site ?? new URL('https://tokendial.app');
-const canonical = new URL(pathFor(locale), site).href;
+const pageTitle = title ?? t('meta.title');
+const pageDescription = description ?? t('meta.description');
+const canonical = new URL(path ?? pathFor(locale), site).href;
 const ogImage = new URL('/og.png', site).href;
 ---
 
@@ -28,24 +34,24 @@ const ogImage = new URL('/og.png', site).href;
       } catch {}
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{t('meta.title')}</title>
-    <meta name="description" content={t('meta.description')} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
     <meta name="theme-color" content="#0b0e14" />
     <meta name="color-scheme" content="dark light" />
     <link rel="canonical" href={canonical} />
-    {locales.map((code) => <link rel="alternate" hreflang={code} href={new URL(pathFor(code), site).href} />)}
-    <link rel="alternate" hreflang="x-default" href={new URL('/', site).href} />
+    {!path && locales.map((code) => <link rel="alternate" hreflang={code} href={new URL(pathFor(code), site).href} />)}
+    {!path && <link rel="alternate" hreflang="x-default" href={new URL('/', site).href} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Tokendial" />
-    <meta property="og:title" content={t('meta.title')} />
-    <meta property="og:description" content={t('meta.description')} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:locale" content={locale.replace('-', '_')} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={t('meta.title')} />
-    <meta name="twitter:description" content={t('meta.description')} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={ogImage} />
     <script type="application/ld+json" set:html={JSON.stringify({
       '@context': 'https://schema.org',

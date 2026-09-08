@@ -1,0 +1,54 @@
+---
+title: "How to install GitHub Copilot and put it on the dial"
+description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+date: 2026-09-08
+section: install
+provider: copilot
+---
+
+GitHub Copilot meters premium requests per month, and on the Free plan also chat and completions. The standalone Copilot CLI is the quickest way to sign in from a terminal.
+
+Tokendial reads the GitHub token Copilot stores and asks the endpoint the editor's status bar reads.
+
+## Install on Windows
+
+Open PowerShell and run the command GitHub publishes:
+
+```powershell
+winget install GitHub.Copilot --accept-source-agreements --accept-package-agreements
+```
+
+`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
+
+## Install on macOS
+
+In Terminal, run the command GitHub publishes:
+
+```bash
+curl -fsSL https://gh.io/copilot-install | bash
+```
+
+## Sign in
+
+Once installed, sign in with the tool itself:
+
+```bash
+copilot
+```
+
+When Copilot opens in the terminal, type `/login` and follow the browser steps.
+
+## What Tokendial reads
+
+After the sign-in, GitHub Copilot keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+
+- Windows: `%LOCALAPPDATA%/github-copilot/apps.json`
+- macOS: `~/.config/github-copilot/apps.json`
+
+The dial shows **premium requests**. Hover it to see the other windows and when each one resets.
+
+## Or let Tokendial do it
+
+If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+
+Official documentation: [https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli).

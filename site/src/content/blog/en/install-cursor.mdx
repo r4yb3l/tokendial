@@ -1,0 +1,52 @@
+---
+title: "How to install Cursor and put it on the dial"
+description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+date: 2026-09-08
+section: install
+provider: cursor
+---
+
+Cursor is a desktop editor, so there is no CLI to sign in with: you install the app and sign in inside it. Its usage comes as included usage for your plan, plus on-demand usage when you enable it.
+
+Tokendial reads the session the editor keeps in its local database and asks cursor.com for the same summary the editor shows.
+
+## Install on Windows
+
+The quickest path is the Windows Package Manager, which downloads the official installer:
+
+```powershell
+winget install Anysphere.Cursor --accept-source-agreements --accept-package-agreements
+```
+
+`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
+
+You can also download the installer from [the official page](https://cursor.com/downloads).
+
+## Install on macOS
+
+With Homebrew installed:
+
+```bash
+brew install --cask cursor
+```
+
+You can also download the installer from [the official page](https://cursor.com/downloads).
+
+## Sign in
+
+Open Cursor and sign in to your account inside the app. Nothing else is needed.
+
+## What Tokendial reads
+
+After the sign-in, Cursor keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+
+- Windows: `%APPDATA%/Cursor/User/globalStorage/state.vscdb`
+- macOS: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`
+
+The dial shows **included usage**. Hover it to see the other windows and when each one resets.
+
+## Or let Tokendial do it
+
+If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+
+Official documentation: [https://cursor.com/docs/get-started/installation](https://cursor.com/docs/get-started/installation).

@@ -4,18 +4,21 @@ import LanguageMenu from './LanguageMenu.astro';
 import ThemeMenu from './ThemeMenu.astro';
 import { pathFor, useTranslations, type Locale } from '../i18n';
 import { links } from '../data/links';
+import { blogPath } from '../blog';
 
 interface Props {
   locale: Locale;
 }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
+const home = pathFor(locale);
 const nav = [
-  ['#why', t('nav.why')],
-  ['#how', t('nav.how')],
-  ['#providers', t('nav.providers')],
-  ['#alerts', t('nav.alerts')],
-  ['#security', t('nav.security')]
+  [`${home}#why`, t('nav.why')],
+  [`${home}#how`, t('nav.how')],
+  [`${home}#providers`, t('nav.providers')],
+  [`${home}#alerts`, t('nav.alerts')],
+  [`${home}#security`, t('nav.security')],
+  [blogPath(locale), t('nav.blog')]
 ];
 ---
 
@@ -27,9 +30,8 @@ const nav = [
     </a>
     <nav aria-label="Primary" class="hidden items-center gap-1 lg:flex">
       {nav.map(([href, label]) => (
-        <a href={href} class="rounded-lg px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-ink-800 hover:text-slate-100">{label}</a>
+        <a href={href} class="whitespace-nowrap rounded-lg px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-ink-800 hover:text-slate-100">{label}</a>
       ))}
-      <a href={links.repo} class="rounded-lg px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-ink-800 hover:text-slate-100" rel="noopener">{t('nav.github')}</a>
     </nav>
     <div class="ms-auto flex items-center gap-2">
       <ThemeMenu locale={locale} />

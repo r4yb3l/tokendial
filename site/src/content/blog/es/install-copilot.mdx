@@ -1,0 +1,54 @@
+---
+title: "Cómo instalar GitHub Copilot y ponerlo en el dial"
+description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+date: 2026-09-08
+section: install
+provider: copilot
+---
+
+GitHub Copilot mide las peticiones premium al mes y, en el plan Free, también el chat y los completados. El Copilot CLI independiente es la forma más rápida de iniciar sesión desde una terminal.
+
+Tokendial lee el token de GitHub que Copilot guarda y consulta el punto de acceso que lee la barra de estado del editor.
+
+## Instalar en Windows
+
+Abre PowerShell y ejecuta el comando que publica GitHub:
+
+```powershell
+winget install GitHub.Copilot --accept-source-agreements --accept-package-agreements
+```
+
+`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
+
+## Instalar en macOS
+
+En Terminal, ejecuta el comando que publica GitHub:
+
+```bash
+curl -fsSL https://gh.io/copilot-install | bash
+```
+
+## Iniciar sesión
+
+Una vez instalado, inicia sesión con la propia herramienta:
+
+```bash
+copilot
+```
+
+Cuando Copilot se abra en la terminal, escribe `/login` y sigue los pasos del navegador.
+
+## Qué lee Tokendial
+
+Tras iniciar sesión, GitHub Copilot guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+
+- Windows: `%LOCALAPPDATA%/github-copilot/apps.json`
+- macOS: `~/.config/github-copilot/apps.json`
+
+El dial muestra las **peticiones premium**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+
+## O deja que lo haga Tokendial
+
+Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+
+Documentación oficial: [https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli).

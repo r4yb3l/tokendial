@@ -1,0 +1,54 @@
+---
+title: "How to install OpenCode and put it on the dial"
+description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+date: 2026-09-08
+section: install
+provider: opencode
+---
+
+OpenCode is an open-source coding agent that can run on many providers. Tokendial follows the OpenCode Go plan, which has a monthly window.
+
+Tokendial reads the Go plan key OpenCode stores after you connect it and asks opencode.ai for the month's usage.
+
+## Install on Windows
+
+Open PowerShell and run the command OpenCode publishes:
+
+```powershell
+winget install SST.opencode --accept-source-agreements --accept-package-agreements
+```
+
+`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
+
+## Install on macOS
+
+In Terminal, run the command OpenCode publishes:
+
+```bash
+curl -fsSL https://opencode.ai/install | bash
+```
+
+## Sign in
+
+Once installed, sign in with the tool itself:
+
+```bash
+opencode auth login
+```
+
+OpenCode asks which provider to connect: choose OpenCode and follow the sign-in it offers.
+
+## What Tokendial reads
+
+After the sign-in, OpenCode keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+
+- Windows: `~/.local/share/opencode/auth.json`
+- macOS: `~/.local/share/opencode/auth.json`
+
+The dial shows the **monthly window**. Hover it to see the other windows and when each one resets.
+
+## Or let Tokendial do it
+
+If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+
+Official documentation: [https://opencode.ai/docs/](https://opencode.ai/docs/).

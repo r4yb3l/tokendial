@@ -1,0 +1,34 @@
+---
+title: "Six habits that make your tokens last"
+description: "You do not need to understand tokens to stop burning them. Six small changes to how you talk to an agent, each one visible on the dial the same afternoon."
+date: 2026-09-08
+section: save-tokens
+---
+
+Every coding assistant charges you in the same currency: the text it reads plus the text it writes. You do not have to count it. You do have to stop doing the six things that burn it for nothing.
+
+## 1. Let the agent read files instead of pasting them
+
+Pasting a 400-line file into the chat sends those 400 lines with every single turn that follows, because the conversation carries them. Pointing the agent at the file lets it read what it needs, when it needs it. Same result, a fraction of the spend.
+
+## 2. Compact or restart long conversations
+
+A conversation that has been going for two hours drags two hours of context behind every new message. Most agents have a command to compact it (Claude Code has `/compact`); the rest let you start a fresh one. When the dial climbs faster than your progress, that is the signal.
+
+## 3. Ask for the plan before the code
+
+"Tell me how you would do this, in five lines" costs a few hundred tokens. Letting the agent write the wrong implementation and then correcting it costs the wrong implementation, the correction, and the fix. Plan first on anything bigger than a function.
+
+## 4. Do not re-run what already passed
+
+Agents love to re-run the whole test suite after every change and read every line of output. Ask for the failing tests only, or for a summary. Output is tokens too.
+
+## 5. Match the model to the job
+
+Renaming a variable across a project does not need the most capable model. If your tool lets you pick, run the routine work on the cheaper one and keep the expensive one for design and debugging. On Claude Code, the per-model weekly windows on the dial show you exactly where the split lands.
+
+## 6. Stop at amber, switch at red
+
+The dial's bands are the habit that makes the other five stick. Under 50 % spend freely; from 50 % finish what you started instead of opening something new; at 80 % move the task to an assistant that is green, or wait for the reset the card is already counting down.
+
+None of these need you to know what a token is. They need a glance at the edge of the screen.

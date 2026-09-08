@@ -1,0 +1,36 @@
+---
+title: "Cómo leer tus límites de Claude Code"
+description: "Ventana de sesión, ventanas semanales, ventanas por modelo: qué significa cada una, cuándo se reinicia y cuál muestra el dial."
+date: 2026-09-08
+section: save-tokens
+provider: claude
+---
+
+Claude Code no tiene un límite. Tiene varias ventanas que se llenan y se vacían cada una a su ritmo, y la que te para casi nunca es la que estabas mirando. Así se leen.
+
+## La ventana de sesión
+
+Cada mensaje que envías cuenta contra una **ventana deslizante de cinco horas**. Se abre con tu primer mensaje y se cierra cinco horas después, hagas lo que hagas entre medias. Lanza tres turnos pesados de agente en los primeros veinte minutos y puede que pases el resto de la ventana esperando.
+
+Es la ventana que Tokendial pone en el dial por defecto, porque es la que interrumpe una tarde de trabajo.
+
+## Las ventanas semanales
+
+Encima de la sesión, Anthropic mide una **ventana de siete días para todos los modelos** y, en algunos planes, **ventanas semanales por modelo** (Opus, Sonnet o un modelo propio del plan). Estas se reinician una vez por semana a una hora fija, no desde tu primer mensaje.
+
+Chocar con una ventana semanal se siente distinto: el dial de sesión puede estar en verde y Claude Code seguir diciendo que no. Cuando pase, pasa el cursor por el dial. La tarjeta lista todas las ventanas con su barra y su hora de reinicio, así ves cuál está llena de verdad.
+
+## Leer la tarjeta
+
+- **Sesión actual** es la ventana de cinco horas. A menos de una hora del reinicio la tarjeta dice "Se reinicia en 51 min"; más lejos, da el día y la hora.
+- **Todos los modelos** es la ventana semanal a la que suma cada mensaje.
+- **Opus**, **Sonnet** o un modelo con nombre son las ventanas semanales por modelo. Las vacías no se muestran.
+- Una tilde delante de un número significa que el valor se calculó en tu equipo en vez de publicarlo Anthropic.
+
+## Tres hábitos que ayudan
+
+1. **Mira antes de la tarea larga.** Si la sesión está al 70 % y el reinicio a 40 minutos, esa refactorización puede esperar 40 minutos y arrancar con la ventana llena.
+2. **Deja que la alerta del 80 % haga su trabajo.** Tokendial avisa una vez por ventana al cruzar el 50, el 80 y el 95 %. El 80 % es el momento de terminar la idea, no de empezar otra.
+3. **Vigila la barra semanal los lunes.** Una ventana semanal que se reinicia a mitad de semana convierte un lunes lento en un jueves rápido, o al revés.
+
+Nada de esto necesita una terminal: el dial está siempre en el borde de la pantalla y la tarjeta a un cursor de distancia.
