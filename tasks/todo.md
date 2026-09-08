@@ -61,6 +61,25 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [ ] Code signing, installer (Velopack), GitHub Release, tokendial.app page
 - [ ] macOS zip/dmg
 
+## 7b — Settings redesign (user's Tailwind mockup, 2026-09-08)
+- [x] Chrome design system: palette, title bar with logo/version/status pill, drawn checkbox/radio/card/chip/field/button, thin scrollbar
+- [x] Settings window rebuilt: two scrolling columns, provider cards with tinted tiles and usage bar, install rows in the same style
+- [x] Theme switch (system / dark / light) with a derived light palette for panel and windows; follows Windows in system mode
+- [x] Dock position setting: top, bottom, left, right (rows and columns, same tiles); verified live in the four positions
+- [ ] Welcome window on the same components
+- [ ] Light palette reviewed by design (current one is derived from the dark mockup)
+- [ ] macOS settings to the same tokens
+
+## 8 — Install assistant (Windows first)
+- [x] docs/providers: `install` block in the schema and in seven specs (glm has none)
+- [x] docs/i18n: `install.*` strings in en, es, fr, de, ar
+- [x] Core: InstallCatalog (embedded specs), ToolLocator, InstallState, InstallScript, InstallWatcher
+- [x] App: InstallAssistant (watchers owned by App), TerminalRunner, RunSheet, InstallSteps rows in Settings and Welcome
+- [x] Tests: catalog, script, locator, watcher
+- [ ] SECURITY.md and README paragraphs
+- [x] Live on this PC: OpenCode row Install → sheet → terminal (winget) → detected as installed → terminal closed without sign-in → row shows the not-seen hint with Sign in as the next step. Sign-in → auto-connect still to be exercised by the user pressing the buttons; Grok untested live
+- [ ] macOS: same recipes, zsh script, Terminal.app, Strings.load + bundled docs (later, when the Mac is on)
+
 ## Review
 - macOS v0.1.0 panel, card, banners, settings and Claude Code reading verified live on the Mac over SSH on 2026-09-08; Swift core passes the same 17 vectors and 25 fixtures as C#.
 - Windows v0.1.0 is functionally complete and verified live on 2026-09-07: welcome, compact and expanded capsule, hover card, settings, toast delivery, published exe.

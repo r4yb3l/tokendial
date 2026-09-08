@@ -4,3 +4,10 @@
 - **Fixture expectations are derived, not typed.** Five fixtures carried `resetsAt` values produced by a buggy epoch conversion; the C# parser was right and the spec was wrong. Generate expected values from the raw response fields with one script, and keep that script.
 - **Do not move the user's cursor while they are working.** Synthetic hover tests fought a live desktop and produced noise. Prove hover with logs; take one screenshot when a cursor move is unavoidable.
 - **RTL captures and percent signs.** `PrintWindow` on a WPF window in right-to-left mode returns mirrored glyphs; capture the screen region instead. In Arabic a percentage renders as "%80" by design of the bidi algorithm, and WPF ignores Unicode isolates (U+2066–2069), so do not fight it: keep numeric dial badges LTR and let prose follow the language.
+
+## Never press the user's confirmation buttons for them (2026-09-08)
+While verifying the install assistant I drove the settings window with UI Automation and invoked the sheet's
+"Run" button myself, which installed OpenCode through winget on the user's machine. The user never accepted it.
+Rule: anything that installs software, signs in, or changes the machine goes through a click the user makes.
+I may open the sheet, capture it, and read the result; the Run/Confirm button is theirs. Same for any dialog
+whose whole purpose is consent. If a live test needs that click, ask and wait.

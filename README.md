@@ -17,6 +17,11 @@ Claude Code, Codex, GitHub Copilot, Cursor, Antigravity, GLM (Z.ai Coding Plan),
 opt-in. Tokendial reads the sign-in each tool already stores on your machine and asks that
 tool's usage endpoint; it never writes credentials and never sends them anywhere else.
 
+A tool you do not have yet shows an **Install** button in Settings and on the first run. It shows
+the vendor's own install command before running it in a visible terminal, chains the tool's sign-in,
+and connects the dial the moment the sign-in lands. Nothing runs until you press Run; see
+`SECURITY.md`. GLM is a key rather than a tool and keeps its instructions instead.
+
 ## Alerts
 
 | Alert | When |

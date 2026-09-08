@@ -37,6 +37,22 @@ Encrypted ZCode tokens (`enc:v1:`) are ignored rather than decrypted. Cursor's d
 read-only; if that fails and a temporary copy is needed, the copy is zeroed and deleted when the
 read finishes and any leftover from a crash is destroyed at the next start.
 
+## The install assistant
+
+A provider whose tool is missing offers an **Install** button, and one that is installed but signed
+out offers **Sign in**. Both open a sheet that shows the exact command first, whose vendor it comes
+from and where it is documented; nothing runs until you press Run. Then a visible PowerShell window
+runs that command and, for a command-line tool, the tool's own sign-in right after it.
+
+- The commands are the vendors' published installers (`irm https://claude.ai/install.ps1 | iex`,
+  `winget install GitHub.Copilot`, and so on). They ship inside the binary, read from
+  `docs/providers/*.json`; Tokendial never downloads a recipe or a script.
+- The script prints the command before running it, runs it in a child process, stops at the first
+  failure, and stays open so you can read what happened.
+- Nothing runs elevated. When a winget package needs administrator rights, Windows asks you.
+- The sign-in is the tool's own; Tokendial only notices that its credential appeared and connects
+  the dial. It never sees or stores the resulting token.
+
 ## Limits you should know
 
 - Tokens live in process memory while a request is in flight. Any process running as the same
