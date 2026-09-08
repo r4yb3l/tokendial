@@ -13,3 +13,4 @@ macos/build/
 # local
 tools/mac.local.ps1
 *.log
+tools/shots/
