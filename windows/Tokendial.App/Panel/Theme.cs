@@ -33,6 +33,7 @@ public static class Theme
     public const double CompactSpacing = 10;
     public const double CompactDial = 24;
     public const double CompactMark = 11;
+    public const double ExpandedMark = 13;
     public const double CompactStroke = 3;
     public const double ExpandedHeight = 132;
     public const double ExpandedPadding = 20;

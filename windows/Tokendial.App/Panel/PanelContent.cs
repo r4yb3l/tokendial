@@ -97,7 +97,7 @@ public sealed class PanelContent
             compactDials[tile.Id] = mini;
             compactMarks[tile.Id] = mark;
             CompactRow.Children.Add(host);
-            var cell = new Cell(tile.Id, tile.Mark);
+            var cell = new Cell(tile.Id);
             cell.Root.MouseLeftButtonUp += (_, _) => CellClicked?.Invoke(tile.Id);
             cells[tile.Id] = cell;
             cellRow.Children.Add(cell.Root);
@@ -126,17 +126,17 @@ public sealed class PanelContent
     {
         private readonly Dial dial = new(Theme.ExpandedDial, Theme.ExpandedStroke);
         private readonly ActivityArc activity = new();
-        private readonly TextBlock mark = Text.Make("", 9, Theme.TextSecondary, FontWeights.SemiBold, display: true, align: TextAlignment.Center);
+        private readonly MarkView mark;
         private readonly TextBlock percent = Text.Make("", 15, Theme.TextPrimary, FontWeights.SemiBold, display: true, align: TextAlignment.Center);
         private readonly TextBlock name = Text.Primary("", 11, FontWeights.SemiBold, TextAlignment.Center);
         private readonly TextBlock label = Text.Secondary("", 10, TextAlignment.Center);
         private readonly StackPanel bars = new() { Margin = new Thickness(18, 3, 18, 0) };
         private bool shown;
 
-        public Cell(string id, string markText)
+        public Cell(string id)
         {
             Id = id;
-            mark.Text = markText;
+            mark = new MarkView(id, Theme.ExpandedMark) { HorizontalAlignment = HorizontalAlignment.Center };
             var stack = new StackPanel { Width = Theme.CellWidth, UseLayoutRounding = false };
             var dialHost = new Grid { Width = Theme.ExpandedDial, Height = Theme.ExpandedDial, HorizontalAlignment = HorizontalAlignment.Center };
             dialHost.Children.Add(dial);
@@ -144,9 +144,9 @@ public sealed class PanelContent
             activity.VerticalAlignment = VerticalAlignment.Center;
             dialHost.Children.Add(activity);
             mark.VerticalAlignment = VerticalAlignment.Top;
-            mark.Margin = new Thickness(0, 13, 0, 0);
+            mark.Margin = new Thickness(0, 11, 0, 0);
             percent.VerticalAlignment = VerticalAlignment.Top;
-            percent.Margin = new Thickness(0, 24, 0, 0);
+            percent.Margin = new Thickness(0, 25, 0, 0);
             dialHost.Children.Add(mark);
             dialHost.Children.Add(percent);
             stack.Children.Add(dialHost);
@@ -167,7 +167,7 @@ public sealed class PanelContent
             if (animate) dial.AnimateTo(fraction); else { dial.BeginAnimation(Dial.FractionProperty, null); dial.Fraction = fraction; }
             percent.Text = tile.HasReading && tile.Fraction is double f ? $"{Math.Round(f * 100):0}%" : tile.HasReading && tile.Headline?.Count is int c ? $"{c}" : "–";
             percent.Foreground = tile.HasReading ? Theme.TextPrimary : Theme.TextDisabled;
-            mark.Foreground = tile.HasReading ? Theme.TextSecondary : Theme.TextDisabled;
+            mark.Pulse(tile.Activity?.State == SessionState.Waiting, Theme.AmpleColor, Theme.TextDisabledColor, tile.HasReading ? Theme.TextSecondary : Theme.TextDisabled);
             name.Text = tile.Name;
             name.Foreground = tile.HasReading ? Theme.TextPrimary : Theme.TextDisabled;
             label.Text = tile.HasReading ? tile.HeadlineLabel : tile.StatusLabel;
