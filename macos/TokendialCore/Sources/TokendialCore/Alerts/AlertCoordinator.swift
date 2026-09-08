@@ -43,12 +43,8 @@ public final class AlertCoordinator {
     public func onReadings(_ readings: [ProviderReading]) {
         let at = now()
         for reading in readings where reading.status == .live {
-            let limited = reading.block != nil
-            for window in reading.windows {
-                guard let used = window.usedFraction else { continue }
-                let isHeadline = reading.headline?.id == window.id
-                apply(.usage(at: at, provider: reading.providerId, window: window.id, usedPct: (used * 10000).rounded() / 100, resetsAt: window.resetsAt, limited: limited && isHeadline))
-            }
+            guard let window = reading.headline, let used = window.usedFraction else { continue }
+            apply(.usage(at: at, provider: reading.providerId, window: window.id, usedPct: (used * 10000).rounded() / 100, resetsAt: window.resetsAt, limited: reading.block != nil))
         }
     }
 

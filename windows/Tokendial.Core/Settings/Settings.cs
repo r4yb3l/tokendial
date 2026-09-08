@@ -26,6 +26,8 @@ public sealed class Settings
     public int Schema { get; set; } = CurrentSchema;
     public PanelMode Panel { get; set; } = PanelMode.ExpandOnHover;
     public HashSet<string> Disconnected { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>Provider ids this install has seen. A provider added by an update joins connected only when its tool is signed in.</summary>
+    public HashSet<string> Known { get; set; } = new(StringComparer.Ordinal);
     public bool LaunchAtLogin { get; set; }
     public bool FirstRunDone { get; set; }
     public List<int> Thresholds { get; set; } = [50, 80, 95];

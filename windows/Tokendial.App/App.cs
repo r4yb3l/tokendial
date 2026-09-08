@@ -96,8 +96,22 @@ public sealed class App : Application
         clockTimer = new DispatcherTimer(TimeSpan.FromSeconds(30), DispatcherPriority.Background, (_, _) => RefreshModel(), Dispatcher);
         clockTimer.Start();
 
-        if (settings.FirstRunDone) Begin();
+        if (settings.FirstRunDone) { AdoptNewProviders(providers); Begin(); }
         else FirstRun();
+    }
+
+    /// <summary>A provider this install has never seen (an update added it) is connected only when its tool is already signed in.</summary>
+    private void AdoptNewProviders(IReadOnlyList<IUsageProvider> providers)
+    {
+        var fresh = providers.Where(p => !settings.Known.Contains(p.Id)).ToList();
+        if (fresh.Count == 0) return;
+        foreach (var provider in fresh)
+        {
+            settings.Known.Add(provider.Id);
+            if (provider.Account() is null) settings.Disconnected.Add(provider.Id);
+        }
+        Save();
+        store.Disconnected = settings.Disconnected;
     }
 
     private void Begin()
@@ -116,6 +130,7 @@ public sealed class App : Application
         WelcomeWindow.Show(detected, absent, chosen =>
         {
             settings.Disconnected = all.Select(s => s.Id).Where(id => !chosen.Contains(id)).ToHashSet(StringComparer.Ordinal);
+            settings.Known = all.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
             settings.FirstRunDone = true;
             settings.LastSeenVersion = Version;
             Save();

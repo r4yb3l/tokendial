@@ -58,13 +58,8 @@ public sealed class AlertCoordinator : IDisposable
         foreach (var reading in readings)
         {
             if (reading.Status is not ReadingStatus.Live) continue;
-            var limited = reading.Block is not null;
-            foreach (var window in reading.Windows)
-            {
-                if (window.UsedFraction is not double used) continue;
-                var isHeadline = reading.Headline?.Id == window.Id;
-                Apply(new AlertEvent.Usage(at, reading.ProviderId, window.Id, Math.Round(used * 100, 2), window.ResetsAt, limited && isHeadline));
-            }
+            if (reading.Headline is not UsageWindow window || window.UsedFraction is not double used) continue;
+            Apply(new AlertEvent.Usage(at, reading.ProviderId, window.Id, Math.Round(used * 100, 2), window.ResetsAt, reading.Block is not null));
         }
     }
 

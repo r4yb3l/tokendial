@@ -60,7 +60,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshModel()
         clock = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in self?.refreshModel() }
 
-        if settings.firstRunDone { begin() } else { firstRun() }
+        if settings.firstRunDone { adoptNewProviders() } else { firstRun() }
+    }
+
+    /// A provider this install has never seen (an update added it) is connected only when its tool is already signed in.
+    private func adoptNewProviders() {
+        let fresh = store.summaries.map { $0.id }.filter { !settings.known.contains($0) }
+        guard !fresh.isEmpty else { begin(); return }
+        Task { [weak self] in
+            guard let self else { return }
+            await self.store.refreshAccounts()
+            await MainActor.run {
+                for summary in self.store.summaries where fresh.contains(summary.id) {
+                    self.settings.known.insert(summary.id)
+                    if summary.account == nil { self.settings.disconnected.insert(summary.id) }
+                }
+                self.save()
+                self.store.disconnected = self.settings.disconnected
+                self.begin()
+            }
+        }
     }
 
     /// tokendial://show, tokendial://show?provider=claude, tokendial://settings, tokendial://test-alert.
@@ -104,6 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         welcome = HostedWindow(title: "Welcome to Tokendial", content: WelcomeView(detected: detected, absent: absent) { [weak self] chosen, openSettings in
             guard let self else { return }
             self.settings.disconnected = Set(all.map { $0.id }).subtracting(chosen)
+            self.settings.known = Set(all.map { $0.id })
             self.settings.firstRunDone = true
             self.settings.lastSeenVersion = Self.version
             self.save()
@@ -168,6 +188,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func connect(_ id: String, _ on: Bool) {
         if on { settings.disconnected.remove(id); store.connect(id) } else { settings.disconnected.insert(id); store.disconnect(id) }
+        settings.known.insert(id)
         save()
         settingsModel?.settings = settings
         settingsModel?.summaries = store.summaries

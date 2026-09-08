@@ -15,7 +15,7 @@ sequence for each.
 
 | Event | Fields | Meaning |
 |---|---|---|
-| `usage` | `t, provider, window, usedPct, resetsAt?, limited` | A fresh reading of one window. `limited` is true when the provider reports a block. |
+| `usage` | `t, provider, window, usedPct, resetsAt?, limited` | A fresh reading of one window. Hosts feed only each provider's headline window; secondary windows are shown, not alerted on. `limited` is true when the provider reports a block. |
 | `session` | `t, provider, sessionId, state` | `working`, `waiting` or `done`. |
 | `hover` | `t, on` | The panel is expanded under the cursor. |
 | `tick` | `t` | The host's clock, at least every 30 s. |

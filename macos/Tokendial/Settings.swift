@@ -18,6 +18,8 @@ struct Settings: Codable {
     var schema = 1
     var panel: PanelMode = .expandOnHover
     var disconnected: Set<String> = []
+    /// Provider ids this install has seen. A provider added by an update joins connected only when its tool is signed in.
+    var known: Set<String> = []
     var launchAtLogin = false
     var firstRunDone = false
     var thresholds: [Int] = [50, 80, 95]

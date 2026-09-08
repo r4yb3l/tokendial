@@ -172,6 +172,7 @@ public sealed class SettingsWindow
     {
         if (on) { settings.Disconnected.Remove(id); store.Connect(id); }
         else { settings.Disconnected.Add(id); store.Disconnect(id); }
+        settings.Known.Add(id);
         save();
     }
 
