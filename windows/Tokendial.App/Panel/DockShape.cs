@@ -1,63 +1,54 @@
 using System.Windows;
 using System.Windows.Media;
+using Tokendial.Core.Settings;
 
 namespace Tokendial.App.Panel;
 
 /// <summary>
-/// The dock hanging from the screen edge: a trapezoid whose top spans the full width,
-/// whose sides slant inward, and whose bottom corners are rounded. The top edge has no
-/// outline, so the shape reads as part of the edge rather than a floating pill.
+/// The dock hanging from a screen edge: a trapezoid whose base spans the full length along
+/// the edge, whose sides slant inward, and whose far corners are rounded. The base has no
+/// outline, so the shape reads as part of the edge rather than a floating pill. The shape is
+/// drawn as if the edge were the top, then mapped onto the edge it actually hangs from.
 /// </summary>
 public static class DockShape
 {
-    /// <summary>Closed fill: (0,0) → (w,0) → slanted side → rounded bottom → slanted side back.</summary>
-    public static Geometry Fill(double width, double height, double slant, double radius)
-    {
-        var geometry = new StreamGeometry();
-        using (var ctx = geometry.Open())
-        {
-            ctx.BeginFigure(new Point(0, 0), true, true);
-            ctx.LineTo(new Point(width, 0), false, false);
-            Side(ctx, width, height, slant, radius, rightSide: true);
-            Side(ctx, width, height, slant, radius, rightSide: false);
-        }
-        geometry.Freeze();
-        return geometry;
-    }
+    /// <summary>Closed fill for a dock of the given length along the edge and depth across it.</summary>
+    public static Geometry Fill(double along, double across, double slant, double radius, DockEdge edge) => Build(along, across, slant, radius, edge, closed: true);
 
-    /// <summary>Open hairline along the sides and bottom only; the top stays open against the edge.</summary>
-    public static Geometry Edge(double width, double height, double slant, double radius)
-    {
-        var geometry = new StreamGeometry();
-        using (var ctx = geometry.Open())
-        {
-            ctx.BeginFigure(new Point(width, 0), false, false);
-            Side(ctx, width, height, slant, radius, rightSide: true);
-            Side(ctx, width, height, slant, radius, rightSide: false);
-        }
-        geometry.Freeze();
-        return geometry;
-    }
+    /// <summary>Open hairline along the sides and the far side only; the base stays open against the edge.</summary>
+    public static Geometry Edge(double along, double across, double slant, double radius, DockEdge edge) => Build(along, across, slant, radius, edge, closed: false);
 
-    /// <summary>From the top corner down the slanted side into the rounded bottom corner, then along the bottom to the other corner.</summary>
-    private static void Side(StreamGeometryContext ctx, double width, double height, double slant, double radius, bool rightSide)
+    private static Geometry Build(double along, double across, double slant, double radius, DockEdge edge, bool closed)
     {
-        var r = Math.Min(radius, Math.Min(height / 2, (width - 2 * slant) / 2));
-        var length = Math.Sqrt(slant * slant + height * height);
+        Point Map(double x, double y) => edge switch
+        {
+            DockEdge.Bottom => new Point(x, across - y),
+            DockEdge.Left => new Point(y, x),
+            DockEdge.Right => new Point(across - y, x),
+            _ => new Point(x, y)
+        };
+        var r = Math.Max(0, Math.Min(radius, Math.Min(across / 2, (along - 2 * slant) / 2)));
+        var length = Math.Sqrt(slant * slant + across * across);
         var ux = slant / length;
-        var uy = height / length;
-        if (rightSide)
+        var uy = across / length;
+        var geometry = new StreamGeometry();
+        using (var ctx = geometry.Open())
         {
-            var corner = new Point(width - slant, height);
-            ctx.LineTo(new Point(corner.X + ux * r, corner.Y - uy * r), true, true);
-            ctx.QuadraticBezierTo(corner, new Point(corner.X - r, height), true, true);
-            ctx.LineTo(new Point(slant + r, height), true, true);
+            if (closed)
+            {
+                ctx.BeginFigure(Map(0, 0), true, true);
+                ctx.LineTo(Map(along, 0), false, false);
+            }
+            else ctx.BeginFigure(Map(along, 0), false, false);
+            var farRight = (X: along - slant, Y: across);
+            ctx.LineTo(Map(farRight.X + ux * r, farRight.Y - uy * r), true, true);
+            ctx.QuadraticBezierTo(Map(farRight.X, farRight.Y), Map(farRight.X - r, across), true, true);
+            ctx.LineTo(Map(slant + r, across), true, true);
+            var farLeft = (X: slant, Y: across);
+            ctx.QuadraticBezierTo(Map(farLeft.X, farLeft.Y), Map(farLeft.X - ux * r, farLeft.Y - uy * r), true, true);
+            ctx.LineTo(Map(0, 0), true, true);
         }
-        else
-        {
-            var corner = new Point(slant, height);
-            ctx.QuadraticBezierTo(corner, new Point(corner.X - ux * r, corner.Y - uy * r), true, true);
-            ctx.LineTo(new Point(0, 0), true, true);
-        }
+        geometry.Freeze();
+        return geometry;
     }
 }

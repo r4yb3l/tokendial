@@ -15,19 +15,20 @@ public sealed class PanelContent
     private readonly Dictionary<string, MarkView> compactMarks = new();
     private readonly Dictionary<string, Cell> cells = new();
     private readonly List<string> order = new();
+    private bool vertical;
 
     public StackPanel CompactRow { get; } = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, UseLayoutRounding = false };
     public Grid Expanded { get; } = new() { UseLayoutRounding = false };
     private readonly StackPanel cellRow = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, UseLayoutRounding = false };
     private readonly TextBlock sessionsLine = Text.Secondary("", 11, TextAlignment.Center);
-    private readonly Border mutedBadge = new() { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = Theme.Watch, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0), Visibility = Visibility.Collapsed };
+    private readonly Border mutedBadge = new() { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = Theme.Watch, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(6, 0, 0, 0), Visibility = Visibility.Collapsed };
 
     public event Action<string>? CellClicked;
 
     public PanelContent()
     {
         Expanded.RowDefinitions.Add(new RowDefinition { Height = new GridLength(10) });
-        Expanded.RowDefinitions.Add(new RowDefinition { Height = new GridLength(96) });
+        Expanded.RowDefinitions.Add(new RowDefinition { Height = new GridLength(Theme.CellHeight) });
         Expanded.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         Grid.SetRow(cellRow, 1);
         Grid.SetRow(sessionsLine, 2);
@@ -41,8 +42,30 @@ public sealed class PanelContent
 
     public IReadOnlyList<(string Id, FrameworkElement Element)> CellElements => order.Select(id => (id, (FrameworkElement)cells[id].Root)).ToList();
 
-    public static double CompactWidth(int n) => n == 0 ? 2 * Theme.CompactPadding + 40 : 2 * Theme.CompactPadding + n * Theme.CompactDial + (n - 1) * Theme.CompactSpacing;
-    public static double ExpandedWidth(int n) => Math.Max(2 * Theme.ExpandedPadding + Math.Max(n, 1) * Theme.CellWidth, Theme.CardWidth + 2 * Theme.ExpandedPadding);
+    /// <summary>The compact dock's extent along its edge: padding, dials and the gaps between them.</summary>
+    public static double CompactLength(int n) => n == 0 ? 2 * Theme.CompactPadding + 40 : 2 * Theme.CompactPadding + n * Theme.CompactDial + (n - 1) * Theme.CompactSpacing;
+
+    /// <summary>The expanded dock's extent along its edge: a row of cells, or a column of cells with the sessions line under it.</summary>
+    public static double ExpandedLength(int n, bool vertical) => vertical
+        ? 10 + Math.Max(n, 1) * (Theme.CellHeight + Theme.CellGap) + 62
+        : Math.Max(2 * Theme.ExpandedPadding + Math.Max(n, 1) * Theme.CellWidth, Theme.CardWidth + 2 * Theme.ExpandedPadding);
+
+    /// <summary>How far the expanded dock reaches into the screen.</summary>
+    public static double ExpandedAcross(bool vertical) => vertical ? Theme.CellWidth + 2 * Theme.ExpandedPadding : Theme.ExpandedHeight;
+
+    /// <summary>Lay the tiles out as a column for a side dock, as a row otherwise; the tiles are rebuilt on the next apply.</summary>
+    public void SetVertical(bool value)
+    {
+        if (vertical == value) return;
+        vertical = value;
+        CompactRow.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
+        cellRow.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
+        Expanded.RowDefinitions[1].Height = vertical ? GridLength.Auto : new GridLength(Theme.CellHeight);
+        sessionsLine.TextWrapping = vertical ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        sessionsLine.TextTrimming = vertical ? TextTrimming.None : TextTrimming.CharacterEllipsis;
+        sessionsLine.Margin = vertical ? new Thickness(8, 4, 8, 0) : new Thickness(Theme.ExpandedPadding, 2, Theme.ExpandedPadding, 0);
+        order.Clear();
+    }
 
     /// <summary>Forces every label to be built again in the current language.</summary>
     public void Relocalize() => order.Clear();
@@ -87,7 +110,7 @@ public sealed class PanelContent
         cells.Clear();
         if (model.Tiles.Count == 0)
         {
-            CompactRow.Children.Add(Text.Disabled("Tokendial", 11));
+            CompactRow.Children.Add(vertical ? new Dial(Theme.CompactDial, Theme.CompactStroke) { Hollow = true } : Text.Disabled("Tokendial", 11));
             cellRow.Children.Add(new Border { Width = Theme.CellWidth * 2, Child = Text.Secondary(Strings.T("panel.noProviders"), 11, TextAlignment.Center), VerticalAlignment = VerticalAlignment.Center });
         }
         for (var i = 0; i < model.Tiles.Count; i++)
@@ -95,7 +118,8 @@ public sealed class PanelContent
             var tile = model.Tiles[i];
             var mini = new Dial(Theme.CompactDial, Theme.CompactStroke);
             var mark = new MarkView(tile.Id, Theme.CompactMark) { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            var host = new Grid { Width = Theme.CompactDial, Height = Theme.CompactDial, Margin = new Thickness(i == 0 ? 0 : Theme.CompactSpacing, 0, 0, 0) };
+            var gap = i == 0 ? 0 : Theme.CompactSpacing;
+            var host = new Grid { Width = Theme.CompactDial, Height = Theme.CompactDial, Margin = vertical ? new Thickness(0, gap, 0, 0) : new Thickness(gap, 0, 0, 0) };
             host.Children.Add(mini);
             host.Children.Add(mark);
             compactDials[tile.Id] = mini;
@@ -104,8 +128,10 @@ public sealed class PanelContent
             var cell = new Cell(tile.Id);
             cell.Root.MouseLeftButtonUp += (_, _) => CellClicked?.Invoke(tile.Id);
             cells[tile.Id] = cell;
+            cell.Root.Margin = vertical ? new Thickness(0, 0, 0, Theme.CellGap) : new Thickness(0);
             cellRow.Children.Add(cell.Root);
         }
+        mutedBadge.Margin = vertical ? new Thickness(0, 6, 0, 0) : new Thickness(6, 0, 0, 0);
         CompactRow.Children.Add(mutedBadge);
     }
 
