@@ -101,7 +101,7 @@ const installPoints = [t('install.1'), t('install.2'), t('install.3')];
   <div class="grid gap-4 md:grid-cols-3">
     {dock.map((item, i) => (
       <article class="card reveal overflow-hidden" style={`transition-delay:${i * 60}ms`}>
-        <div class="ltr grid h-36 place-items-center border-b border-ink-700/50 bg-ink-950/60 p-6">
+        <div class="ltr theme-dark grid h-36 place-items-center border-b border-ink-700/50 bg-ink-950 p-6">
           {i === 0 && (
             <div class="flex items-end gap-3">
               {[['top', 'inset-x-3 top-0 h-2 rounded-b'], ['bottom', 'inset-x-3 bottom-0 h-2 rounded-t'], ['left', 'inset-y-3 left-0 w-2 rounded-r'], ['right', 'inset-y-3 right-0 w-2 rounded-l']].map(([, cls]) => (
@@ -163,7 +163,7 @@ const installPoints = [t('install.1'), t('install.2'), t('install.3')];
         </div>
         <span class="btn-primary pointer-events-none !min-h-9 !px-3.5 text-xs" aria-hidden="true">{t('install.step.install')}</span>
       </div>
-      <div class="ltr card overflow-hidden font-mono text-[12px] leading-relaxed">
+      <div class="ltr theme-dark card overflow-hidden font-mono text-[12px] leading-relaxed">
         <div class="flex items-center gap-1.5 border-b border-ink-700/60 px-4 py-2.5 text-[11px] text-slate-500">
           <span class="size-2.5 rounded-full bg-ink-600"></span><span class="size-2.5 rounded-full bg-ink-600"></span><span class="size-2.5 rounded-full bg-ink-600"></span>
           <span class="ms-2">Tokendial · Grok</span>
@@ -190,7 +190,7 @@ const installPoints = [t('install.1'), t('install.2'), t('install.3')];
       ))}
     </ul>
     <div class="reveal card min-w-0 flex flex-col justify-between gap-6 p-6">
-      <div class="ltr rounded-xl bg-ink-950/70 p-4 font-mono text-[12px] leading-relaxed text-slate-400">
+      <div class="ltr theme-dark rounded-xl bg-ink-950 p-4 font-mono text-[12px] leading-relaxed text-slate-400">
         <p class="text-slate-500">$ cat docs/providers/claude.json | jq .endpoints[0].url</p>
         <p class="text-brand-400">"https://api.anthropic.com/api/oauth/usage"</p>
         <p class="mt-3 text-slate-500">$ grep -c AllowAutoRedirect windows/Tokendial.Core/Providers/Json.cs</p>

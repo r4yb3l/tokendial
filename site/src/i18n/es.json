@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — tus límites de IA en un dial, antes de que te frenen",
   "meta.description": "Hecho para vibecoders: un dock en el borde de tu pantalla con un dial por asistente de código (Claude Code, Codex, Cursor, Copilot y más). Te avisa antes de que una ventana se reinicie, cuando llegas al límite y cuando un agente espera tu sí. Libre y de código abierto, macOS y Windows.",
-
   "nav.why": "Por qué Tokendial",
   "nav.how": "Cómo funciona",
   "nav.providers": "Proveedores",
@@ -11,7 +10,6 @@
   "nav.download": "Descargar",
   "nav.language": "Idioma",
   "nav.skip": "Saltar al contenido",
-
   "hero.eyebrow": "Hecho para vibecoders · macOS · Windows · gratis",
   "hero.title": "Que un límite de uso no te corte el vibe.",
   "hero.lead": "Construyes con Claude Code, Codex, Cursor, Copilot… y la única forma de saber que te estás quedando sin cuota es cuando se paran. Tokendial pone un dial en el borde de tu pantalla por cada uno, te avisa antes de que una ventana se reinicie y te llama cuando un agente espera tu sí.",
@@ -19,7 +17,6 @@
   "hero.macos": "Descargar para macOS",
   "hero.source": "Código en GitHub",
   "hero.note": "Gratis · Sin cuenta · Sin terminal para ponerlo en marcha",
-
   "demo.caption": "El dock al pasar el cursor: una celda por asistente, el límite que importa, los demás como barras finas, y quién te espera.",
   "demo.session": "Claude Code espera tu respuesta · 2 min",
   "demo.banner.title": "Claude Code espera tu respuesta",
@@ -28,7 +25,6 @@
   "demo.window.5h": "Límite de 5 h",
   "demo.window.premium": "Peticiones premium",
   "demo.window.included": "Uso incluido",
-
   "why.eyebrow": "Por qué Tokendial",
   "why.title": "Hecho para cómo programas ahora",
   "why.lead": "Varios asistentes, varias suscripciones, varios límites que se reinician cada uno a su hora. Nadie debería llevar eso en la cabeza mientras saca cosas.",
@@ -38,7 +34,6 @@
   "why.2.body": "Cada dial muestra la ventana que importa y cuándo se reinicia. Al 80 % pasas la tarea a otra herramienta, o te tomas el descanso hasta que vuelva.",
   "why.3.title": "No te pierdas al agente pidiendo un sí",
   "why.3.body": "Cuando Claude Code se para a pedir permiso y tú estás en otra ventana, su marca late en el dock y un banner te dice quién espera y para qué.",
-
   "how.eyebrow": "Cómo funciona",
   "how.title": "Cero configuración. Lee lo que tus herramientas ya saben",
   "how.1.title": "Encuentra tus herramientas",
@@ -47,7 +42,6 @@
   "how.2.body": "Los mismos números de consumo que muestra la barra de estado de cada herramienta, pedidos al fabricante una vez por minuto mientras trabajas y cada cinco cuando descansas.",
   "how.3.title": "Muestra un dial, no una hoja de cálculo",
   "how.3.body": "Verde, ámbar, rojo. Pasa el cursor para ver cada ventana, su hora de reinicio y las sesiones en marcha. El resto del tiempo, ignóralo.",
-
   "providers.eyebrow": "Proveedores",
   "providers.title": "Ocho asistentes, un dial cada uno",
   "providers.lead": "Cada proveedor se activa por decisión tuya y se apaga cuando quieras. Donde el fabricante no publica techo, el dial muestra el recuento sin más y lo dice.",
@@ -67,7 +61,6 @@
   "providers.grok.detail": "Consumo de Grok Build",
   "providers.opencode": "OpenCode",
   "providers.opencode.detail": "Límite mensual de OpenCode Go",
-
   "alerts.eyebrow": "Alertas",
   "alerts.title": "Avisos cuando ayudan, silencio cuando ya estás mirando",
   "alerts.lead": "Notificaciones nativas, o los banners propios de Tokendial en el color de acento del sistema cuando No molestar se traga las demás. En silencio mientras el dock está abierto bajo tu cursor. Como mucho una por proveedor cada minuto.",
@@ -79,7 +72,6 @@
   "alerts.3.body": "Un agente lleva 20 segundos esperando tu respuesta. Su marca late en el dock hasta que vuelves.",
   "alerts.4.title": "Límite alcanzado",
   "alerts.4.body": "Una ventana llegó al 100 % o el fabricante te bloqueó, con la hora en que se levanta.",
-
   "dock.eyebrow": "El dock",
   "dock.title": "Cualquier borde, cualquier aspecto",
   "dock.1.title": "Cuatro posiciones",
@@ -88,7 +80,6 @@
   "dock.2.body": "Sigue a Windows o macOS, o elige uno. Diales, tarjetas y banners se dibujan con los mismos tokens.",
   "dock.3.title": "Seis idiomas",
   "dock.3.body": "Inglés, inglés británico, español, francés, alemán y árabe, con escritura de derecha a izquierda, cambiables sin reiniciar.",
-
   "install.eyebrow": "Asistente de instalación",
   "install.title": "¿Aún no tienes la herramienta? Un clic.",
   "install.lead": "¿Quieres probar Codex o Grok pero nunca has tocado una terminal? Un proveedor cuya herramienta falta ofrece Instalar → Iniciar sesión → Listo. Tokendial muestra el comando oficial del fabricante, tú pulsas Ejecutar, te acompaña en el inicio de sesión, y al terminar el dial ya está ahí.",
@@ -98,7 +89,6 @@
   "install.step.install": "Instalar",
   "install.step.signin": "Iniciar sesión",
   "install.step.ready": "Listo",
-
   "security.eyebrow": "Seguridad",
   "security.title": "Tus claves nunca salen de tu equipo",
   "security.1": "Sin cuenta, sin telemetría, sin comprobación de actualizaciones, sin informes de fallos.",
@@ -106,16 +96,17 @@
   "security.3": "Cada host es una constante en el código y en las fichas públicas; las redirecciones se rechazan.",
   "security.4": "Los registros llevan códigos de estado y mensajes propios de Tokendial, nunca cabeceras, cuerpos ni URL.",
   "security.link": "Leer las notas de seguridad",
-
   "cta.title": "Que siga el vibe.",
   "cta.lead": "Libre y de código abierto, Windows y macOS, construidos desde una misma especificación.",
-
   "footer.made": "Hecho por Raybel Hernández · Licencia MIT",
   "footer.disclaimer": "Tokendial es un proyecto independiente. No está afiliado a, ni respaldado o patrocinado por Anthropic, OpenAI, GitHub, Cursor, Google, Z.ai, xAI ni el proyecto OpenCode. Los nombres y marcas pertenecen a sus dueños.",
   "footer.source": "Código fuente",
   "footer.security": "Notas de seguridad",
   "footer.issues": "Incidencias",
-
   "platform.windows": "Windows 10 1809 o posterior",
-  "platform.macos": "macOS 14 o posterior"
+  "platform.macos": "macOS 14 o posterior",
+  "nav.theme": "Tema",
+  "theme.system": "Sistema",
+  "theme.light": "Claro",
+  "theme.dark": "Oscuro"
 }

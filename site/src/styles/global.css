@@ -28,8 +28,99 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html {
+/* The two looks. Utilities read these variables, so overriding them on a scope re-colours everything inside it. */
+:root {
+  --color-ink-950: #0b0e14;
+  --color-ink-900: #11151d;
+  --color-ink-800: #171c26;
+  --color-ink-750: #1d2331;
+  --color-ink-700: #262f40;
+  --color-ink-600: #384358;
+  --color-brand-400: #34d399;
+  --color-watch: #fbbf24;
+  --color-critical: #fb7185;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --glow-1: rgb(16 185 129 / 0.10);
+  --glow-2: rgb(56 67 88 / 0.25);
+  --card-inset: rgb(255 255 255 / 0.03);
+  --card-shadow: rgb(0 0 0 / 0.8);
   color-scheme: dark;
+}
+
+.theme-dark {
+  --color-ink-950: #0b0e14;
+  --color-ink-900: #11151d;
+  --color-ink-800: #171c26;
+  --color-ink-750: #1d2331;
+  --color-ink-700: #262f40;
+  --color-ink-600: #384358;
+  --color-brand-400: #34d399;
+  --color-watch: #fbbf24;
+  --color-critical: #fb7185;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --glow-1: rgb(16 185 129 / 0.10);
+  --glow-2: rgb(56 67 88 / 0.25);
+  --card-inset: rgb(255 255 255 / 0.03);
+  --card-shadow: rgb(0 0 0 / 0.8);
+  color-scheme: dark;
+}
+
+.theme-light,
+:root[data-theme='light'] {
+  --color-ink-950: #f4f6fa;
+  --color-ink-900: #ffffff;
+  --color-ink-800: #f1f4f8;
+  --color-ink-750: #e8ecf2;
+  --color-ink-700: #d9dfe8;
+  --color-ink-600: #b9c2cf;
+  --color-brand-400: #059669;
+  --color-watch: #d97706;
+  --color-critical: #e11d48;
+  --color-slate-100: #0f172a;
+  --color-slate-200: #1e293b;
+  --color-slate-300: #334155;
+  --color-slate-400: #64748b;
+  --color-slate-500: #94a3b8;
+  --glow-1: rgb(16 185 129 / 0.14);
+  --glow-2: rgb(15 23 42 / 0.06);
+  --card-inset: rgb(255 255 255 / 0.6);
+  --card-shadow: rgb(15 23 42 / 0.18);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --color-ink-950: #f4f6fa;
+    --color-ink-900: #ffffff;
+    --color-ink-800: #f1f4f8;
+    --color-ink-750: #e8ecf2;
+    --color-ink-700: #d9dfe8;
+    --color-ink-600: #b9c2cf;
+    --color-brand-400: #059669;
+    --color-watch: #d97706;
+    --color-critical: #e11d48;
+    --color-slate-100: #0f172a;
+    --color-slate-200: #1e293b;
+    --color-slate-300: #334155;
+    --color-slate-400: #64748b;
+    --color-slate-500: #94a3b8;
+    --glow-1: rgb(16 185 129 / 0.14);
+    --glow-2: rgb(15 23 42 / 0.06);
+    --card-inset: rgb(255 255 255 / 0.6);
+    --card-shadow: rgb(15 23 42 / 0.18);
+    color-scheme: light;
+  }
+}
+
+html {
   scroll-behavior: smooth;
   text-size-adjust: 100%;
 }
@@ -37,8 +128,9 @@ html {
 body {
   @apply bg-ink-950 text-slate-300 font-sans antialiased;
   background-image:
-    radial-gradient(60rem 30rem at 50% -10rem, rgb(16 185 129 / 0.10), transparent 60%),
-    radial-gradient(40rem 24rem at 90% 20rem, rgb(56 67 88 / 0.25), transparent 60%);
+    radial-gradient(60rem 30rem at 50% -10rem, var(--glow-1), transparent 60%),
+    radial-gradient(40rem 24rem at 90% 20rem, var(--glow-2), transparent 60%);
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 :focus-visible {
@@ -53,7 +145,7 @@ body {
 
 .card {
   @apply rounded-2xl border border-ink-700/60 bg-ink-900/70 backdrop-blur;
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 20px 40px -30px rgb(0 0 0 / 0.8);
+  box-shadow: 0 1px 0 var(--card-inset) inset, 0 20px 40px -30px var(--card-shadow);
 }
 
 .eyebrow {

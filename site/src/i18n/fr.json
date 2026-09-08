@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — vos limites d'IA sur un cadran, avant qu'elles ne vous arrêtent",
   "meta.description": "Pensé pour les vibecoders : un dock au bord de votre écran avec un cadran par assistant de code (Claude Code, Codex, Cursor, Copilot et plus). Il vous prévient avant la remise à zéro d'une fenêtre, quand une limite est atteinte et quand un agent attend votre oui. Libre et open source, macOS et Windows.",
-
   "nav.why": "Pourquoi Tokendial",
   "nav.how": "Fonctionnement",
   "nav.providers": "Fournisseurs",
@@ -11,7 +10,6 @@
   "nav.download": "Télécharger",
   "nav.language": "Langue",
   "nav.skip": "Aller au contenu",
-
   "hero.eyebrow": "Pensé pour les vibecoders · macOS · Windows · gratuit",
   "hero.title": "Qu'une limite d'usage ne casse pas le vibe.",
   "hero.lead": "Vous construisez avec Claude Code, Codex, Cursor, Copilot… et la seule façon de savoir que vous arrivez au bout, c'est quand ils s'arrêtent. Tokendial pose un cadran au bord de votre écran pour chacun, vous prévient avant la remise à zéro d'une fenêtre et vous appelle quand un agent attend votre oui.",
@@ -19,7 +17,6 @@
   "hero.macos": "Télécharger pour macOS",
   "hero.source": "Code sur GitHub",
   "hero.note": "Gratuit · Sans compte · Aucun terminal pour le mettre en route",
-
   "demo.caption": "Le dock au survol : une cellule par assistant, la limite qui compte, les autres en barres fines, et qui vous attend.",
   "demo.session": "Claude Code attend votre réponse · 2 min",
   "demo.banner.title": "Claude Code attend votre réponse",
@@ -28,7 +25,6 @@
   "demo.window.5h": "Limite 5 h",
   "demo.window.premium": "Requêtes premium",
   "demo.window.included": "Usage inclus",
-
   "why.eyebrow": "Pourquoi Tokendial",
   "why.title": "Fait pour la façon dont vous codez aujourd'hui",
   "why.lead": "Plusieurs assistants, plusieurs abonnements, plusieurs limites qui se remettent à zéro chacune à son heure. Personne ne devrait garder ça en tête en livrant.",
@@ -38,7 +34,6 @@
   "why.2.body": "Chaque cadran montre la fenêtre qui compte et son heure de remise à zéro. À 80 %, vous passez la tâche à un autre outil, ou vous faites la pause jusqu'à son retour.",
   "why.3.title": "Ne ratez plus l'agent qui demande un oui",
   "why.3.body": "Quand Claude Code s'arrête pour une autorisation et que vous êtes dans une autre fenêtre, sa marque bat dans le dock et une bannière vous dit qui attend et pour quoi.",
-
   "how.eyebrow": "Fonctionnement",
   "how.title": "Zéro configuration. Il lit ce que vos outils savent déjà",
   "how.1.title": "Il trouve vos outils",
@@ -47,7 +42,6 @@
   "how.2.body": "Les mêmes chiffres de consommation que la barre d'état de chaque outil affiche, demandés à l'éditeur une fois par minute quand vous travaillez et toutes les cinq minutes au repos.",
   "how.3.title": "Il montre un cadran, pas un tableur",
   "how.3.body": "Vert, ambre, rouge. Survolez pour voir chaque fenêtre, son heure de remise à zéro et les sessions en cours. Le reste du temps, ignorez-le.",
-
   "providers.eyebrow": "Fournisseurs",
   "providers.title": "Huit assistants, un cadran chacun",
   "providers.lead": "Chaque fournisseur s'active sur votre décision et se coupe à tout moment. Quand l'éditeur ne publie pas de plafond, le cadran affiche le simple décompte et le dit.",
@@ -67,7 +61,6 @@
   "providers.grok.detail": "Consommation de Grok Build",
   "providers.opencode": "OpenCode",
   "providers.opencode.detail": "Limite mensuelle OpenCode Go",
-
   "alerts.eyebrow": "Alertes",
   "alerts.title": "Des alertes quand elles aident, le silence quand vous regardez déjà",
   "alerts.lead": "Notifications natives, ou les bannières de Tokendial dans la couleur d'accent du système quand Ne pas déranger avale les autres. Silencieuses quand le dock est ouvert sous votre curseur. Au plus une par fournisseur et par minute.",
@@ -79,7 +72,6 @@
   "alerts.3.body": "Un agent attend votre réponse depuis 20 secondes. Sa marque bat dans le dock jusqu'à votre retour.",
   "alerts.4.title": "Limite atteinte",
   "alerts.4.body": "Une fenêtre a atteint 100 % ou l'éditeur vous a bloqué, avec l'heure de levée.",
-
   "dock.eyebrow": "Le dock",
   "dock.title": "N'importe quel bord, n'importe quel style",
   "dock.1.title": "Quatre positions",
@@ -88,7 +80,6 @@
   "dock.2.body": "Suit Windows ou macOS, ou choisissez. Cadrans, cartes et bannières sont dessinés à partir des mêmes jetons.",
   "dock.3.title": "Six langues",
   "dock.3.body": "Anglais, anglais britannique, espagnol, français, allemand et arabe, écriture de droite à gauche comprise, sans redémarrer.",
-
   "install.eyebrow": "Assistant d'installation",
   "install.title": "Vous n'avez pas encore l'outil ? Un clic.",
   "install.lead": "Envie d'essayer Codex ou Grok sans avoir jamais ouvert un terminal ? Un fournisseur dont l'outil manque propose Installer → Se connecter → Prêt. Tokendial affiche la commande officielle de l'éditeur, vous appuyez sur Exécuter, il vous guide dans la connexion, et le cadran est là quand vous avez fini.",
@@ -98,7 +89,6 @@
   "install.step.install": "Installer",
   "install.step.signin": "Se connecter",
   "install.step.ready": "Prêt",
-
   "security.eyebrow": "Sécurité",
   "security.title": "Vos clés ne quittent jamais votre machine",
   "security.1": "Pas de compte, pas de télémétrie, pas de vérification de mise à jour, pas de rapport de plantage.",
@@ -106,16 +96,17 @@
   "security.3": "Chaque hôte est une constante dans le code et dans les fiches publiques ; les redirections sont refusées.",
   "security.4": "Les journaux contiennent des codes d'état et les messages de Tokendial, jamais d'en-têtes, de corps ni d'URL.",
   "security.link": "Lire les notes de sécurité",
-
   "cta.title": "Que le vibe continue.",
   "cta.lead": "Libre et open source, Windows et macOS, construits à partir d'une même spécification.",
-
   "footer.made": "Réalisé par Raybel Hernández · Licence MIT",
   "footer.disclaimer": "Tokendial est un projet indépendant. Il n'est ni affilié, ni approuvé, ni sponsorisé par Anthropic, OpenAI, GitHub, Cursor, Google, Z.ai, xAI ou le projet OpenCode. Les noms et marques appartiennent à leurs propriétaires.",
   "footer.source": "Code source",
   "footer.security": "Notes de sécurité",
   "footer.issues": "Tickets",
-
   "platform.windows": "Windows 10 1809 ou ultérieur",
-  "platform.macos": "macOS 14 ou ultérieur"
+  "platform.macos": "macOS 14 ou ultérieur",
+  "nav.theme": "Thème",
+  "theme.system": "Système",
+  "theme.light": "Clair",
+  "theme.dark": "Sombre"
 }

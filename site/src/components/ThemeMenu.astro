@@ -1,0 +1,61 @@
+---
+import { useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const options = [
+  ['system', t('theme.system'), 'M4 6h16v10H4zM8 20h8'],
+  ['light', t('theme.light'), 'M12 4v2m0 12v2M4 12h2m12 0h2M6.3 6.3l1.4 1.4m8.6 8.6 1.4 1.4M6.3 17.7l1.4-1.4m8.6-8.6 1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'],
+  ['dark', t('theme.dark'), 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z']
+] as const;
+---
+
+<details class="group relative" data-theme-menu>
+  <summary class="btn-secondary !min-h-10 list-none !px-3 text-slate-300" aria-label={t('nav.theme')}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 0v18M12 3a9 9 0 0 1 0 18" /></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-open:rotate-180" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+  </summary>
+  <ul class="card absolute end-0 top-12 z-50 min-w-40 overflow-hidden p-1.5" role="list">
+    {options.map(([value, label, icon]) => (
+      <li>
+        <button type="button" data-theme-choice={value} class="flex min-h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-3 text-start text-sm text-slate-300 transition-colors hover:bg-ink-800 aria-[current=true]:text-brand-400">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icon} /></svg>
+          <span class="flex-1">{label}</span>
+          <span class="size-1.5 rounded-full bg-brand-400 opacity-0 aria-[current=true]:opacity-100" aria-hidden="true"></span>
+        </button>
+      </li>
+    ))}
+  </ul>
+</details>
+
+<script>
+  const menu = document.querySelector<HTMLDetailsElement>('[data-theme-menu]');
+  const choices = document.querySelectorAll<HTMLButtonElement>('[data-theme-choice]');
+  const current = () => document.documentElement.dataset.theme ?? 'system';
+  const paint = () => {
+    for (const choice of choices) {
+      const on = choice.dataset.themeChoice === current();
+      choice.setAttribute('aria-current', on ? 'true' : 'false');
+      choice.querySelector('span:last-child')?.classList.toggle('opacity-0', !on);
+      choice.classList.toggle('text-brand-400', on);
+    }
+  };
+  for (const choice of choices) {
+    choice.addEventListener('click', () => {
+      const value = choice.dataset.themeChoice ?? 'system';
+      try {
+        if (value === 'system') { delete document.documentElement.dataset.theme; localStorage.removeItem('theme'); }
+        else { document.documentElement.dataset.theme = value; localStorage.setItem('theme', value); }
+      } catch {}
+      paint();
+      if (menu) menu.open = false;
+    });
+  }
+  document.addEventListener('click', (event) => {
+    if (menu?.open && !menu.contains(event.target as Node)) menu.open = false;
+  });
+  paint();
+</script>

@@ -19,12 +19,19 @@ const ogImage = new URL('/og.png', site).href;
 <html lang={lang(locale)} dir={dir(locale)}>
   <head>
     <meta charset="utf-8" />
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      try {
+        const fromUrl = new URLSearchParams(location.search).get('theme');
+        const stored = fromUrl || localStorage.getItem('theme');
+        if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored;
+      } catch {}
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{t('meta.title')}</title>
     <meta name="description" content={t('meta.description')} />
     <meta name="theme-color" content="#0b0e14" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <link rel="canonical" href={canonical} />
     {locales.map((code) => <link rel="alternate" hreflang={code} href={new URL(pathFor(code), site).href} />)}
     <link rel="alternate" hreflang="x-default" href={new URL('/', site).href} />
