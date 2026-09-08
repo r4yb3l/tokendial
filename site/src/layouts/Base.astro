@@ -63,8 +63,10 @@ const ogImage = new URL('/og.png', site).href;
     <Footer locale={locale} />
     <script>
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let fired = false;
       const reveal = new IntersectionObserver(
         (entries) => {
+          fired = true;
           for (const entry of entries) {
             if (!entry.isIntersecting) continue;
             entry.target.classList.add('is-visible');
@@ -76,12 +78,23 @@ const ogImage = new URL('/og.png', site).href;
         },
         { rootMargin: '0px 0px -10% 0px', threshold: 0.15 }
       );
+      const showNow = (el: Element) => {
+        el.classList.add('is-visible');
+        for (const arc of el.querySelectorAll<SVGElement>('[data-offset]')) arc.style.strokeDashoffset = arc.dataset.offset ?? '0';
+      };
+      const staticReveal = reduce || document.visibilityState !== 'visible';
       for (const el of document.querySelectorAll('.reveal')) {
-        if (reduce) {
-          el.classList.add('is-visible');
-          for (const arc of el.querySelectorAll<SVGElement>('[data-offset]')) arc.style.strokeDashoffset = arc.dataset.offset ?? '0';
-        } else reveal.observe(el);
+        if (staticReveal) showNow(el);
+        else reveal.observe(el);
       }
+      setTimeout(() => {
+        if (fired) return;
+        for (const el of document.querySelectorAll('.reveal:not(.is-visible)')) showNow(el);
+      }, 1200);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') return;
+        for (const el of document.querySelectorAll('.reveal:not(.is-visible)')) showNow(el);
+      });
     </script>
   </body>
 </html>
