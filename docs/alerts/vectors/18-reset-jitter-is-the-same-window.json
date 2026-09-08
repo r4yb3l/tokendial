@@ -1,0 +1,14 @@
+{
+  "name": "18-reset-jitter-is-the-same-window",
+  "config": {},
+  "steps": [
+    { "t": 0, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 60, "resetsAt": 18000 } },
+    { "t": 60, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 61, "resetsAt": 18000.4 } },
+    { "t": 120, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 62, "resetsAt": 18030 } },
+    { "t": 180, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 62, "resetsAt": 18180 } }
+  ],
+  "expected": [
+    { "t": 0, "kind": "threshold", "provider": "claude", "window": "session", "pct": 50 },
+    { "t": 180, "kind": "threshold", "provider": "claude", "window": "session", "pct": 50 }
+  ]
+}

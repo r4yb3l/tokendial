@@ -48,7 +48,7 @@ public sealed class BannerSink : IAlertSink
         dispatcher.BeginInvoke(() =>
         {
             host ??= new BannerHost();
-            host.Add(new Banner(title, body, fraction, alert.Kind, () => Opened?.Invoke(alert)));
+            host.Add(new Banner(title, body, fraction, alert.Kind, alert.Provider, () => Opened?.Invoke(alert)));
         });
     }
 
@@ -175,7 +175,7 @@ public sealed class Banner : Border
     private readonly TranslateTransform slide = new();
     private bool leaving;
 
-    public Banner(string title, string body, double? fraction, AlertKind kind, Action open)
+    public Banner(string title, string body, double? fraction, AlertKind kind, string providerId, Action open)
     {
         var dark = SystemLook.DarkApps();
         var accent = SystemLook.Accent();
@@ -204,10 +204,14 @@ public sealed class Banner : Border
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var dial = new Dial(30, 3.5) { Fill = text, Track = faint, Hollow = fraction is null, Margin = new Thickness(0, 1, 12, 0), VerticalAlignment = VerticalAlignment.Top };
+        var dial = new Dial(34, 3.5) { Fill = text, Track = faint, Hollow = fraction is null };
         if (fraction is double f) dial.Fraction = Math.Clamp(f, 0, 1);
         if (kind == AlertKind.Waiting) { dial.Hollow = false; dial.Fraction = 1; }
-        grid.Children.Add(dial);
+        var mark = new MarkView(providerId, 16) { Fill = text, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var badge = new Grid { Width = 34, Height = 34, Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
+        badge.Children.Add(dial);
+        badge.Children.Add(mark);
+        grid.Children.Add(badge);
 
         var lines = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var titleBlock = Text.Make(title, 14, text, FontWeights.SemiBold, display: true);

@@ -67,7 +67,7 @@ public sealed class AlertEngine
     {
         var key = $"{usage.Provider}|{usage.Window}";
         var epoch = state.Epochs.FirstOrDefault(x => x.Key == key);
-        var fresh = epoch is null || epoch.Closed || epoch.ResetsAt != usage.ResetsAt || epoch.LastPct - usage.UsedPct > 10;
+        var fresh = epoch is null || epoch.Closed || !SameReset(epoch.ResetsAt, usage.ResetsAt) || epoch.LastPct - usage.UsedPct > 10;
         if (fresh)
         {
             state.Epochs.RemoveAll(x => x.Key == key);
@@ -170,6 +170,12 @@ public sealed class AlertEngine
 
         return emitted.OrderBy(a => a.Kind).ThenBy(a => a.Provider, StringComparer.Ordinal).ToList();
     }
+
+    /// <summary>Vendors compute resets_at on the fly, so consecutive polls differ by milliseconds; a real rollover moves it by hours.</summary>
+    public static readonly TimeSpan ResetTolerance = TimeSpan.FromSeconds(60);
+
+    private static bool SameReset(DateTimeOffset? a, DateTimeOffset? b) =>
+        a is null || b is null ? a == b : (a.Value - b.Value).Duration() <= ResetTolerance;
 
     private bool InCooldown(string provider, DateTimeOffset now) =>
         state.CooldownUntil.TryGetValue(provider, out var until) && until > now;

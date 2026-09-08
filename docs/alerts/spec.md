@@ -32,8 +32,10 @@ sequence for each.
 ## Epochs
 
 Every `(provider, window)` lives in an epoch keyed by `resetsAt`. A new epoch
-begins when `resetsAt` changes or when `usedPct` drops by more than 10 points
-from the last sample. A new epoch clears every fired flag: thresholds re-arm,
+begins when `resetsAt` moves by more than 60 s or when `usedPct` drops by more
+than 10 points from the last sample. Smaller moves are jitter: vendors compute
+`resets_at` on the fly, so consecutive polls differ by milliseconds while a real
+rollover moves it by hours. The epoch keeps the latest value. A new epoch clears every fired flag: thresholds re-arm,
 `limit` re-arms, `resetSoon` and `resetDone` re-arm.
 
 ## Alerts

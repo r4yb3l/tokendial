@@ -48,7 +48,7 @@ public final class AlertEngine {
         let key = "\(provider)|\(window)"
         var index = state.epochs.firstIndex { $0.key == key }
         let existing = index.map { state.epochs[$0] }
-        let fresh = existing == nil || existing!.closed || existing!.resetsAt != resetsAt || existing!.lastPct - usedPct > 10
+        let fresh = existing == nil || existing!.closed || !Self.sameReset(existing!.resetsAt, resetsAt) || existing!.lastPct - usedPct > 10
         if fresh {
             state.epochs.removeAll { $0.key == key }
             state.epochs.append(Epoch(key: key, provider: provider, window: window, resetsAt: resetsAt))
@@ -137,6 +137,14 @@ public final class AlertEngine {
             if a.kind.order != b.kind.order { return a.kind.order < b.kind.order }
             return a.provider.utf8.lexicographicallyPrecedes(b.provider.utf8)
         }
+    }
+
+    /// Vendors compute resets_at on the fly, so consecutive polls differ by milliseconds; a real rollover moves it by hours.
+    public static let resetTolerance: TimeInterval = 60
+
+    private static func sameReset(_ a: Date?, _ b: Date?) -> Bool {
+        guard let a, let b else { return a == b }
+        return abs(a.timeIntervalSince(b)) <= resetTolerance
     }
 
     private func inCooldown(_ provider: String, now: Date) -> Bool {
