@@ -67,10 +67,7 @@ public sealed class ToastSink : IAlertSink
                 return ($"{name} is available again", $"{windowLabel} has reset");
             case AlertKind.Waiting:
                 var session = activity?.Sessions.FirstOrDefault(s => s.Id == alert.SessionId);
-                var who = session is null ? name : $"{session.Name}";
-                var where = session is null ? null : session.Where;
-                var why = session?.WaitingFor;
-                return ($"{who} is waiting for you", Join(name, where, why));
+                return ($"{name} is waiting for you", Join(session?.Where, session?.WaitingFor));
             default:
                 return (name, windowLabel);
         }

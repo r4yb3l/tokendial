@@ -16,7 +16,7 @@ enum AlertCopy {
         case .resetDone: return ("\(name) is available again", "\(windowLabel) has reset")
         case .waiting:
             let session = activity?.sessions.first { $0.id == alert.sessionId }
-            return ("\(session?.name ?? name) is waiting for you", join(name, session?.location, session?.waitingFor))
+            return ("\(name) is waiting for you", join(session?.location, session?.waitingFor))
         }
     }
 
