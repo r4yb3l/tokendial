@@ -1,0 +1,57 @@
+name: Tokendial
+options:
+  bundleIdPrefix: app.tokendial
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  xcodeVersion: "16.0"
+packages:
+  TokendialCore:
+    path: TokendialCore
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "Tokendial Dev"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: NO
+    ENABLE_APP_SANDBOX: NO
+    SWIFT_STRICT_CONCURRENCY: minimal
+targets:
+  Tokendial:
+    type: application
+    platform: macOS
+    sources:
+      - path: Tokendial
+    dependencies:
+      - package: TokendialCore
+        product: TokendialCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.tokendial.Tokendial
+        PRODUCT_NAME: Tokendial
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Tokendial/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_OBJC_BRIDGING_HEADER: ""
+        COMBINE_HIDPI_IMAGES: YES
+    info:
+      path: Tokendial/Info.plist
+      properties:
+        CFBundleName: Tokendial
+        CFBundleDisplayName: Tokendial
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        LSUIElement: true
+        LSMinimumSystemVersion: "14.0"
+        NSHumanReadableCopyright: "© Raybel Hernández. MIT License."
+        NSPrincipalClass: NSApplication
+        NSSupportsAutomaticTermination: false
+        NSSupportsSuddenTermination: false
+        NSUserNotificationsUsageDescription: Tokendial tells you when a usage threshold is crossed, a window is about to reset, an agent is waiting on you, or a limit is reached.
+        CFBundleURLTypes:
+          - CFBundleURLName: app.tokendial.Tokendial
+            CFBundleURLSchemes: [tokendial]
