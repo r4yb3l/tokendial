@@ -1,0 +1,45 @@
+{
+  "id": "codex",
+  "displayName": "Codex",
+  "fidelity": "official",
+  "credential": {
+    "macos": {
+      "kind": "file",
+      "path": "~/.codex/auth.json",
+      "fields": { "accessToken": "$.tokens.access_token", "accountId": "$.tokens.account_id", "idToken": "$.tokens.id_token" },
+      "expiry": "exp claim of the access token JWT, epochSeconds; a local hint only",
+      "notes": "The id_token's claims carry email and https://api.openai.com/auth.chatgpt_plan_type for the account row."
+    },
+    "windows": {
+      "kind": "file",
+      "path": "~/.codex/auth.json",
+      "fields": { "accessToken": "$.tokens.access_token", "accountId": "$.tokens.account_id", "idToken": "$.tokens.id_token" },
+      "expiry": "exp claim of the access token JWT, epochSeconds"
+    }
+  },
+  "endpoints": [
+    {
+      "name": "usage",
+      "method": "GET",
+      "url": "https://chatgpt.com/backend-api/wham/usage",
+      "headers": { "Authorization": "Bearer {accessToken}", "ChatGPT-Account-Id": "{accountId}", "Accept": "application/json", "Cache-Control": "no-cache, no-store" },
+      "timeoutSeconds": 15
+    }
+  ],
+  "response": {
+    "windows": [
+      { "id": "primary", "label": "{limit_window_seconds → 5h limit | Weekly limit | Monthly limit | Nd limit | Nm limit}", "usedPath": "$.rate_limit.primary_window.used_percent", "unit": "percent", "resetAtPath": "$.rate_limit.primary_window.reset_at", "resetUnit": "epochSeconds", "notes": "Fallback reset: reset_after_seconds from now. A present window without used_percent is a bad response. The label derives from limit_window_seconds, never assumed: a free plan's only window is a 30-day one." },
+      { "id": "secondary", "label": "{limit_window_seconds}", "usedPath": "$.rate_limit.secondary_window.used_percent", "unit": "percent", "resetAtPath": "$.rate_limit.secondary_window.reset_at", "resetUnit": "epochSeconds" }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "needsAuth", "429": "rateLimited" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "flat60" },
+  "sessions": {
+    "kind": "mtime",
+    "macos": "~/.codex/state_5.sqlite (threads.rollout_path, archived=0, order by updated_at_ms) and ~/.codex/sqlite/codex-dev.db (local_thread_catalog.source_updated_at in fractional seconds, display_title)",
+    "windows": "same paths under the user profile",
+    "staleSeconds": 8,
+    "notes": "No status field exists; a rollout file or catalogue row written within 8 seconds means a turn is running. One session at most, the newest of the two sources. Never 'waiting'."
+  },
+  "status": { "enabled": true, "termsRisk": "medium", "notice": "Uses the ChatGPT session the Codex CLI holds." }
+}

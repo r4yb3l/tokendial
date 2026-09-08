@@ -1,0 +1,57 @@
+{
+  "response": {
+    "code": 200,
+    "success": true,
+    "msg": "",
+    "data": {
+      "level": "pro",
+      "limits": [
+        {
+          "type": "TOKENS_LIMIT",
+          "unit": 3,
+          "number": 5,
+          "percentage": 12.5,
+          "currentValue": 1250000,
+          "usage": 12000000,
+          "nextResetTime": 1788682200000
+        },
+        {
+          "type": "TOKENS_LIMIT",
+          "unit": 6,
+          "number": 1,
+          "percentage": 8.1,
+          "nextResetTime": 1789190400000
+        },
+        {
+          "type": "TIME_LIMIT",
+          "percentage": 4.0,
+          "currentValue": 40,
+          "usage": 1000
+        }
+      ]
+    }
+  },
+  "expected": {
+    "headline": "session",
+    "plan": "pro",
+    "windows": [
+      {
+        "id": "session",
+        "label": "Current session",
+        "usedFraction": 0.125,
+        "resetsAt": "2026-09-05T13:30:00Z"
+      },
+      {
+        "id": "weekly",
+        "label": "Weekly",
+        "usedFraction": 0.081,
+        "resetsAt": "2026-09-11T10:40:00Z"
+      },
+      {
+        "id": "mcp",
+        "label": "MCP (1 month)",
+        "usedFraction": 0.04
+      }
+    ]
+  }
+}

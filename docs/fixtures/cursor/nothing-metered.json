@@ -1,0 +1,11 @@
+{
+  "response": {
+    "membershipType": "free",
+    "individualUsage": {
+      "plan": {}
+    }
+  },
+  "expected": {
+    "error": "nothingMetered"
+  }
+}

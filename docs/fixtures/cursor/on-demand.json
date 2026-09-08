@@ -1,0 +1,29 @@
+{
+  "response": {
+    "individualUsage": {
+      "plan": {
+        "totalPercentUsed": 4
+      },
+      "onDemand": {
+        "enabled": true,
+        "used": 3,
+        "limit": 50
+      }
+    }
+  },
+  "expected": {
+    "headline": "included",
+    "windows": [
+      {
+        "id": "included",
+        "label": "Included usage",
+        "usedFraction": 0.04
+      },
+      {
+        "id": "on_demand",
+        "label": "On demand",
+        "usedFraction": 0.06
+      }
+    ]
+  }
+}

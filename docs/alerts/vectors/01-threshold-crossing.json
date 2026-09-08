@@ -1,0 +1,69 @@
+{
+  "name": "01-threshold-crossing",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 40,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 60,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 55,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 120,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 82,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 180,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 96,
+        "resetsAt": 18000
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 60,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    },
+    {
+      "t": 120,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 80
+    },
+    {
+      "t": 180,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 95
+    }
+  ]
+}

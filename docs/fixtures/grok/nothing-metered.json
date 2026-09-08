@@ -1,0 +1,8 @@
+{
+  "response": {
+    "config": {}
+  },
+  "expected": {
+    "error": "nothingMetered"
+  }
+}

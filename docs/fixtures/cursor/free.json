@@ -1,0 +1,51 @@
+{
+  "response": {
+    "billingCycleStart": "2026-08-24T03:32:15.933Z",
+    "billingCycleEnd": "2026-09-24T03:32:15.933Z",
+    "membershipType": "free",
+    "limitType": "user",
+    "isUnlimited": false,
+    "autoModelSelectedDisplayMessage": "You've used 10% of your included total usage",
+    "namedModelSelectedDisplayMessage": "You've used 19% of your included API usage",
+    "individualUsage": {
+      "plan": {
+        "enabled": true,
+        "used": 0,
+        "limit": 0,
+        "remaining": 0,
+        "breakdown": {
+          "included": 0,
+          "bonus": 19,
+          "total": 19
+        },
+        "autoPercentUsed": 0,
+        "apiPercentUsed": 19,
+        "totalPercentUsed": 9.5
+      },
+      "onDemand": {
+        "enabled": false,
+        "used": 0,
+        "limit": null,
+        "remaining": null
+      }
+    },
+    "teamUsage": {}
+  },
+  "expected": {
+    "headline": "included",
+    "windows": [
+      {
+        "id": "included",
+        "label": "Included usage",
+        "usedFraction": 0.095,
+        "resetsAt": "2026-09-24T03:32:15.933Z"
+      },
+      {
+        "id": "api",
+        "label": "API usage",
+        "usedFraction": 0.19,
+        "resetsAt": "2026-09-24T03:32:15.933Z"
+      }
+    ]
+  }
+}

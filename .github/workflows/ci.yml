@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  spec:
+    name: Validate specs and fixtures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate provider specs against the schema
+        run: |
+          npx --yes ajv-cli@5 validate --spec=draft2020 -s docs/providers/schema.json -d "docs/providers/!(schema).json"
+      - name: Every fixture and vector parses
+        run: |
+          for f in $(find docs/fixtures docs/alerts/vectors -name '*.json'); do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || exit 1; done
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Test
+        if: hashFiles('windows/Tokendial.sln') != ''
+        run: dotnet test windows/Tokendial.sln --configuration Release
+      - name: Publish
+        if: hashFiles('windows/Tokendial.sln') != ''
+        run: dotnet publish windows/Tokendial.App --configuration Release -o windows/dist
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('windows/Tokendial.sln') != ''
+        with:
+          name: tokendial-windows
+          path: windows/dist/*.exe
+
+  macos:
+    name: macOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core tests
+        if: hashFiles('macos/TokendialCore/Package.swift') != ''
+        run: swift test --package-path macos/TokendialCore
+      - name: App build and tests
+        if: hashFiles('macos/project.yml') != ''
+        run: |
+          brew install xcodegen
+          cd macos && xcodegen generate
+          xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -destination 'platform=macOS' \
+            -configuration Debug -derivedDataPath build \
+            CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= CODE_SIGN_ENTITLEMENTS= \
+            build test
+      - name: Smoke screenshot
+        if: hashFiles('macos/project.yml') != ''
+        run: |
+          APP=$(find macos/build -name 'Tokendial.app' -path '*Debug*' | head -1)
+          open "$APP" && sleep 8 && screencapture -x macos/build/smoke.png
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('macos/project.yml') != ''
+        with:
+          name: tokendial-macos-smoke
+          path: |
+            macos/build/smoke.png
+            macos/build/Build/Products/Debug/Tokendial.app

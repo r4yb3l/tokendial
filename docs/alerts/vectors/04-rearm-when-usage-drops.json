@@ -1,0 +1,52 @@
+{
+  "name": "04-rearm-when-usage-drops",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 60,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 30,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 120,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 18000
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    },
+    {
+      "t": 120,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "02-skip-over-emits-highest-only",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 40,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 60,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 96,
+        "resetsAt": 18000
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 60,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 95
+    }
+  ]
+}

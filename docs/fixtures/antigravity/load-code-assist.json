@@ -1,0 +1,27 @@
+{
+  "note": "The gate's body; it carries no usage.",
+  "response": {
+    "allowedTiers": [
+      {
+        "id": "standard-tier",
+        "name": "Gemini Code Assist",
+        "description": "Unlimited coding assistant with the most powerful Gemini models",
+        "userDefinedCloudaicompanionProject": true,
+        "privacyNotice": {},
+        "isDefault": true,
+        "usesGcpTos": true
+      }
+    ],
+    "ineligibleTiers": [
+      {
+        "reasonCode": "UNSUPPORTED_CLIENT",
+        "reasonMessage": "This client is no longer supported.",
+        "tierId": "free-tier",
+        "tierName": "Gemini Code Assist for individuals"
+      }
+    ]
+  },
+  "expected": {
+    "gate": "ok"
+  }
+}

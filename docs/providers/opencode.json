@@ -1,0 +1,41 @@
+{
+  "id": "opencode",
+  "displayName": "OpenCode",
+  "fidelity": "official",
+  "headline": "rolling",
+  "credential": {
+    "macos": {
+      "kind": "file",
+      "path": "~/.local/share/opencode/auth.json",
+      "fields": { "token": "$['opencode-go'] as string, or its key | apiKey | api_key | token | accessToken" },
+      "notes": "Only the opencode-go entry. Every other entry (openai, google…) is that vendor's key and is never claimed."
+    },
+    "windows": {
+      "kind": "file",
+      "path": "~/.local/share/opencode/auth.json",
+      "fields": { "token": "same" },
+      "notes": "Unverified on Windows; OpenCode may also use %APPDATA%/opencode/auth.json."
+    }
+  },
+  "endpoints": [
+    {
+      "name": "usage",
+      "method": "GET",
+      "url": "https://opencode.ai/zen/go/v1/usage",
+      "headers": { "Authorization": "Bearer {token}", "Accept": "application/json" },
+      "timeoutSeconds": 15,
+      "notes": "401 → needsAuth (a missing Go plan and a bad key look the same upstream). 403 → nothingMetered: a valid key without a Go subscription. Zen pay-as-you-go credit has no API at all."
+    }
+  ],
+  "response": {
+    "windows": [
+      { "id": "rolling", "label": "5h limit", "usedPath": "$.usage.rolling.percent", "unit": "percent", "resetAtPath": "$.usage.rolling.resetsAt", "resetUnit": "iso8601", "notes": "Fixed table driven by the client. A window without percent is dropped; no windows at all is a bad response, not zeros. Timestamps carry milliseconds." },
+      { "id": "weekly", "label": "Weekly limit", "usedPath": "$.usage.weekly.percent", "unit": "percent", "resetAtPath": "$.usage.weekly.resetsAt", "resetUnit": "iso8601" },
+      { "id": "monthly", "label": "Monthly limit", "usedPath": "$.usage.monthly.percent", "unit": "percent", "resetAtPath": "$.usage.monthly.resetsAt", "resetUnit": "iso8601" }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "nothingMetered", "429": "rateLimited" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
+  "sessions": { "kind": "none" },
+  "status": { "enabled": true, "termsRisk": "low", "notice": "Plan is always 'Go'." }
+}

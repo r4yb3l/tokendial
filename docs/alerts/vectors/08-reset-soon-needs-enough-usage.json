@@ -1,0 +1,23 @@
+{
+  "name": "08-reset-soon-needs-enough-usage",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 30,
+        "resetsAt": 3600
+      }
+    },
+    {
+      "t": 3100,
+      "event": {
+        "kind": "tick"
+      }
+    }
+  ],
+  "expected": []
+}

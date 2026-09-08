@@ -1,0 +1,29 @@
+{
+  "note": "Shape inferred from message names in the binary; never validated against a licensed response.",
+  "response": {
+    "quotaGroups": [
+      {
+        "displayName": "Gemini",
+        "buckets": [
+          {
+            "name": "daily",
+            "displayName": "Daily",
+            "used": 250,
+            "limit": 1000,
+            "resetTime": "2026-09-01T00:00:00Z"
+          }
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "windows": [
+      {
+        "id": "daily",
+        "label": "Daily",
+        "usedFraction": 0.25,
+        "resetsAt": "2026-09-01T00:00:00Z"
+      }
+    ]
+  }
+}

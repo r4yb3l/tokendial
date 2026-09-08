@@ -1,0 +1,98 @@
+{
+  "note": "Recorded live from a Team plan; the tail of null keys must not trip decoding.",
+  "response": {
+    "five_hour": {
+      "utilization": 63.0,
+      "resets_at": "2026-09-07T18:49:59.751183+00:00",
+      "limit_dollars": null,
+      "used_dollars": null,
+      "remaining_dollars": null,
+      "locked_reason": null
+    },
+    "seven_day": {
+      "utilization": 8.0,
+      "resets_at": "2026-09-13T09:59:59.751207+00:00",
+      "limit_dollars": null
+    },
+    "seven_day_oauth_apps": null,
+    "seven_day_opus": null,
+    "tangelo": null,
+    "nimbus_quill": {
+      "utilization": 0.0,
+      "resets_at": null
+    },
+    "extra_usage": {
+      "is_enabled": false,
+      "monthly_limit": null,
+      "currency": "EUR",
+      "spend_limit_reached": true
+    },
+    "limits": [
+      {
+        "kind": "session",
+        "group": "session",
+        "percent": 63,
+        "severity": "normal",
+        "resets_at": "2026-09-07T18:49:59.751183+00:00",
+        "scope": null,
+        "is_active": true
+      },
+      {
+        "kind": "weekly_all",
+        "group": "weekly",
+        "percent": 8,
+        "severity": "normal",
+        "resets_at": "2026-09-13T09:59:59.751207+00:00",
+        "scope": null,
+        "is_active": false
+      },
+      {
+        "kind": "weekly_scoped",
+        "group": "weekly",
+        "percent": 8,
+        "severity": "normal",
+        "resets_at": "2026-09-13T09:59:59.751468+00:00",
+        "scope": {
+          "model": {
+            "id": null,
+            "display_name": "Fable"
+          },
+          "surface": null
+        },
+        "is_active": false
+      }
+    ],
+    "spend": {
+      "used": {
+        "amount_minor": 0,
+        "currency": "EUR",
+        "exponent": 2
+      },
+      "limit": null,
+      "percent": 0
+    }
+  },
+  "expected": {
+    "headline": "session",
+    "windows": [
+      {
+        "id": "session",
+        "label": "Current session",
+        "usedFraction": 0.63,
+        "resetsAt": "2026-09-07T18:49:59.751183+00:00"
+      },
+      {
+        "id": "weekly_all",
+        "label": "All models",
+        "usedFraction": 0.08,
+        "resetsAt": "2026-09-13T09:59:59.751207+00:00"
+      },
+      {
+        "id": "weekly_scoped",
+        "label": "Fable",
+        "usedFraction": 0.08,
+        "resetsAt": "2026-09-13T09:59:59.751468+00:00"
+      }
+    ]
+  }
+}

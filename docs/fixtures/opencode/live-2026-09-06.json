@@ -1,0 +1,44 @@
+{
+  "response": {
+    "usage": {
+      "rolling": {
+        "status": "ok",
+        "percent": 0,
+        "resetsAt": "2026-09-06T12:31:06.611Z"
+      },
+      "weekly": {
+        "status": "ok",
+        "percent": 0,
+        "resetsAt": "2026-09-07T00:00:00.611Z"
+      },
+      "monthly": {
+        "status": "ok",
+        "percent": 0,
+        "resetsAt": "2026-10-03T13:09:45.611Z"
+      }
+    }
+  },
+  "expected": {
+    "headline": "rolling",
+    "windows": [
+      {
+        "id": "rolling",
+        "label": "5h limit",
+        "usedFraction": 0.0,
+        "resetsAt": "2026-09-06T12:31:06.611Z"
+      },
+      {
+        "id": "weekly",
+        "label": "Weekly limit",
+        "usedFraction": 0.0,
+        "resetsAt": "2026-09-07T00:00:00.611Z"
+      },
+      {
+        "id": "monthly",
+        "label": "Monthly limit",
+        "usedFraction": 0.0,
+        "resetsAt": "2026-10-03T13:09:45.611Z"
+      }
+    ]
+  }
+}

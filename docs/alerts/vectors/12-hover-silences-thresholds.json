@@ -1,0 +1,41 @@
+{
+  "name": "12-hover-silences-thresholds",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "hover",
+        "on": true
+      }
+    },
+    {
+      "t": 5,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 10,
+      "event": {
+        "kind": "hover",
+        "on": false
+      }
+    },
+    {
+      "t": 20,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 18000
+      }
+    }
+  ],
+  "expected": []
+}

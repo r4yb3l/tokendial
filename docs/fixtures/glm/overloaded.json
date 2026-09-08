@@ -1,0 +1,11 @@
+{
+  "response": {
+    "code": 1305,
+    "msg": "overloaded",
+    "success": false
+  },
+  "expected": {
+    "error": "badResponse",
+    "status": 1305
+  }
+}

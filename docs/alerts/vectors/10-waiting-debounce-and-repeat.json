@@ -1,0 +1,59 @@
+{
+  "name": "10-waiting-debounce-and-repeat",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "session",
+        "provider": "claude",
+        "sessionId": "claude.1",
+        "state": "waiting"
+      }
+    },
+    {
+      "t": 10,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 20,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 100,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 320,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 400,
+      "event": {
+        "kind": "tick"
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 20,
+      "kind": "waiting",
+      "provider": "claude",
+      "sessionId": "claude.1"
+    },
+    {
+      "t": 320,
+      "kind": "waiting",
+      "provider": "claude",
+      "sessionId": "claude.1"
+    }
+  ]
+}

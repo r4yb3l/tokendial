@@ -1,0 +1,38 @@
+{
+  "name": "13-hover-holds-limit",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "hover",
+        "on": true
+      }
+    },
+    {
+      "t": 5,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 100,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 10,
+      "event": {
+        "kind": "hover",
+        "on": false
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 10,
+      "kind": "limit",
+      "provider": "claude",
+      "window": "session"
+    }
+  ]
+}

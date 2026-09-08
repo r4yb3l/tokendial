@@ -1,0 +1,56 @@
+{
+  "response": {
+    "rate_limit": {
+      "primary_window": {
+        "used_percent": 25,
+        "limit_window_seconds": 18000,
+        "reset_at": 1800001000
+      },
+      "secondary_window": {
+        "used_percent": 10,
+        "limit_window_seconds": 604800,
+        "reset_at": 1800600000
+      }
+    },
+    "additional_rate_limits": [
+      {
+        "limit_name": "Spark",
+        "rate_limit": {
+          "primary_window": {
+            "used_percent": 99,
+            "limit_window_seconds": 18000
+          }
+        }
+      }
+    ],
+    "code_review_rate_limit": {
+      "primary_window": {
+        "used_percent": 90,
+        "limit_window_seconds": 604800
+      }
+    },
+    "credits": {
+      "balance": "100"
+    },
+    "model_usage": {
+      "spark": 99
+    }
+  },
+  "expected": {
+    "headline": "primary",
+    "windows": [
+      {
+        "id": "primary",
+        "label": "5h limit",
+        "usedFraction": 0.25,
+        "resetsAt": "2027-01-14T14:16:40Z"
+      },
+      {
+        "id": "secondary",
+        "label": "Weekly limit",
+        "usedFraction": 0.1,
+        "resetsAt": "2027-01-21T12:40:00Z"
+      }
+    ]
+  }
+}

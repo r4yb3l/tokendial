@@ -1,0 +1,23 @@
+{
+  "response": {
+    "usage": {
+      "rolling": {
+        "status": "ok"
+      },
+      "weekly": {
+        "status": "ok",
+        "percent": 3
+      }
+    }
+  },
+  "expected": {
+    "headline": "rolling",
+    "windows": [
+      {
+        "id": "weekly",
+        "label": "Weekly limit",
+        "usedFraction": 0.03
+      }
+    ]
+  }
+}

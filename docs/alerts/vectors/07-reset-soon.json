@@ -1,0 +1,49 @@
+{
+  "name": "07-reset-soon",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 85,
+        "resetsAt": 3600
+      }
+    },
+    {
+      "t": 2900,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 3000,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 3300,
+      "event": {
+        "kind": "tick"
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 80
+    },
+    {
+      "t": 3000,
+      "kind": "resetSoon",
+      "provider": "claude",
+      "window": "session"
+    }
+  ]
+}

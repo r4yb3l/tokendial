@@ -1,0 +1,52 @@
+{
+  "id": "claude",
+  "displayName": "Claude Code",
+  "fidelity": "official",
+  "headline": "session",
+  "credential": {
+    "macos": {
+      "kind": "keychain",
+      "service": "Claude Code-credentials",
+      "account": "*",
+      "fields": { "accessToken": "$.claudeAiOauth.accessToken", "subscriptionType": "$.claudeAiOauth.subscriptionType" },
+      "expiry": "$.claudeAiOauth.expiresAt as epochMillis",
+      "notes": "One item per token rotation under the same service; read the newest by modification date. A profile at ~/.claude-<slug> files its token under 'Claude Code-credentials-<first 8 hex of sha256(path)>'. Read the item's attributes to know whether it changed before reading its data, so the keychain prompt appears once per token."
+    },
+    "windows": {
+      "kind": "file",
+      "path": "~/.claude/.credentials.json",
+      "fields": { "accessToken": "$.claudeAiOauth.accessToken", "subscriptionType": "$.claudeAiOauth.subscriptionType" },
+      "expiry": "$.claudeAiOauth.expiresAt as epochMillis",
+      "notes": "Profiles: every ~/.claude-<slug> directory containing sessions/, projects/, settings.json, history.jsonl or .claude.json is an account of its own with its own .credentials.json."
+    }
+  },
+  "endpoints": [
+    {
+      "name": "usage",
+      "method": "GET",
+      "url": "https://api.anthropic.com/api/oauth/usage",
+      "headers": { "Authorization": "Bearer {accessToken}", "anthropic-beta": "oauth-2025-04-20" },
+      "timeoutSeconds": 15,
+      "notes": "The same endpoint Claude Code's /usage command uses. 401/403 once: drop the cached token, re-read it and retry a single time. 429 answers Retry-After: 0, which must be treated as a floor-raiser only."
+    }
+  ],
+  "response": {
+    "windows": [
+      { "id": "session", "label": "Current session", "usedPath": "$.limits[?(@.kind=='session')].percent", "unit": "percent", "resetAtPath": "$.limits[?(@.kind=='session')].resets_at", "resetUnit": "iso8601", "notes": "Also present as $.five_hour.utilization; merge it in when limits[] lacks the session, which happens the moment a window rolls over." },
+      { "id": "weekly_all", "label": "All models", "usedPath": "$.limits[?(@.kind=='weekly_all')].percent", "unit": "percent", "resetAtPath": "$.limits[?(@.kind=='weekly_all')].resets_at", "resetUnit": "iso8601", "notes": "Also $.seven_day.utilization." },
+      { "id": "weekly_opus", "label": "Opus", "usedPath": "$.limits[?(@.kind=='weekly_opus')].percent", "unit": "percent", "resetAtPath": "$.limits[?(@.kind=='weekly_opus')].resets_at", "resetUnit": "iso8601" },
+      { "id": "weekly_sonnet", "label": "Sonnet", "usedPath": "$.limits[?(@.kind=='weekly_sonnet')].percent", "unit": "percent", "resetAtPath": "$.limits[?(@.kind=='weekly_sonnet')].resets_at", "resetUnit": "iso8601" },
+      { "id": "weekly_scoped", "label": "{scope.model.display_name}", "usedPath": "$.limits[?(@.kind=='weekly_scoped')].percent", "unit": "percent", "resetAtPath": "$.limits[?(@.kind=='weekly_scoped')].resets_at", "resetUnit": "iso8601", "notes": "Seen live 2026-09-07 on a Team plan: a per-model weekly limit whose label is the model's display name." }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "needsAuth", "429": "rateLimited" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
+  "sessions": {
+    "kind": "registry",
+    "macos": "~/.claude/sessions/<pid>.json",
+    "windows": "~/.claude/sessions/<pid>.json",
+    "staleSeconds": 0,
+    "notes": "One file per running process: pid, cwd, name, entrypoint (cli | claude-vscode | claude-desktop | local-agent), status (busy | waiting | idle) or tempo (active | blocked), statusUpdatedAt/updatedAt in epoch millis, startedAt in epoch millis, procStart as a UTC ctime string, waitingFor/needs. Trust the file only while the pid is alive and its start time is within 5 minutes of startedAt."
+  },
+  "status": { "enabled": true, "termsRisk": "low", "notice": "Reads the token Claude Code stores; never refreshes or writes it." }
+}

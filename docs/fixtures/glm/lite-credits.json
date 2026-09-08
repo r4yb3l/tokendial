@@ -1,0 +1,47 @@
+{
+  "response": {
+    "code": 200,
+    "success": true,
+    "data": {
+      "level": "lite",
+      "limits": [
+        {
+          "type": "CREDIT_LIMIT",
+          "unit": 3,
+          "number": 5,
+          "percentage": 1,
+          "currentValue": 1,
+          "usage": 2000,
+          "nextResetTime": 1788654095358
+        },
+        {
+          "type": "CREDIT_LIMIT",
+          "unit": 6,
+          "number": 1,
+          "percentage": 17,
+          "currentValue": 1775,
+          "usage": 10000,
+          "nextResetTime": 1789073479999
+        }
+      ]
+    }
+  },
+  "expected": {
+    "headline": "session",
+    "plan": "lite",
+    "windows": [
+      {
+        "id": "session",
+        "label": "Current session",
+        "usedFraction": 0.01,
+        "resetsAt": "2026-09-05T05:41:35.358Z"
+      },
+      {
+        "id": "weekly",
+        "label": "Weekly",
+        "usedFraction": 0.17,
+        "resetsAt": "2026-09-10T02:11:19.999Z"
+      }
+    ]
+  }
+}

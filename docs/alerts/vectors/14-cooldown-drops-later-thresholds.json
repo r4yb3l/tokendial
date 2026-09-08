@@ -1,0 +1,45 @@
+{
+  "name": "14-cooldown-drops-later-thresholds",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 55,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 10,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "weekly_all",
+        "usedPct": 85,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 70,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "weekly_all",
+        "usedPct": 85,
+        "resetsAt": 18000
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "response": {
+    "billingCycleEnd": "2026-09-20T01:35:15.142Z",
+    "membershipType": "free",
+    "isUnlimited": false,
+    "individualUsage": {
+      "plan": {
+        "enabled": true,
+        "used": 0,
+        "limit": 0,
+        "remaining": 0,
+        "breakdown": {
+          "included": 0,
+          "bonus": 0,
+          "total": 0
+        },
+        "autoPercentUsed": 0,
+        "apiPercentUsed": 0,
+        "totalPercentUsed": 0
+      },
+      "onDemand": {
+        "enabled": false,
+        "used": 0,
+        "limit": null,
+        "remaining": null
+      }
+    }
+  },
+  "expected": {
+    "headline": "included",
+    "windows": [
+      {
+        "id": "included",
+        "label": "Included usage",
+        "usedFraction": 0.0,
+        "resetsAt": "2026-09-20T01:35:15.142Z"
+      }
+    ]
+  }
+}

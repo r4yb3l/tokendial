@@ -1,0 +1,42 @@
+{
+  "response": {
+    "config": {
+      "currentPeriod": {
+        "type": "USAGE_PERIOD_TYPE_WEEKLY",
+        "start": "2026-09-05T08:21:18.802818+00:00",
+        "end": "2026-09-12T08:21:18.802818+00:00"
+      },
+      "creditUsagePercent": 8.0,
+      "onDemandCap": {
+        "val": 0
+      },
+      "onDemandUsed": {
+        "val": 0
+      },
+      "productUsage": [
+        {
+          "product": "GrokBuild",
+          "usagePercent": 8.0
+        }
+      ],
+      "isUnifiedBillingUser": true,
+      "prepaidBalance": {
+        "val": 0
+      },
+      "topUpMethod": "TOP_UP_METHOD_SAVED_PAYMENT_METHOD",
+      "billingPeriodStart": "2026-09-05T08:21:18.802818+00:00",
+      "billingPeriodEnd": "2026-09-12T08:21:18.802818+00:00"
+    }
+  },
+  "expected": {
+    "headline": "credits",
+    "windows": [
+      {
+        "id": "credits",
+        "label": "Grok Build",
+        "usedFraction": 0.08,
+        "resetsAt": "2026-09-12T08:21:18.802818+00:00"
+      }
+    ]
+  }
+}

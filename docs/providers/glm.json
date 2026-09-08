@@ -1,0 +1,41 @@
+{
+  "id": "glm",
+  "displayName": "GLM",
+  "fidelity": "official",
+  "headline": "session",
+  "credential": {
+    "macos": {
+      "kind": "file",
+      "path": "~/.claude/settings.json | ~/.zcode/v2/config.json | ~/.zcode/v2/credentials.json | ~/.local/share/opencode/auth.json",
+      "notes": "Four sources in this fixed order, re-read on every fetch. 1) Claude Code: $.env.ANTHROPIC_AUTH_TOKEN or $.env.ANTHROPIC_API_KEY, accepted only when $.env.ANTHROPIC_BASE_URL's host is api.z.ai, *.z.ai, open.bigmodel.cn or *.bigmodel.cn; otherwise it is an Anthropic key. 2) ZCode plan key: $.provider[*] whose key contains 'coding-plan', not enabled:false, with options.apiKey; console from options.baseURL's host. 3) ZCode OAuth: $['oauth:zai:access_token'], skipped when it starts with 'enc:v1:'. 4) OpenCode: ids zai-coding-plan, zai, z-ai, z.ai, zhipu, zhipuai; string or object with apiKey|api_key|token|key|accessToken|auth_token; zhipu* → open.bigmodel.cn. Only the console host survives: https://api.z.ai or https://open.bigmodel.cn."
+    },
+    "windows": {
+      "kind": "file",
+      "path": "same four files under the user profile",
+      "notes": "Same rules."
+    }
+  },
+  "endpoints": [
+    {
+      "name": "quotaLimit",
+      "method": "GET",
+      "url": "{console}/api/monitor/usage/quota/limit",
+      "headers": { "Authorization": "{token}", "Accept": "application/json" },
+      "timeoutSeconds": 15,
+      "notes": "The token goes raw: prefixing Bearer is exactly what an auth failure looks like from here."
+    }
+  ],
+  "response": {
+    "envelopeErrors": "Under HTTP 200: success == true || code absent || code == 200 means success; otherwise code 401/403 → needsAuth, 429 → rateLimited, any other code → badResponse(code). Example recorded verbatim: {\"code\":401,\"msg\":\"token expired or incorrect\",\"success\":false}.",
+    "windows": [
+      { "id": "session", "label": "Current session", "usedPath": "$.data.limits[?(@.unit==3 && @.number==5)].percentage", "unit": "percent", "resetAtPath": "nextResetTime", "resetUnit": "epochMillis", "notes": "Identity comes from (unit, number), never from type: TOKENS_LIMIT and CREDIT_LIMIT encode the same windows. Percentages above 100 are kept. A limit without percentage is dropped; a window without reset is kept." },
+      { "id": "weekly", "label": "Weekly", "usedPath": "$.data.limits[?(@.unit==6 && @.number==1)].percentage", "unit": "percent", "resetAtPath": "nextResetTime", "resetUnit": "epochMillis" },
+      { "id": "mcp", "label": "MCP (1 month)", "usedPath": "$.data.limits[?(@.type=='TIME_LIMIT')].percentage", "unit": "percent", "notes": "Never carries a reset." },
+      { "id": "window-{unit}x{number}", "label": "Usage ({number} h | {number} wk)", "usedPath": "other (unit, number) pairs", "unit": "percent", "resetAtPath": "nextResetTime", "resetUnit": "epochMillis" }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "needsAuth", "429": "rateLimited" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
+  "sessions": { "kind": "none" },
+  "status": { "enabled": true, "termsRisk": "low", "notice": "Plan level comes back as $.data.level (pro, lite…) for the account row." }
+}

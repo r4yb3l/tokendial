@@ -1,0 +1,42 @@
+{
+  "name": "03-rearm-when-reset-changes",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 3600
+      }
+    },
+    {
+      "t": 60,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 7200
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    },
+    {
+      "t": 60,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    }
+  ]
+}

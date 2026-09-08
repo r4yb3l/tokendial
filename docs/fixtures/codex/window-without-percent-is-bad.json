@@ -1,0 +1,12 @@
+{
+  "response": {
+    "rate_limit": {
+      "primary_window": {
+        "limit_window_seconds": 18000
+      }
+    }
+  },
+  "expected": {
+    "error": "badResponse"
+  }
+}

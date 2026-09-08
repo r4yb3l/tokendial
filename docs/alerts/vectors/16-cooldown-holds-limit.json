@@ -1,0 +1,47 @@
+{
+  "name": "16-cooldown-holds-limit",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 55,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 10,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "weekly_all",
+        "usedPct": 100,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 61,
+      "event": {
+        "kind": "tick"
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    },
+    {
+      "t": 61,
+      "kind": "limit",
+      "provider": "claude",
+      "window": "weekly_all"
+    }
+  ]
+}

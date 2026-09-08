@@ -1,0 +1,25 @@
+{
+  "name": "06-limited-flag-is-a-limit",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 70,
+        "resetsAt": 18000,
+        "limited": true
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "limit",
+      "provider": "claude",
+      "window": "session"
+    }
+  ]
+}

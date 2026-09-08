@@ -1,0 +1,34 @@
+{
+  "name": "05-limit-suppresses-thresholds",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 100,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 60,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 100,
+        "resetsAt": 18000
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "limit",
+      "provider": "claude",
+      "window": "session"
+    }
+  ]
+}

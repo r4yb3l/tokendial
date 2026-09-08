@@ -1,0 +1,46 @@
+{
+  "name": "11-waiting-cancelled-by-work",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "session",
+        "provider": "claude",
+        "sessionId": "claude.1",
+        "state": "waiting"
+      }
+    },
+    {
+      "t": 10,
+      "event": {
+        "kind": "session",
+        "provider": "claude",
+        "sessionId": "claude.1",
+        "state": "working"
+      }
+    },
+    {
+      "t": 30,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 40,
+      "event": {
+        "kind": "session",
+        "provider": "claude",
+        "sessionId": "claude.1",
+        "state": "done"
+      }
+    },
+    {
+      "t": 70,
+      "event": {
+        "kind": "tick"
+      }
+    }
+  ],
+  "expected": []
+}

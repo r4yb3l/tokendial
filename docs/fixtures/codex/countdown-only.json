@@ -1,0 +1,32 @@
+{
+  "now": 1800000000,
+  "response": {
+    "rate_limit": {
+      "primary_window": {
+        "used_percent": 8,
+        "limit_window_seconds": 604800
+      },
+      "secondary_window": {
+        "used_percent": 0,
+        "limit_window_seconds": 18000,
+        "reset_after_seconds": 120
+      }
+    }
+  },
+  "expected": {
+    "headline": "primary",
+    "windows": [
+      {
+        "id": "primary",
+        "label": "Weekly limit",
+        "usedFraction": 0.08
+      },
+      {
+        "id": "secondary",
+        "label": "5h limit",
+        "usedFraction": 0.0,
+        "resetsAt": "2027-01-14T14:02:00Z"
+      }
+    ]
+  }
+}

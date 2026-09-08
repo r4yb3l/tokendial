@@ -1,0 +1,48 @@
+{
+  "name": "09-reset-done-after-limit",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 100,
+        "resetsAt": 1000
+      }
+    },
+    {
+      "t": 999,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 1000,
+      "event": {
+        "kind": "tick"
+      }
+    },
+    {
+      "t": 1100,
+      "event": {
+        "kind": "tick"
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "limit",
+      "provider": "claude",
+      "window": "session"
+    },
+    {
+      "t": 1000,
+      "kind": "resetDone",
+      "provider": "claude",
+      "window": "session"
+    }
+  ]
+}

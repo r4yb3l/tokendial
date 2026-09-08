@@ -1,0 +1,59 @@
+{
+  "name": "17-two-providers-are-independent",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 55,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 1,
+      "event": {
+        "kind": "usage",
+        "provider": "codex",
+        "window": "primary",
+        "usedPct": 85,
+        "resetsAt": 3600
+      }
+    },
+    {
+      "t": 2,
+      "event": {
+        "kind": "usage",
+        "provider": "codex",
+        "window": "primary",
+        "usedPct": 96,
+        "resetsAt": 3600
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    },
+    {
+      "t": 1,
+      "kind": "threshold",
+      "provider": "codex",
+      "window": "primary",
+      "pct": 80
+    },
+    {
+      "t": 2,
+      "kind": "threshold",
+      "provider": "codex",
+      "window": "primary",
+      "pct": 95
+    }
+  ]
+}

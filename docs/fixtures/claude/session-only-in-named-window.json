@@ -1,0 +1,37 @@
+{
+  "note": "The schema drops a window from limits[] the moment its reset passes; five_hour still carries it.",
+  "response": {
+    "five_hour": {
+      "utilization": 0.0,
+      "resets_at": "2026-08-29T18:39:59.636345+00:00"
+    },
+    "seven_day": {
+      "utilization": 33.0,
+      "resets_at": "2026-09-02T16:59:59.636373+00:00"
+    },
+    "limits": [
+      {
+        "kind": "weekly_all",
+        "percent": 33,
+        "resets_at": "2026-09-02T16:59:59.636373+00:00"
+      }
+    ]
+  },
+  "expected": {
+    "headline": "session",
+    "windows": [
+      {
+        "id": "session",
+        "label": "Current session",
+        "usedFraction": 0.0,
+        "resetsAt": "2026-08-29T18:39:59.636345+00:00"
+      },
+      {
+        "id": "weekly_all",
+        "label": "All models",
+        "usedFraction": 0.33,
+        "resetsAt": "2026-09-02T16:59:59.636373+00:00"
+      }
+    ]
+  }
+}

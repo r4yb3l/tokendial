@@ -1,0 +1,69 @@
+{
+  "id": "antigravity",
+  "displayName": "Antigravity",
+  "fidelity": "official",
+  "headline": "gemini-weekly",
+  "credential": {
+    "macos": {
+      "kind": "keychain",
+      "service": "gemini",
+      "account": "antigravity",
+      "fields": { "authMethod": "$.auth_method", "accessToken": "$.token.access_token" },
+      "expiry": "$.token.expiry as RFC 3339 with fractional seconds and a non-UTC offset",
+      "notes": "Stored by Go's keyring package: the blob is 'go-keyring-base64:' followed by base64 of the JSON. Raw base64 and plain JSON must decode too."
+    },
+    "windows": {
+      "kind": "credman",
+      "target": "gemini:antigravity",
+      "fields": { "authMethod": "$.auth_method", "accessToken": "$.token.access_token" },
+      "expiry": "$.token.expiry as RFC 3339",
+      "notes": "Go's wincred backend names the generic credential service:user. Fall back to target 'gemini', then to enumerating generic credentials containing both words, newest LastWritten first. The blob is UTF-8 JSON (UTF-16 if written by PowerShell). Credential Manager never prompts, so a failed read is not-found or transient, never a refusal."
+    }
+  },
+  "endpoints": [
+    {
+      "name": "loadCodeAssist",
+      "method": "POST",
+      "url": "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+      "headers": { "Authorization": "Bearer {accessToken}", "Content-Type": "application/json" },
+      "body": "{\"metadata\":{\"pluginType\":\"GEMINI\"}}",
+      "timeoutSeconds": 15,
+      "notes": "Mandatory gate that proves the token; pluginType must be GEMINI. 401 → forget cached credential + needsAuth; 403 → needsAuth; 429 → rateLimited(Retry-After); other non-200 → badResponse. Its body says nothing about usage."
+    },
+    {
+      "name": "languageServerQuota",
+      "method": "POST",
+      "url": "https://127.0.0.1:{port}/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary",
+      "headers": { "Content-Type": "application/json", "x-codeium-csrf-token": "{csrfToken}" },
+      "body": "{\"forceRefresh\":true}",
+      "timeoutSeconds": 10,
+      "notes": "Preferred source. The server is launched with --https_server_port 0 and writes nothing down: find the language_server process, read --csrf_token from its command line, list the ports it listens on (two; only one serves this RPC, try all). Self-signed certificate: trust it only for 127.0.0.1, localhost, ::1 on a dedicated client. forceRefresh is essential or the answer is served from the server's cache. Once this source has ever answered, a silent bridge means Antigravity was closed: keep the last percentage stale rather than fall back."
+    },
+    {
+      "name": "retrieveUserQuotaSummary",
+      "method": "POST",
+      "url": "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary",
+      "headers": { "Authorization": "Bearer {accessToken}", "Content-Type": "application/json" },
+      "body": "{}",
+      "timeoutSeconds": 15,
+      "notes": "Body must be exactly {}. Non-200 is an entitlement gap (a personal account answers 403 'no valid license'), not an error: fall through to the derived count."
+    }
+  ],
+  "response": {
+    "windows": [
+      { "id": "{bucketId}", "label": "{group.displayName}", "usedPath": "$.response.groups[*].buckets[*].remainingFraction", "unit": "remainingFraction", "resetAtPath": "$.response.groups[*].buckets[*].resetTime", "resetUnit": "iso8601", "notes": "languageServerQuota shape. Drop buckets whose fraction is outside 0…1. Ids seen: gemini-weekly, 3p-weekly." },
+      { "id": "{name}", "label": "{displayName}", "usedPath": "$.quotaGroups[*].buckets[*].used / .limit (also top-level $.buckets[*])", "unit": "usedOverLimit", "resetAtPath": "resetTime", "resetUnit": "iso8601", "notes": "retrieveUserQuotaSummary shape, never validated against a licensed response: require limit > 0 and 0 ≤ used ≤ 1.5·limit." },
+      { "id": "requests", "label": "Requests today · no limit published", "usedPath": "count of transcript lines with source == MODEL dated today (local day) under ~/.gemini/antigravity/brain/*/.system_generated/logs/transcript.jsonl", "unit": "count", "notes": "Derived fallback, fidelity derived, no dial arc, the number alone." }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "needsAuth", "429": "rateLimited" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "none" },
+  "sessions": {
+    "kind": "mtime",
+    "macos": "~/.gemini/antigravity/brain/<trajectory>/.system_generated/logs/transcript.jsonl",
+    "windows": "same under the user profile",
+    "staleSeconds": 45,
+    "notes": "Step statuses all read DONE because a step is written once finished; the transcript's modification time is the only live signal. One busy session at most, never waiting."
+  },
+  "status": { "enabled": true, "termsRisk": "medium", "notice": "Talks to Antigravity's own language server and to Google's internal Cloud Code endpoints with the token Antigravity holds." }
+}

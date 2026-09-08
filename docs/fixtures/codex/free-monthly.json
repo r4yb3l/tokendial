@@ -1,0 +1,25 @@
+{
+  "response": {
+    "rate_limit": {
+      "primary_window": {
+        "used_percent": 16,
+        "limit_window_seconds": 2592000,
+        "reset_after_seconds": 1838382,
+        "reset_at": 1790585722
+      },
+      "secondary_window": null
+    },
+    "plan_type": "free"
+  },
+  "expected": {
+    "headline": "primary",
+    "windows": [
+      {
+        "id": "primary",
+        "label": "Monthly limit",
+        "usedFraction": 0.16,
+        "resetsAt": "2026-09-28T13:35:22Z"
+      }
+    ]
+  }
+}

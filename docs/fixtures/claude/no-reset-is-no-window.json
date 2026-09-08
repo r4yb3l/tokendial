@@ -1,0 +1,19 @@
+{
+  "response": {
+    "limits": [
+      {
+        "kind": "session",
+        "percent": 5,
+        "resets_at": null
+      }
+    ],
+    "five_hour": {
+      "utilization": 5.0,
+      "resets_at": null
+    }
+  },
+  "expected": {
+    "headline": "session",
+    "windows": []
+  }
+}

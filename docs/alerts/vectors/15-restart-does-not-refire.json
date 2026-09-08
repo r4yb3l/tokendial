@@ -1,0 +1,59 @@
+{
+  "name": "15-restart-does-not-refire",
+  "config": {},
+  "steps": [
+    {
+      "t": 0,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 10,
+      "event": {
+        "kind": "restart"
+      },
+      "persistAndRestart": true
+    },
+    {
+      "t": 20,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 60,
+        "resetsAt": 18000
+      }
+    },
+    {
+      "t": 30,
+      "event": {
+        "kind": "usage",
+        "provider": "claude",
+        "window": "session",
+        "usedPct": 85,
+        "resetsAt": 18000
+      }
+    }
+  ],
+  "expected": [
+    {
+      "t": 0,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 50
+    },
+    {
+      "t": 30,
+      "kind": "threshold",
+      "provider": "claude",
+      "window": "session",
+      "pct": 80
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "note": "Recorded verbatim under HTTP 200.",
+  "response": {
+    "code": 401,
+    "msg": "token expired or incorrect",
+    "success": false
+  },
+  "expected": {
+    "error": "needsAuth"
+  }
+}

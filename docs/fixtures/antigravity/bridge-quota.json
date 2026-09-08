@@ -1,0 +1,51 @@
+{
+  "note": "Verbatim from the running language server.",
+  "response": {
+    "response": {
+      "groups": [
+        {
+          "displayName": "Gemini Models",
+          "description": "Models within this group: Gemini Flash, Gemini Pro",
+          "buckets": [
+            {
+              "bucketId": "gemini-weekly",
+              "displayName": "Weekly Limit Remaining",
+              "window": "weekly",
+              "remainingFraction": 0.96262,
+              "resetTime": "2026-09-07T14:12:34Z"
+            }
+          ]
+        },
+        {
+          "displayName": "Claude and GPT models",
+          "buckets": [
+            {
+              "bucketId": "3p-weekly",
+              "displayName": "Weekly Limit Remaining",
+              "window": "weekly",
+              "remainingFraction": 1,
+              "resetTime": "2026-09-08T09:12:10Z"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "expected": {
+    "headline": "gemini-weekly",
+    "windows": [
+      {
+        "id": "gemini-weekly",
+        "label": "Gemini Models",
+        "usedFraction": 0.03738,
+        "resetsAt": "2026-09-07T14:12:34Z"
+      },
+      {
+        "id": "3p-weekly",
+        "label": "Claude and GPT models",
+        "usedFraction": 0.0,
+        "resetsAt": "2026-09-08T09:12:10Z"
+      }
+    ]
+  }
+}

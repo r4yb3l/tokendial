@@ -1,0 +1,48 @@
+{
+  "id": "cursor",
+  "displayName": "Cursor",
+  "fidelity": "official",
+  "headline": "included",
+  "credential": {
+    "macos": {
+      "kind": "sqlite",
+      "path": "~/Library/Application Support/Cursor/User/globalStorage/state.vscdb",
+      "query": "SELECT value FROM ItemTable WHERE key = ?",
+      "fields": { "accessToken": "cursorAuth/accessToken", "accountId": "cursorAuth/stripeMembershipAuthId", "email": "cursorAuth/cachedEmail", "plan": "cursorAuth/stripeMembershipType" },
+      "notes": "WAL mode. Open read-only but never immutable while the editor runs, or you read the state at the last checkpoint: an already-rotated token. Fall back to immutable=1 once the editor has quit."
+    },
+    "windows": {
+      "kind": "sqlite",
+      "path": "%APPDATA%/Cursor/User/globalStorage/state.vscdb",
+      "query": "SELECT value FROM ItemTable WHERE key = ?",
+      "fields": { "accessToken": "cursorAuth/accessToken", "accountId": "cursorAuth/stripeMembershipAuthId", "email": "cursorAuth/cachedEmail", "plan": "cursorAuth/stripeMembershipType" }
+    }
+  },
+  "endpoints": [
+    {
+      "name": "usage",
+      "method": "GET",
+      "url": "https://cursor.com/api/usage-summary",
+      "headers": { "Cookie": "WorkosCursorSessionToken={accountId}::{accessToken}", "Accept": "application/json" },
+      "timeoutSeconds": 15,
+      "notes": "Bearer auth on the same token is rejected; the cookie pair is what works. Re-read the credential on every fetch."
+    }
+  ],
+  "response": {
+    "windows": [
+      { "id": "included", "label": "Included usage", "usedPath": "$.individualUsage.plan.totalPercentUsed", "unit": "percent", "resetAtPath": "$.billingCycleEnd", "resetUnit": "iso8601", "notes": "Zero is a reading, not an absence." },
+      { "id": "api", "label": "API usage", "usedPath": "$.individualUsage.plan.apiPercentUsed", "unit": "percent", "resetAtPath": "$.billingCycleEnd", "resetUnit": "iso8601", "notes": "Only when > 0." },
+      { "id": "on_demand", "label": "On demand", "usedPath": "$.individualUsage.onDemand.used / $.individualUsage.onDemand.limit", "unit": "usedOverLimit", "resetAtPath": "$.billingCycleEnd", "resetUnit": "iso8601", "notes": "Only when enabled is true and limit > 0; dollar-denominated." }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "needsAuth" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "none" },
+  "sessions": {
+    "kind": "sqlite",
+    "macos": "state.vscdb: SELECT value FROM composerHeaders WHERE isArchived = 0 ORDER BY recency DESC LIMIT 40",
+    "windows": "same",
+    "staleSeconds": 900,
+    "notes": "Polled every 2 s (the writes land in the WAL sidecar). Fields: composerId, hasBlockingPendingActions | hasPendingPlan → waiting; unfinishedRunAt (set while a run is in flight, but it is the composer's creation time) plus conversationCheckpointLastUpdatedAt | lastUpdatedAt within 15 minutes and not before the editor's own start time → busy; otherwise dropped. Timestamps in epoch millis. The editor start time is the oldest Cursor process."
+  },
+  "status": { "enabled": true, "termsRisk": "high", "notice": "Reuses the editor's browser session cookie against cursor.com." }
+}
