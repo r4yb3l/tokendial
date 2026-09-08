@@ -83,6 +83,30 @@ public sealed class MarkView : FrameworkElement
 
     public bool HasMark => mark is not null;
 
+    private bool pulsing;
+
+    /// <summary>A heartbeat between two colours while an agent waits on the user; a steady fill otherwise.</summary>
+    public void Pulse(bool on, Color bright, Color dim, Brush steady)
+    {
+        if (on)
+        {
+            if (pulsing) return;
+            pulsing = true;
+            var brush = new SolidColorBrush(bright);
+            Fill = brush;
+            if (Theme.ReduceMotion) { brush.Color = bright; return; }
+            brush.BeginAnimation(SolidColorBrush.ColorProperty, new System.Windows.Media.Animation.ColorAnimation(bright, dim, new Duration(TimeSpan.FromSeconds(0.55)))
+            {
+                AutoReverse = true,
+                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                EasingFunction = new System.Windows.Media.Animation.SineEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut }
+            });
+            return;
+        }
+        pulsing = false;
+        Fill = steady;
+    }
+
     public void Show(string providerId)
     {
         mark = Marks.For(providerId);

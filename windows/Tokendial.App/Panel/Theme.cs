@@ -8,10 +8,10 @@ namespace Tokendial.App.Panel;
 /// <summary>docs/design/tokens.md, as WPF resources. Frozen brushes; every number in device-independent points.</summary>
 public static class Theme
 {
-    public static readonly Brush Surface = Freeze(new SolidColorBrush(Color.FromArgb(199, 16, 17, 20)));
+    public static readonly Brush Surface = Freeze(new SolidColorBrush(Color.FromArgb(128, 16, 17, 20)));
     public static readonly Brush SurfaceEdge = Freeze(new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)));
     public static readonly Brush CardSurface = Freeze(new SolidColorBrush(Color.FromArgb(235, 16, 17, 20)));
-    public static readonly Brush Track = Freeze(new SolidColorBrush(Color.FromRgb(0x2A, 0x2C, 0x33)));
+    public static readonly Brush Track = Freeze(new SolidColorBrush(Color.FromArgb(41, 255, 255, 255)));
     public static readonly Brush Ample = Freeze(new SolidColorBrush(Color.FromRgb(0x34, 0xD3, 0x99)));
     public static readonly Brush Watch = Freeze(new SolidColorBrush(Color.FromRgb(0xFB, 0xBF, 0x24)));
     public static readonly Brush Critical = Freeze(new SolidColorBrush(Color.FromRgb(0xFB, 0x71, 0x85)));
@@ -22,6 +22,8 @@ public static class Theme
     public static readonly Brush TextDisabled = Freeze(new SolidColorBrush(Color.FromRgb(0x5C, 0x5F, 0x68)));
     public static readonly Brush Hairline = Freeze(new SolidColorBrush(Color.FromArgb(28, 255, 255, 255)));
     public static readonly Brush Transparent = Brushes.Transparent;
+    public static readonly Color AmpleColor = Color.FromRgb(0x34, 0xD3, 0x99);
+    public static readonly Color TextDisabledColor = Color.FromRgb(0x5C, 0x5F, 0x68);
 
     public static readonly FontFamily Font = new("Segoe UI Variable Text, Segoe UI Variable, Segoe UI");
     public static readonly FontFamily DisplayFont = new("Segoe UI Variable Display, Segoe UI Variable, Segoe UI");

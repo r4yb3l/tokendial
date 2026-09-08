@@ -60,7 +60,7 @@ public sealed class PanelContent
             mini.Hollow = !tile.HasReading;
             mini.Fill = Theme.Of(tile.Band);
             Glide(mini, fraction, animate);
-            compactMarks[tile.Id].Fill = tile.HasReading ? Theme.TextSecondary : Theme.TextDisabled;
+            compactMarks[tile.Id].Pulse(tile.Activity?.State == SessionState.Waiting, Theme.AmpleColor, Theme.TextDisabledColor, tile.HasReading ? Theme.TextSecondary : Theme.TextDisabled);
             cells[tile.Id].Apply(tile, fraction, animate, i);
         }
         mutedBadge.Visibility = model.Muted > 0 ? Visibility.Visible : Visibility.Collapsed;

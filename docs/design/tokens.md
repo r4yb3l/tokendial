@@ -7,9 +7,9 @@ points; both platforms use them verbatim.
 
 | Token | Value | Use |
 |---|---|---|
-| `surface` | rgba(16, 17, 20, 0.78) over system blur (vibrancy on macOS, acrylic on Windows) | capsule and card background |
+| `surface` | rgba(16, 17, 20, 0.50) over system blur (vibrancy on macOS, acrylic on Windows) | capsule and card background |
 | `surfaceEdge` | rgba(255, 255, 255, 0.08) | 1 px inner hairline on the capsule |
-| `track` | #2A2C33 | dial track and bar track |
+| `track` | rgba(255, 255, 255, 0.16) | dial track and bar track |
 | `ample` | #34D399 | < 50 % used |
 | `watch` | #FBBF24 | 50–79 % |
 | `critical` | #FB7185 | ≥ 80 %, and any limit reached |

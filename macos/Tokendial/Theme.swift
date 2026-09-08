@@ -3,10 +3,10 @@ import TokendialCore
 
 /// docs/design/tokens.md as AppKit values. Every number in points.
 enum Theme {
-    static let surface = NSColor(srgbRed: 16 / 255, green: 17 / 255, blue: 20 / 255, alpha: 0.78)
+    static let surface = NSColor(srgbRed: 16 / 255, green: 17 / 255, blue: 20 / 255, alpha: 0.50)
     static let cardSurface = NSColor(srgbRed: 16 / 255, green: 17 / 255, blue: 20 / 255, alpha: 0.92)
     static let surfaceEdge = NSColor(white: 1, alpha: 0.08)
-    static let track = NSColor(srgbRed: 0x2A / 255, green: 0x2C / 255, blue: 0x33 / 255, alpha: 1)
+    static let track = NSColor(white: 1, alpha: 0.16)
     static let ample = NSColor(srgbRed: 0x34 / 255, green: 0xD3 / 255, blue: 0x99 / 255, alpha: 1)
     static let watch = NSColor(srgbRed: 0xFB / 255, green: 0xBF / 255, blue: 0x24 / 255, alpha: 1)
     static let critical = NSColor(srgbRed: 0xFB / 255, green: 0x71 / 255, blue: 0x85 / 255, alpha: 1)
