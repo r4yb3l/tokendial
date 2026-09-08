@@ -3,6 +3,7 @@ using System.Windows.Threading;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.Win32;
 using Tokendial.App.Alerts;
+using Tokendial.App.Install;
 using Tokendial.App.Panel;
 using Tokendial.App.Tray;
 using Tokendial.App.Windows;
@@ -24,6 +25,8 @@ public sealed class App : Application
     private readonly Settings settings = Settings.Load();
     private readonly ReadingArchive archive = new();
     private UsageStore store = null!;
+    private InstallAssistant installer = null!;
+    private readonly HashSet<string> adopted = new(StringComparer.Ordinal);
     private ActivityHub hub = null!;
     private AlertCoordinator alerts = null!;
     private ToastSink toasts = null!;
@@ -49,10 +52,13 @@ public sealed class App : Application
         base.OnStartup(e);
         Log.Ui.Info($"Tokendial {Version} starting");
         Strings.Use(settings.Language);
+        ApplyAppearance(rebuild: false);
         Sqlite.SweepCache();
 
         var providers = ProviderCatalog.Providers(archive);
         store = new UsageStore(providers, archive, settings.Disconnected, launcher: new AppLauncher());
+        installer = new InstallAssistant(providers, Dispatcher);
+        installer.SignedIn += OnToolSignedIn;
         hub = new ActivityHub(ProviderCatalog.Monitors());
         store.IsBusy = () => hub.AnyWorking;
         toasts = new ToastSink(id => store.Readings.FirstOrDefault(r => r.ProviderId == id), hub.For);
@@ -62,6 +68,7 @@ public sealed class App : Application
         alerts = new AlertCoordinator(router, settings.AlertConfig, AlertCoordinator.DefaultStateFile, wants: settings.Wants);
 
         panel = new PanelWindow();
+        panel.SetEdge(settings.Edge);
         panel.HoverChanged += on => { alerts.OnHover(on); if (on) toasts.ClearMuted(); };
         panel.ExpandedShown += () => toasts.ClearMuted();
         panel.ProviderClicked += OpenProvider;
@@ -90,7 +97,11 @@ public sealed class App : Application
         }));
         SystemEvents.PowerModeChanged += (_, args) => { if (args.Mode == PowerModes.Resume) Dispatcher.BeginInvoke(() => store.OnWake()); };
         SystemEvents.DisplaySettingsChanged += (_, _) => Dispatcher.BeginInvoke(panel.Reposition);
-        SystemEvents.UserPreferenceChanged += (_, args) => { if (args.Category is UserPreferenceCategory.Desktop or UserPreferenceCategory.General) Dispatcher.BeginInvoke(panel.Reposition); };
+        SystemEvents.UserPreferenceChanged += (_, args) =>
+        {
+            if (args.Category is UserPreferenceCategory.Desktop or UserPreferenceCategory.General) Dispatcher.BeginInvoke(panel.Reposition);
+            if (args.Category == UserPreferenceCategory.General && settings.Appearance == Appearance.System) Dispatcher.BeginInvoke(() => ApplyAppearance(rebuild: true));
+        };
 
         panel.Show();
         panel.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
@@ -131,9 +142,10 @@ public sealed class App : Application
         var all = store.Summaries;
         var detected = all.Where(s => s.Account is not null).ToList();
         var absent = all.Where(s => s.Account is null).ToList();
-        WelcomeWindow.Show(detected, absent, chosen =>
+        WelcomeWindow.Show(detected, absent, installer, chosen =>
         {
-            settings.Disconnected = all.Select(s => s.Id).Where(id => !chosen.Contains(id)).ToHashSet(StringComparer.Ordinal);
+            var keep = chosen.Concat(adopted).ToHashSet(StringComparer.Ordinal);
+            settings.Disconnected = all.Select(s => s.Id).Where(id => !keep.Contains(id)).ToHashSet(StringComparer.Ordinal);
             settings.Known = all.Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
             settings.FirstRunDone = true;
             settings.LastSeenVersion = Version;
@@ -141,6 +153,17 @@ public sealed class App : Application
             store.Disconnected = settings.Disconnected;
             Begin();
         }, ShowSettings);
+    }
+
+    /// <summary>The assistant saw the tool sign in: the provider joins the dial without another click. During the welcome it is kept for the choice being made there.</summary>
+    private void OnToolSignedIn(string id)
+    {
+        adopted.Add(id);
+        settings.Disconnected.Remove(id);
+        settings.Known.Add(id);
+        if (!settings.FirstRunDone) return;
+        Save();
+        store.Connect(id);
     }
 
     private void OnStoreChanged()
@@ -186,22 +209,47 @@ public sealed class App : Application
     {
         var summary = store.Summaries.FirstOrDefault(s => s.Id == id);
         var reading = store.Readings.FirstOrDefault(r => r.ProviderId == id);
-        if (reading?.Status is Core.Model.ReadingStatus.NeedsSignIn && store.OpenSource(id)) return;
+        if (reading?.Status is Core.Model.ReadingStatus.NeedsSignIn)
+        {
+            if (store.OpenSource(id)) return;
+            if (installer.Recipe(id) is not null) { ShowSettings(id); return; }
+        }
         if (summary?.Account?.ManageUrl is Uri url) SettingsWindow.Open(url.ToString());
         else ShowSettings();
+    }
+
+    private void ShowSettings(string focusProviderId)
+    {
+        ShowSettings();
+        settingsWindow?.Focus(focusProviderId);
     }
 
     private void ShowSettings()
     {
         if (settingsWindow is null)
         {
-            settingsWindow = new SettingsWindow(settings, store, Save, LaunchAtLogin.Set, TestAlert, Version);
+            settingsWindow = new SettingsWindow(settings, store, installer, Save, LaunchAtLogin.Set, TestAlert, Version);
             settingsWindow.PanelModeChanged += mode => panel.SetMode(mode);
             settingsWindow.AlertsChanged += config => alerts.Reconfigure(config, settings.Wants);
             settingsWindow.LanguageChanged += ApplyLanguage;
+            settingsWindow.AppearanceChanged += _ => ApplyAppearance(rebuild: true);
+            settingsWindow.EdgeChanged += panel.SetEdge;
             settingsWindow.Closed += () => settingsWindow = null;
         }
         settingsWindow.Show();
+    }
+
+    /// <summary>Dark or light, from the setting or from Windows. Live windows repaint in place.</summary>
+    private void ApplyAppearance(bool rebuild)
+    {
+        var dark = settings.Appearance switch { Appearance.Dark => true, Appearance.Light => false, _ => SystemLook.DarkApps() };
+        if (rebuild && dark == Theme.Dark) return;
+        Theme.Use(dark);
+        Chrome.Use(dark);
+        if (!rebuild) return;
+        panel.Retheme();
+        settingsWindow?.Retheme();
+        RefreshModel();
     }
 
     /// <summary>The user picked a language: every visible label is rebuilt in place.</summary>
@@ -242,6 +290,7 @@ public sealed class App : Application
         tray.Dispose();
         alerts.Dispose();
         hub.Dispose();
+        installer.Dispose();
         store.Dispose();
         foreach (var provider in ProviderDisposables()) provider.Dispose();
         ToastNotificationManagerCompat.History.Clear();
