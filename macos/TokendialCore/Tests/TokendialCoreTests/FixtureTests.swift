@@ -41,6 +41,9 @@ final class FixtureTests: XCTestCase {
             case ("opencode", _): return try OpenCodeUsage.parse(response)
             case ("antigravity", "bridge-quota.json"): return Parsed(windows: AntigravityUsage.parseBridge(response), headline: "gemini-weekly")
             case ("antigravity", "google-quota.json"): return Parsed(windows: AntigravityUsage.parseGoogleQuota(response), headline: nil)
+            // The unsupported-client answer is the gate turning the account away, not a quota.
+            case ("gemini", "unsupported-client.json"): return try GeminiUsage.parseGate(response)
+            case ("gemini", _): return try GeminiUsage.parse(response)
             default: throw XCTSkip("no parser for \(provider)/\(name)")
             }
         }

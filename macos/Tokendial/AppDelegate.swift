@@ -30,7 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         loadRecipes()
 
         var providers: [UsageProvider] = ClaudeProfile.discover().map { ClaudeProvider(profile: $0, archive: archive) }
-        providers += [CodexProvider(archive: archive), CopilotProvider(archive: archive), CursorProvider(), AntigravityProvider(), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
+        providers += [CodexProvider(archive: archive), CopilotProvider(archive: archive), CursorProvider(), AntigravityProvider(), GeminiProvider(archive: archive), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
         store = UsageStore(providers: providers, archive: archive, disconnected: settings.disconnected, launcher: WorkspaceLauncher())
         installer = InstallAssistant(providers: providers)
         installer.signedIn = { [weak self] id in self?.onToolSignedIn(id) }

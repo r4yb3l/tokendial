@@ -206,18 +206,8 @@ public enum AntigravityUsage {
     }
 
     /// Never validated against a licensed response, so paranoid about bounds.
-    public static func parseGoogleQuota(_ body: Data) -> [UsageWindow] {
-        guard let root = JSON.object(body) else { return [] }
-        let buckets = root.objects("quotaGroups").flatMap { $0.objects("buckets") } + root.objects("buckets")
-        var windows: [UsageWindow] = []
-        for bucket in buckets {
-            guard let limit = bucket.num("limit"), let used = bucket.num("used"), limit > 0, used >= 0, used <= limit * 1.5 else { continue }
-            let name = bucket.str("name")
-            let label = bucket.str("displayName") ?? name ?? "Usage"
-            windows.append(UsageWindow(id: name ?? label, label: label, usedFraction: used / limit, resetsAt: bucket.date("resetTime")))
-        }
-        return windows
-    }
+    /// The same summary Gemini CLI reads, so the parsing lives once, in CodeAssist.
+    public static func parseGoogleQuota(_ body: Data) -> [UsageWindow] { CodeAssist.parseQuotaSummary(body) }
 
     /// The Google sign-in Antigravity keeps through Go's keyring: JSON blob, optional base64 wrapper.
     public struct Credential: Equatable {
