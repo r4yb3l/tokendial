@@ -45,6 +45,24 @@
   },
   "errors": { "401": "needsAuth", "403": "needsAuth", "429": "rateLimited" },
   "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
+  "install": {
+    "vendor": "Google",
+    "docsUrl": "https://google-gemini.github.io/gemini-cli/",
+    "windows": {
+      "kind": "cli",
+      "detect": {"commands": ["gemini.cmd", "gemini.ps1"], "paths": ["%APPDATA%/npm/gemini.cmd"]},
+      "requires": ["npm"],
+      "install": "npm install -g @google/gemini-cli",
+      "signIn": {"command": "gemini", "hint": "install.hint.gemini"}
+    },
+    "macos": {
+      "kind": "cli",
+      "detect": {"commands": ["gemini"], "paths": ["~/.local/bin/gemini", "/opt/homebrew/bin/gemini", "/usr/local/bin/gemini"]},
+      "requires": ["npm"],
+      "install": "npm install -g @google/gemini-cli",
+      "signIn": {"command": "gemini", "hint": "install.hint.gemini"}
+    }
+  },
   "sessions": { "kind": "none", "notes": "Gemini CLI keeps no session registry; usage only." },
   "status": {
     "enabled": true,

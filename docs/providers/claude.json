@@ -63,7 +63,8 @@
       "kind": "cli",
       "detect": {"commands": ["claude"], "paths": ["~/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]},
       "requires": [],
-      "install": "curl -fsSL https://claude.ai/install.sh | bash",
+      "requires": ["brew"],
+      "install": "brew install --cask claude-code",
       "signIn": {"command": "claude", "hint": "install.hint.claude"}
     }
   }

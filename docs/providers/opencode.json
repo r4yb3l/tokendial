@@ -51,8 +51,8 @@
     "macos": {
       "kind": "cli",
       "detect": {"commands": ["opencode"], "paths": ["~/.opencode/bin/opencode", "~/.local/bin/opencode", "/opt/homebrew/bin/opencode", "/usr/local/bin/opencode"]},
-      "requires": [],
-      "install": "curl -fsSL https://opencode.ai/install | bash",
+      "requires": ["brew"],
+      "install": "brew install opencode",
       "signIn": {"command": "opencode auth login", "hint": "install.hint.opencode"}
     }
   }

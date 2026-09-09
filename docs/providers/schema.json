@@ -123,7 +123,7 @@
             "paths": { "type": "array", "items": { "type": "string" }, "description": "Absolute locations with ~, %VAR% and one * per segment allowed." }
           }
         },
-        "requires": { "type": "array", "items": { "enum": ["winget", "brew"] } },
+        "requires": { "type": "array", "items": { "enum": ["winget", "brew", "npm"] }, "description": "Package managers the line needs. The assistant offers to install a missing one as a first step before the tool." },
         "install": { "type": "string", "description": "The exact shell line, PowerShell on Windows and zsh on macOS." },
         "signIn": {
           "type": "object",

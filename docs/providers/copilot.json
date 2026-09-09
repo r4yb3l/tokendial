@@ -50,8 +50,8 @@
     "macos": {
       "kind": "cli",
       "detect": {"commands": ["copilot"], "paths": ["~/.local/bin/copilot", "/opt/homebrew/bin/copilot", "/usr/local/bin/copilot"]},
-      "requires": [],
-      "install": "curl -fsSL https://gh.io/copilot-install | bash",
+      "requires": ["brew"],
+      "install": "brew install --cask copilot-cli",
       "signIn": {"command": "copilot", "hint": "install.hint.copilot"}
     }
   }

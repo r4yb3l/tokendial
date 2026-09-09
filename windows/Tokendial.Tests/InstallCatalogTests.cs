@@ -6,15 +6,14 @@ namespace Tokendial.Tests;
 
 public class InstallCatalogTests
 {
-    /// <summary>GLM is a key rather than a tool and Gemini CLI needs Node, which the recipes do not install.</summary>
-    private static readonly string[] Assisted = ProviderCatalog.Order.Where(id => id is not ("glm" or "gemini")).ToArray();
+    /// <summary>GLM is a key rather than a tool, so there is nothing to install.</summary>
+    private static readonly string[] Assisted = ProviderCatalog.Order.Where(id => id is not "glm").ToArray();
 
     [Fact]
     public void EveryProviderWithATerminalInstallerHasARecipe()
     {
         Assert.Equal(Assisted.OrderBy(x => x), InstallCatalog.All.Keys.OrderBy(x => x));
         Assert.Null(InstallCatalog.For("glm"));
-        Assert.Null(InstallCatalog.For("gemini"));
     }
 
     [Fact]
@@ -36,7 +35,7 @@ public class InstallCatalogTests
         Assert.StartsWith("https://", recipe.DocsUrl);
         Assert.False(string.IsNullOrWhiteSpace(platform.Install), $"{providerId}/{os} install");
         Assert.True(platform.Detect.Commands.Count + platform.Detect.Paths.Count > 0, $"{providerId}/{os} detect");
-        Assert.All(platform.Requires, r => Assert.Contains(r, new[] { "winget", "brew" }));
+        Assert.All(platform.Requires, r => Assert.Contains(r, new[] { "winget", "brew", "npm" }));
         if (platform.Kind == InstallKind.Cli) Assert.NotNull(platform.SignIn);
         if (platform.DownloadUrl is string download) Assert.StartsWith("https://", download);
         if (platform.Install.StartsWith("winget install"))
@@ -45,6 +44,9 @@ public class InstallCatalogTests
             Assert.Contains("--accept-package-agreements", platform.Install);
             Assert.Contains("winget", platform.Requires);
         }
+        // A line that needs a package manager has to say so, or the assistant cannot offer to install it first.
+        if (platform.Install.StartsWith("brew install")) Assert.Contains("brew", platform.Requires);
+        if (platform.Install.StartsWith("npm install -g")) Assert.Contains("npm", platform.Requires);
     }
 
     [Fact]

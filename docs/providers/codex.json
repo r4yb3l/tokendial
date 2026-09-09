@@ -56,7 +56,8 @@
       "kind": "cli",
       "detect": {"commands": ["codex"], "paths": ["~/.local/bin/codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex"]},
       "requires": [],
-      "install": "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+      "requires": ["brew"],
+      "install": "brew install --cask codex",
       "signIn": {"command": "codex login", "hint": "install.hint.codex"}
     }
   }
