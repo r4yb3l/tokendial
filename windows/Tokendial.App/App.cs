@@ -183,7 +183,7 @@ public sealed class App : Application
         modelTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(60), DispatcherPriority.Background, (_, _) =>
         {
             modelTimer!.Stop();
-            var model = PanelModel.Build(store.Readings, store.Summaries, hub.Activities, store.InFlight, toasts.Muted);
+            var model = PanelModel.Build(store.Readings, store.Summaries, hub.Activities, store.InFlight, toasts.Muted, store.Forecasts);
             panel.Update(model);
             var worst = model.Tiles.Where(t => t.HasReading).Select(t => t.Fraction).Max();
             tray.Update(worst, Tooltip(model));

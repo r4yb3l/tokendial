@@ -43,6 +43,8 @@
     "copy.requests": { "zero": "sin peticiones hoy", "one": "~1 petición hoy", "other": "~{n} peticiones hoy" },
     "copy.noReading": "Sin lectura",
     "copy.via": "vía {source}",
+    "copy.forecastRunsOut": "A este ritmo, vacío a las {time}",
+    "copy.forecastLasts": "A este ritmo dura hasta el reinicio",
 
     "alert.usage": "Consumo",
     "alert.threshold.title": "{name} al {pct}%",

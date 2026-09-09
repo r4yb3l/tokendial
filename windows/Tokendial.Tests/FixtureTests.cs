@@ -121,6 +121,14 @@ public class CopyTests
     }
 
     [Fact]
+    public void ForecastCopyNamesTheHourOrTheReset()
+    {
+        Assert.Equal("At this pace, empty at 11:06 PM", Copy.Forecast(new Forecast(ForecastKind.RunsOut, Now.AddMinutes(53)), Now, TimeZoneInfo.Utc));
+        Assert.Equal("At this pace, empty at Wed 2:26 AM", Copy.Forecast(new Forecast(ForecastKind.RunsOut, Now.AddHours(4).AddMinutes(13)), Now, TimeZoneInfo.Utc));
+        Assert.Equal("At this pace it lasts until the reset", Copy.Forecast(new Forecast(ForecastKind.LastsUntilReset, null), Now, TimeZoneInfo.Utc));
+    }
+
+    [Fact]
     public void SummaryReadsBothEnds()
     {
         Assert.Equal("63% used · 37% left", new UsageWindow("w", "W", 0.63).Summary(Fidelity.Official));

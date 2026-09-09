@@ -57,6 +57,13 @@ public static class HoverCard
                 body.Children.Add(WithMargin(Text.Bar(fraction, 4, Theme.Of(tile.Reading.Block is not null ? Band.Critical : Bands.Of(fraction))), new Thickness(0, 5, 0, 4)));
             }
             body.Children.Add(Text.Secondary(window.Summary(tile.Reading.Fidelity), 11));
+            if (tile.Forecast is Forecast forecast && window.Id == tile.Headline?.Id)
+            {
+                var pace = Text.Make(Copy.Forecast(forecast, now), 11, forecast.Kind == ForecastKind.RunsOut ? Theme.Watch : Theme.TextSecondary);
+                pace.TextWrapping = System.Windows.TextWrapping.Wrap;
+                pace.TextTrimming = System.Windows.TextTrimming.None;
+                body.Children.Add(WithMargin(pace, new Thickness(0, 2, 0, 0)));
+            }
         }
 
         if (tile.Reading.Block is Blocked block)

@@ -43,6 +43,8 @@
     "copy.requests": { "zero": "لا طلبات اليوم", "one": "~طلب واحد اليوم", "two": "~طلبان اليوم", "few": "~{n} طلبات اليوم", "many": "~{n} طلبًا اليوم", "other": "~{n} طلب اليوم" },
     "copy.noReading": "لا قراءة",
     "copy.via": "عبر {source}",
+    "copy.forecastRunsOut": "بهذا المعدل يفرغ عند {time}",
+    "copy.forecastLasts": "بهذا المعدل يدوم حتى إعادة الضبط",
 
     "alert.usage": "الاستهلاك",
     "alert.threshold.title": "{name} عند {pct}%",

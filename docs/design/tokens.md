@@ -114,3 +114,5 @@ Resets: "Resets in 51 min" under an hour (rounded, never "60 min"), "Resets Thu
 12:00 AM" within a week, "Resets Sep 28" beyond it, "Resetting…" once passed.
 Elapsed: "just now" under 45 s, "6 min", "1 hr", "1 hr 5 min"; "… ago" for ages.
 Usage: "63% used · 37% left"; a derived count reads "~7 requests today".
+
+Pace, on the headline window only, under its summary: "At this pace, empty at 4:40 PM" (amber; the weekday is added when that is another day) or "At this pace it lasts until the reset". Computed by least squares over the last hour of the current epoch, at least three samples spanning ten minutes; nothing is shown while a window rests (under half a point an hour), is full, or would only empty more than a day away.

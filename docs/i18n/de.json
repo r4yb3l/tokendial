@@ -43,6 +43,8 @@
     "copy.requests": { "zero": "heute keine Anfragen", "one": "~1 Anfrage heute", "other": "~{n} Anfragen heute" },
     "copy.noReading": "Kein Messwert",
     "copy.via": "über {source}",
+    "copy.forecastRunsOut": "In diesem Tempo um {time} leer",
+    "copy.forecastLasts": "In diesem Tempo reicht es bis zum Zurücksetzen",
 
     "alert.usage": "Verbrauch",
     "alert.threshold.title": "{name} bei {pct} %",

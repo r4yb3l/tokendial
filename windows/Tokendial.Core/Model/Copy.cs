@@ -48,6 +48,16 @@ public static class Copy
         return Strings.T("copy.until", ("reason", reason), ("time", time));
     }
 
+    /// <summary>"At this pace, empty at 4:40 PM" (with the weekday when that is another day), or "At this pace it lasts until the reset".</summary>
+    public static string Forecast(Forecast forecast, DateTimeOffset now, TimeZoneInfo? zone = null)
+    {
+        if (forecast.Kind == ForecastKind.LastsUntilReset || forecast.RunsOutAt is not DateTimeOffset at) return Strings.T("copy.forecastLasts");
+        zone ??= TimeZoneInfo.Local;
+        var local = TimeZoneInfo.ConvertTime(at, zone);
+        var time = CalendarDaysBetween(now, at, zone) >= 1 ? $"{local.ToString("ddd", Strings.Culture)} {ShortTime(local)}" : ShortTime(local);
+        return Strings.T("copy.forecastRunsOut", ("time", time));
+    }
+
     public static int CalendarDaysBetween(DateTimeOffset from, DateTimeOffset to, TimeZoneInfo zone) =>
         (TimeZoneInfo.ConvertTime(to, zone).Date - TimeZoneInfo.ConvertTime(from, zone).Date).Days;
 

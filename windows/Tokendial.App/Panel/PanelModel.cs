@@ -13,7 +13,8 @@ public sealed record Tile(
     ProviderReading Reading,
     ProviderAccount? Account,
     Activity? Activity,
-    bool InFlight)
+    bool InFlight,
+    Forecast? Forecast = null)
 {
     public UsageWindow? Headline => Reading.Headline;
     public double? Fraction => Reading.HeadlineFraction;
@@ -52,12 +53,13 @@ public sealed record PanelModel(IReadOnlyList<Tile> Tiles, IReadOnlyList<AgentSe
     public static readonly PanelModel Empty = new([], [], 0);
 
     public static PanelModel Build(IReadOnlyList<ProviderReading> readings, IReadOnlyList<ProviderSummary> summaries,
-        IReadOnlyDictionary<string, Activity> activities, IReadOnlySet<string> inFlight, int muted)
+        IReadOnlyDictionary<string, Activity> activities, IReadOnlySet<string> inFlight, int muted, IReadOnlyDictionary<string, Forecast>? forecasts = null)
     {
         var tiles = readings.Select(r =>
         {
             var summary = summaries.FirstOrDefault(s => s.Id == r.ProviderId);
-            return new Tile(r.ProviderId, r.DisplayName, Tile.MarkFor(r.ProviderId), r, summary?.Account, activities.GetValueOrDefault(r.ProviderId), inFlight.Contains(r.ProviderId));
+            return new Tile(r.ProviderId, r.DisplayName, Tile.MarkFor(r.ProviderId), r, summary?.Account, activities.GetValueOrDefault(r.ProviderId), inFlight.Contains(r.ProviderId),
+                forecasts?.GetValueOrDefault(r.ProviderId));
         }).ToList();
         var sessions = activities.Values.SelectMany(a => a.Ordered)
             .OrderBy(s => s.State switch { SessionState.Waiting => 0, SessionState.Working => 1, _ => 2 })

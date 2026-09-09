@@ -43,6 +43,8 @@
     "copy.requests": { "zero": "no requests today", "one": "~1 request today", "other": "~{n} requests today" },
     "copy.noReading": "No reading",
     "copy.via": "via {source}",
+    "copy.forecastRunsOut": "At this pace, empty at {time}",
+    "copy.forecastLasts": "At this pace it lasts until the reset",
 
     "alert.usage": "Usage",
     "alert.threshold.title": "{name} at {pct}%",

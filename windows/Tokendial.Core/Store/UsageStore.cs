@@ -18,6 +18,7 @@ public sealed class UsageStore : IDisposable
     private readonly Func<DateTimeOffset> now;
     private readonly IAppLauncher launcher;
     private readonly Dictionary<string, Remembered> remembered;
+    private readonly UsageHistory history = new();
     private readonly Dictionary<string, int> generation = new();
     private HashSet<string> disconnected;
     private HashSet<string> inFlight = new();
@@ -51,6 +52,25 @@ public sealed class UsageStore : IDisposable
     public Func<bool> IsBusy { get; set; } = () => false;
 
     public IReadOnlyList<ProviderReading> Readings { get { lock (gate) return readings.ToArray(); } }
+
+    /// <summary>Where each connected provider's headline window is heading, for the card; providers at rest or too new are absent.</summary>
+    public IReadOnlyDictionary<string, Forecast> Forecasts
+    {
+        get
+        {
+            lock (gate)
+            {
+                var at = now();
+                var result = new Dictionary<string, Forecast>(StringComparer.Ordinal);
+                foreach (var reading in readings)
+                {
+                    if (reading.Headline is not UsageWindow headline || headline.UsedFraction is null) continue;
+                    if (Forecast.For(history.Samples(reading.ProviderId, headline.Id), at, headline.ResetsAt) is Forecast forecast) result[reading.ProviderId] = forecast;
+                }
+                return result;
+            }
+        }
+    }
     public IReadOnlySet<string> InFlight { get { lock (gate) return new HashSet<string>(inFlight); } }
     public IReadOnlySet<string> Disconnected { get { lock (gate) return new HashSet<string>(disconnected); } set => SetDisconnected(value); }
     public Task? CurrentPoll { get; private set; }
@@ -205,6 +225,7 @@ public sealed class UsageStore : IDisposable
             foreach (var id in disconnected)
             {
                 if (remembered.Remove(id)) archive.Forget(id);
+                history.Forget(id);
             }
             foreach (var id in changed.Where(id => !disconnected.Contains(id)))
             {
@@ -231,7 +252,9 @@ public sealed class UsageStore : IDisposable
             if (!IsCurrent(provider.Id, gen)) return null;
             lock (gate)
             {
-                remembered[provider.Id] = new Remembered(fresh, now());
+                var at = now();
+                remembered[provider.Id] = new Remembered(fresh, at);
+                history.Record(fresh, at);
                 archive.Save(remembered);
             }
             Log.Usage.Debug($"{provider.Id}: {fresh.Windows.Count} window(s)");
