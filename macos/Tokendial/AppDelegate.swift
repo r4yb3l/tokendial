@@ -128,7 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let all = store.summaries
         let detected = all.filter { $0.account != nil }
         let absent = all.filter { $0.account == nil }
-        welcome = HostedWindow(title: "Welcome to Tokendial", content: WelcomeView(detected: detected, absent: absent) { [weak self] chosen, openSettings in
+        welcome = HostedWindow(title: Strings.t("welcome.title"), width: absent.isEmpty ? 520 : 560, height: absent.isEmpty ? 580 : 620, content: WelcomeView(detected: detected, absent: absent) { [weak self] chosen, openSettings in
             guard let self else { return }
             self.settings.disconnected = Set(all.map { $0.id }).subtracting(chosen)
             self.settings.known = Set(all.map { $0.id })
@@ -181,7 +181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model.summaries = store.summaries
             model.readings = store.readings
             settingsModel = model
-            settingsWindow = HostedWindow(title: "Tokendial Settings", content: SettingsView(model: model))
+            settingsWindow = HostedWindow(title: Strings.t("settings.title"), width: 1120, height: 860, content: SettingsView(model: model))
             settingsWindow?.onClose = { [weak self] in self?.settingsWindow = nil; self?.settingsModel = nil }
         }
         settingsWindow?.show()
@@ -214,6 +214,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard dark != Theme.dark else { return }
         Theme.use(dark: dark)
         panel.retheme()
+        settingsWindow?.retheme()
+        welcome?.retheme()
         refreshModel()
     }
 
@@ -226,6 +228,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alerts.reconfigure(current.alertConfig, wants: { current.wants($0) })
         if settings.launchAtLogin != LaunchAtLogin.isEnabled { LaunchAtLogin.set(settings.launchAtLogin) }
         refreshModel()
+        settingsModel?.settings = settings
     }
 
     private func connect(_ id: String, _ on: Bool) {
