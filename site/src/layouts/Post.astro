@@ -1,4 +1,5 @@
 ---
+import { getImage } from 'astro:assets';
 import Base from './Base.astro';
 import Mark from '../components/Mark.astro';
 import PostCard from '../components/PostCard.astro';
@@ -15,9 +16,13 @@ const date = post.data.date.toLocaleDateString(locale, { year: 'numeric', month:
 const updated = post.data.updated?.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 const related = (await posts(locale)).filter((p) => p.id !== post.id && p.data.section === post.data.section).slice(0, 3);
 const provider = post.data.provider as Parameters<typeof Mark>[0]['id'] | undefined;
+const site = Astro.site ?? new URL('https://tokendial.app');
+const cover = post.data.cover ? await getImage({ src: post.data.cover, width: 1200, height: 630, fit: 'cover', format: 'png' }) : undefined;
+const social = cover ? new URL(cover.src, site).href : undefined;
+const sources = post.data.sources ?? [];
 ---
 
-<Base locale={locale} title={`${post.data.title} — Tokendial`} description={post.data.description} path={blogPath(locale, slugOf(post))}>
+<Base locale={locale} title={`${post.data.title} — Tokendial`} description={post.data.description} path={blogPath(locale, slugOf(post))} image={social}>
   <article class="mx-auto max-w-3xl px-5 py-12 md:py-16">
     <a href={blogPath(locale)} class="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-100">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rtl:-scale-x-100" aria-hidden="true"><path d="M19 12H5m6 6-6-6 6-6" /></svg>
@@ -36,6 +41,14 @@ const provider = post.data.provider as Parameters<typeof Mark>[0]['id'] | undefi
     </header>
     <div class="prose prose-tokendial mt-10 max-w-none prose-headings:tracking-tight">
       <slot />
+      {sources.length > 0 && (
+        <section class="sources">
+          <h2>{t('blog.sources')}</h2>
+          <ol>
+            {sources.map((s) => <li><a href={s.href} rel="noopener">{s.title}</a></li>)}
+          </ol>
+        </section>
+      )}
     </div>
   </article>
   {related.length > 0 && (

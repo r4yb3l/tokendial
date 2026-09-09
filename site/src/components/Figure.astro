@@ -1,0 +1,55 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { useTranslations, type Locale } from '../i18n';
+
+/**
+ * An illustration inside an article, always credited. Images come from the internet under a free licence
+ * (author + licence + source link); the only exception is a diagram of our own, marked as such with the
+ * source it was built from.
+ */
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  caption?: string;
+  author?: string;
+  license?: string;
+  licenseHref?: string;
+  sourceHref?: string;
+  /** For a diagram we drew ourselves: the source it was built from. */
+  ours?: string;
+  locale?: Locale;
+  /** Keep a diagram at its natural width instead of stretching it; for small SVGs. */
+  natural?: boolean;
+  /** Give a dark or transparent diagram a light plate so its strokes read in both themes. */
+  plate?: boolean;
+}
+const { src, alt, caption, author, license, licenseHref, sourceHref, ours, locale = 'en', natural = false, plate = false } = Astro.props;
+const t = useTranslations(locale);
+const widths = natural ? undefined : [480, 768, 1200];
+---
+
+<figure class="figure not-prose">
+  <div class:list={['figure-frame', plate && 'figure-plate']}>
+    <Image src={src} alt={alt} widths={widths} sizes="(min-width: 768px) 720px, 100vw" loading="lazy" decoding="async" class:list={[natural && 'figure-natural']} />
+  </div>
+  <figcaption>
+    {caption && <span class="figure-caption">{caption}</span>}
+    {ours ? (
+      <span class="figure-credit">{t('blog.figureOurs', { source: ours })}</span>
+    ) : (
+      author && (
+        <span class="figure-credit">
+          {t('blog.figureBy')}{' '}
+          {sourceHref ? <a href={sourceHref} rel="noopener">{author}</a> : author}
+          {license && (
+            <>
+              {' · '}
+              {licenseHref ? <a href={licenseHref} rel="license noopener">{license}</a> : license}
+            </>
+          )}
+        </span>
+      )
+    )}
+  </figcaption>
+</figure>

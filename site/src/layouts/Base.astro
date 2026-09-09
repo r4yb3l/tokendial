@@ -10,15 +10,17 @@ interface Props {
   description?: string;
   /** The page's path for this locale; alternates are derived by swapping the locale prefix. Defaults to the landing. */
   path?: string;
+  /** Absolute URL of the social image; the site's own card when absent. */
+  image?: string;
 }
 
-const { locale, title, description, path } = Astro.props;
+const { locale, title, description, path, image } = Astro.props;
 const t = useTranslations(locale);
 const site = Astro.site ?? new URL('https://tokendial.app');
 const pageTitle = title ?? t('meta.title');
 const pageDescription = description ?? t('meta.description');
 const canonical = new URL(path ?? pathFor(locale), site).href;
-const ogImage = new URL('/og.png', site).href;
+const ogImage = image ?? new URL('/og.png', site).href;
 ---
 
 <!doctype html>

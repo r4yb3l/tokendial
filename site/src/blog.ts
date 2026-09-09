@@ -7,7 +7,7 @@ export type Section = Post['data']['section'];
 /** The languages the blog is written in. Other locales read the English edition. */
 export const blogLocales: Locale[] = ['en', 'es'];
 
-export const sections: Section[] = ['save-tokens', 'install', 'tools', 'news'];
+export const sections: Section[] = ['basics', 'save-tokens', 'tools', 'design', 'install', 'news'];
 
 export function blogLocale(locale: Locale): Locale {
   return blogLocales.includes(locale) ? locale : defaultLocale;

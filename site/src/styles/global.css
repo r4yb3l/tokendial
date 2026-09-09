@@ -250,3 +250,78 @@ body {
 .prose-tokendial :where(a) {
   text-decoration-color: color-mix(in oklab, var(--color-brand-400) 40%, transparent);
 }
+
+/* Figures inside articles: framed, credited, readable in both looks. */
+.figure {
+  margin: 2rem 0;
+}
+
+.figure-frame {
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--color-ink-700);
+  background: var(--color-ink-900);
+}
+
+.figure-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.figure-frame img.figure-natural {
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.figure-plate {
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.figure-plate img {
+  border-radius: 6px;
+}
+
+.figure figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--color-slate-400);
+}
+
+.figure-caption {
+  color: var(--color-slate-300);
+}
+
+.figure-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+}
+
+.figure-credit a:hover {
+  color: var(--color-slate-100);
+}
+
+.sources {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-ink-700);
+}
+
+.sources h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-slate-400);
+}
+
+.sources ol {
+  font-size: 0.9rem;
+}
