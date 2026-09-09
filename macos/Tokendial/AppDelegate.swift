@@ -51,7 +51,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.onSettings = { [weak self] in self?.showSettings() }
         statusItem.onTestAlert = { [weak self] in self?.testAlert() }
         statusItem.onQuit = { NSApp.terminate(nil) }
-        statusItem.onLaunchAtLogin = { [weak self] on in self?.setLaunchAtLogin(on) }
 
         store.changed = { [weak self] in DispatchQueue.main.async { self?.onStoreChanged() } }
         hub.changed = { [weak self] in DispatchQueue.main.async { self?.onHubChanged() } }
@@ -163,7 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let worst = model.tiles.filter { $0.hasReading }.compactMap { $0.fraction }.max()
         let lines = model.tiles.filter { $0.hasReading }.map { "\($0.name) \(Int(($0.fraction ?? 0) * 100).description)%" }
         let tooltip = lines.isEmpty ? Strings.t("tray.noProviders") : Strings.t("app.name") + "\n" + lines.joined(separator: "\n")
-        statusItem.update(worst: worst, tooltip: tooltip, launchAtLogin: settings.launchAtLogin)
+        statusItem.update(worst: worst, tooltip: tooltip)
     }
 
     private func openProvider(_ id: String) {
@@ -200,7 +199,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// A new language: reload the catalogue, then rebuild everything that holds text.
     private func relocalize() {
         Strings.use(settings.language)
-        statusItem.relocalize()
         panel.retheme()
         refreshModel()
     }
@@ -236,13 +234,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         save()
         settingsModel?.settings = settings
         settingsModel?.summaries = store.summaries
-    }
-
-    private func setLaunchAtLogin(_ on: Bool) {
-        settings.launchAtLogin = on
-        LaunchAtLogin.set(on)
-        save()
-        refreshModel()
     }
 
     /// A sample threshold alert straight to the sink, so the user sees what one looks like without waiting to cross 50 %.
