@@ -1,0 +1,74 @@
+---
+title: "Qué es un LLM, sin matemáticas"
+description: "El modelo detrás de tu asistente de código es un predictor de la siguiente palabra, enorme, con dos capas de entrenamiento encima. Con eso se explica casi todo lo que hace bien, lo que falla y por qué cuesta lo que cuesta."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/what-is-an-llm/transformer-full-architecture.png
+coverAlt: "Diagrama de bloques de la arquitectura Transformer, con las pilas de codificador y decodificador"
+sources:
+  - title: "Wikipedia: Large language model"
+    href: "https://en.wikipedia.org/wiki/Large_language_model"
+  - title: "Wikipedia: Transformer (deep learning)"
+    href: "https://en.wikipedia.org/wiki/Transformer_(deep_learning)"
+  - title: "Wikipedia: Attention Is All You Need"
+    href: "https://en.wikipedia.org/wiki/Attention_Is_All_You_Need"
+  - title: "Wikipedia: Reinforcement learning from human feedback"
+    href: "https://en.wikipedia.org/wiki/Reinforcement_learning_from_human_feedback"
+  - title: "Anthropic: Models overview"
+    href: "https://docs.anthropic.com/en/docs/about-claude/models/overview"
+---
+import Figure from '../../../components/Figure.astro';
+import transformer from '../../../assets/blog/what-is-an-llm/transformer-full-architecture.png';
+import training from '../../../assets/blog/what-is-an-llm/three-stage-training.svg';
+import attention from '../../../assets/blog/what-is-an-llm/attention-overview.svg';
+
+Cada vez que escribes una petición en Claude Code, Codex o Cursor, lo que responde es un modelo de lenguaje grande. Puedes vibecodear años sin saber cómo funciona. Pero cuatro ideas explican casi todo lo que ves: por qué el asistente es brillante con el código repetitivo y flojo con la API interna de tu empresa, por qué a veces se inventa una función que no existe, por qué una conversación larga se vuelve más lenta y más cara, y por qué todos los planes que pagas se miden en tokens. Este artículo te da esas cuatro ideas y nada más.
+
+## 1. Predice el siguiente trozo de texto
+
+Un modelo de lenguaje grande, LLM por sus siglas en inglés, es una red neuronal entrenada con una cantidad enorme de texto para hacer un solo trabajo: dada una secuencia de texto, predecir lo que viene después. No la siguiente palabra exactamente, sino el siguiente **token**, un trozo de texto que suele ser una palabra y a veces un pedazo de una. Los modelos detrás de los asistentes de hoy son de la familia GPT, siglas de *generative pre-trained transformer*: preentrenados para predecir el siguiente token y ajustados después para comportarse como asistentes.
+
+Ese es todo el truco. Cuando pides "escribe una función que parsee esta fecha", el modelo no está buscando nada. Está produciendo, token a token, la continuación que su entrenamiento hace más probable después de una petición como la tuya. Lo hace tan bien porque el texto de entrenamiento incluía una cantidad colosal de código, documentación, preguntas y respuestas, así que "la continuación más probable" cae en código que funciona muchas más veces de las que no.
+
+También explica el fallo que seguro has visto: una respuesta fluida, segura y sencillamente equivocada. Los investigadores lo llaman alucinación. El modelo produjo el texto con más pinta de plausible, y plausible no es lo mismo que verdadero. Un nombre de método inventado que *parece* seguir la convención de la librería es exactamente lo que produce un predictor del siguiente token cuando no conoce el método.
+
+## 2. La arquitectura se llama Transformer
+
+Por dentro, casi todos los LLM son un Transformer, una arquitectura que presentaron en 2017 ocho investigadores de Google en un artículo titulado "Attention Is All You Need". En 2026 ese artículo superaba las 250.000 citas, lo que lo sitúa entre los diez más citados del siglo.
+
+<Figure src={transformer} alt="Diagrama de bloques del Transformer: una pila codificadora a la izquierda y una decodificadora a la derecha, cada una hecha de bloques de atención y feed-forward repetidos N veces" caption="El Transformer original. Asistentes como Claude y GPT usan solo la mitad derecha, el decodificador, apilada muchas veces." author="dvgodoy" license="CC BY 4.0" licenseHref="https://creativecommons.org/licenses/by/4.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Transformer,_full_architecture.png" locale="es" />
+
+No necesitas las cajas. Necesitas la única idea que hizo ganar al Transformer: la **atención**. Los modelos anteriores leían el texto token a token y arrastraban un resumen, así que al final de una frase larga el principio se había desvanecido. Un Transformer mira todos los tokens de la ventana a la vez y, para cada uno, calcula cuánto le importa cada uno de los demás. El "lo" de "el parser falló porque lo esperaba en UTC" puede mirar directamente a "parser". Nada se desvanece con la distancia, al menos dentro de la ventana.
+
+<Figure src={attention} alt="Diagrama de atención: una consulta se compara con un conjunto de claves y los valores que coinciden se combinan en la salida" caption="La atención en una imagen: una consulta pregunta a la memoria qué claves encajan y los valores que encajan se mezclan en la salida." author="Zhang, Lipton, Li y Smola" license="CC BY-SA 4.0" licenseHref="https://creativecommons.org/licenses/by-sa/4.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Attention_mechanism_overview.svg" locale="es" natural plate />
+
+La atención tiene un precio que te afecta directamente: el trabajo crece con el cuadrado del número de tokens de la ventana. Dobla la conversación y multiplicas por cuatro, más o menos, el cálculo. Por eso las sesiones largas se vuelven lentas, por eso los proveedores limitan la ventana y por eso "compacta esta conversación" es un ahorro real y no un ritual.
+
+## 3. El entrenamiento tiene tres etapas
+
+Un predictor del siguiente token en crudo no es un asistente. Continuará tu pregunta con tres preguntas más, porque así son los hilos de los foros. Convertirlo en algo que responde exige dos etapas más de entrenamiento sobre la primera.
+
+<Figure src={training} alt="Flujo de tres etapas: el preentrenamiento con web, libros y código produce un modelo base; el ajuste supervisado con prompts y respuestas ideales produce un modelo que sigue instrucciones; el aprendizaje por refuerzo con retroalimentación humana produce el asistente alineado" caption="Las tres etapas por las que pasa todo asistente moderno. Solo la primera trata de conocimiento; las otras dos tratan de comportamiento." author="Kjerish" license="CC0 1.0" licenseHref="https://creativecommons.org/publicdomain/zero/1.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Three-stage_large_language_model_training_workflow.svg" locale="es" />
+
+1. **Preentrenamiento.** El modelo lee una porción muy grande de internet, libros y código abierto, y aprende a predecir el siguiente token. De aquí salen la gramática, los hechos y la capacidad de escribir código. Es también la parte cara: entrenar GPT-2, un modelo de 1.500 millones de parámetros, costó unos 50.000 dólares en 2019; PaLM, con 540.000 millones, unos 8 millones en 2022. Los modelos de frontera de hoy cuestan mucho más.
+2. **Ajuste supervisado.** Personas escriben prompts con respuestas ideales y el modelo se entrena para imitarlas. Aquí aprende que una pregunta merece una respuesta, en el formato y la longitud pedidos.
+3. **Aprendizaje por refuerzo con retroalimentación humana.** El modelo produce varias respuestas a un prompt, humanos las ordenan, un segundo modelo aprende a predecir ese orden y el asistente se optimiza para puntuar alto en él. De aquí sale el "útil, conciso, y rechaza lo peligroso".
+
+Dos consecuencias para tu trabajo diario. Primera, el conocimiento tiene **fecha de corte**: el texto de preentrenamiento termina en algún punto y el modelo no sabe nada posterior salvo que se lo pegues o le des una herramienta para buscarlo. Anthropic publica una "fecha de corte de conocimiento confiable" por modelo precisamente por esto. Segunda, el comportamiento se moldea por preferencia, no por reglas, y por eso la misma petición formulada de dos maneras puede recibir dos respuestas bastante distintas.
+
+## 4. Todo se mide en tokens
+
+El modelo lee tokens y escribe tokens, así que todos los proveedores cobran en tokens: la inferencia alojada se tarifa por token de entrada y por token de salida, y los planes de suscripción detrás de tu asistente son ventanas de gasto en tokens que se rellenan según un calendario.
+
+Un token es un trozo de texto elegido por el tokenizador del modelo, normalmente con un algoritmo llamado codificación por pares de bytes: parte de caracteres sueltos y va fusionando los pares adyacentes más frecuentes hasta tener un vocabulario de tamaño fijo. Las palabras comunes en inglés acaban siendo un token. Las palabras raras, los identificadores y el código se partan. El ejemplo de Wikipedia es un tokenizador antiguo de GPT-3 que divide `tokenizer: texts -> series of numerical "tokens"` en trece piezas: `token`, `izer`, `:`, ` texts`, ` ->`, `series`, ` of`, ` numerical`, ` "`, `t`, `ok`, `ens`, `"`. Tu `handleUserAuthCallback` cuesta más que la palabra "hola", y el español, con sus tildes y terminaciones, suele costar algo más que el inglés.
+
+La **ventana de contexto** es cuántos tokens puede atender el modelo a la vez: tu conversación, los archivos que el agente leyó, sus propias respuestas, las definiciones de herramientas, todo. En 2026 Claude Fable 5.1, Opus 5 y Sonnet 5 de Anthropic aceptan un millón de tokens y escriben hasta 128.000 en una respuesta; Haiku 4.5 acepta 200.000. Suena infinito. No lo es, porque todo lo que hay en la ventana se relee en cada turno, y porque tu plan mide los tokens, no los turnos.
+
+## Qué significa esto cuando programas
+
+- **Dale los hechos que no puede saber.** Todo lo posterior a la fecha de corte, todo lo privado de tu proyecto, todo lo que esté en un archivo que no ha leído. Señalarle el archivo es mejor que pegarlo, porque el agente lee solo lo que necesita y la copia pegada viajaría en cada turno posterior.
+- **Espera errores seguros de sí mismos y verifica.** Una API alucinada es la salida más natural de un predictor del siguiente token. Las pruebas, el comprobador de tipos y una lectura rápida del diff no son opcionales.
+- **Mantén la ventana ligera.** El coste de la atención crece con el cuadrado de la ventana, y tu plan cobra cada token releído. Abre una conversación nueva cuando cambie la tarea; compacta la actual cuando se arrastre.
+- **Mira el medidor.** Uses Tokendial o el comando de uso de la propia herramienta, el número que limita tu tarde son los tokens de la ventana, no los mensajes enviados.
+
+Nada de esto exige una sola ecuación. Exige recordar que el asistente es un adivinador muy bien entrenado del texto que viene después, y tratar su salida en consecuencia.

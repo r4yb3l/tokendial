@@ -1,0 +1,74 @@
+---
+title: "What an LLM is, without the maths"
+description: "The model behind your coding assistant is a very large next-word predictor wrapped in two layers of training. Knowing that much explains most of what it does well, what it gets wrong, and why it costs what it costs."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/what-is-an-llm/transformer-full-architecture.png
+coverAlt: "Block diagram of the Transformer architecture, with encoder and decoder stacks"
+sources:
+  - title: "Wikipedia: Large language model"
+    href: "https://en.wikipedia.org/wiki/Large_language_model"
+  - title: "Wikipedia: Transformer (deep learning)"
+    href: "https://en.wikipedia.org/wiki/Transformer_(deep_learning)"
+  - title: "Wikipedia: Attention Is All You Need"
+    href: "https://en.wikipedia.org/wiki/Attention_Is_All_You_Need"
+  - title: "Wikipedia: Reinforcement learning from human feedback"
+    href: "https://en.wikipedia.org/wiki/Reinforcement_learning_from_human_feedback"
+  - title: "Anthropic: Models overview"
+    href: "https://docs.anthropic.com/en/docs/about-claude/models/overview"
+---
+import Figure from '../../../components/Figure.astro';
+import transformer from '../../../assets/blog/what-is-an-llm/transformer-full-architecture.png';
+import training from '../../../assets/blog/what-is-an-llm/three-stage-training.svg';
+import attention from '../../../assets/blog/what-is-an-llm/attention-overview.svg';
+
+Every time you type a request into Claude Code, Codex or Cursor, the thing that answers is a large language model. You can vibecode for years without knowing how one works. But four ideas explain almost everything you see: why the assistant is brilliant at boilerplate and shaky on your company's internal API, why it sometimes invents a function that does not exist, why a long conversation gets slower and more expensive, and why every plan you pay for is metered in tokens. This article gives you those four ideas and nothing else.
+
+## 1. It predicts the next piece of text
+
+A large language model, or LLM, is a neural network trained on an enormous amount of text to do one job: given a sequence of text, predict what comes next. Not the next word exactly, but the next **token**, a chunk of text that is often a word, sometimes part of one. The models behind today's assistants are of the GPT family, which stands for *generative pre-trained transformer*: pre-trained to predict the next token, then adjusted to behave as an assistant.
+
+That is the whole trick. When you ask "write a function that parses this date", the model is not looking anything up. It is producing, token by token, the continuation that its training makes most probable after a request like yours. It does that so well because the training text included a colossal amount of code, documentation, questions and answers, so "most probable continuation" lands on working code far more often than not.
+
+It also explains the failure you have surely seen: a fluent, confident answer that is simply wrong. Researchers call it a hallucination. The model produced the most plausible-looking text, and plausible is not the same as true. A made-up method name that *looks* like the library's naming convention is exactly what a next-token predictor will produce when it does not actually know the method.
+
+## 2. The architecture is called a Transformer
+
+Under the hood, almost every LLM is a Transformer, an architecture introduced in 2017 by eight Google researchers in a paper titled "Attention Is All You Need". By 2026 that paper had been cited more than 250,000 times, which puts it among the ten most cited papers of the century.
+
+<Figure src={transformer} alt="Block diagram of the Transformer: an encoder stack on the left, a decoder stack on the right, each made of attention and feed-forward blocks repeated N times" caption="The original Transformer. Assistants like Claude and GPT use the right-hand half only, the decoder, stacked many times." author="dvgodoy" license="CC BY 4.0" licenseHref="https://creativecommons.org/licenses/by/4.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Transformer,_full_architecture.png" locale="en" />
+
+You do not need the boxes. You need the one idea that made the Transformer win: **attention**. Earlier models read text one token at a time and carried a summary forward, so by the end of a long sentence the beginning had faded. A Transformer looks at every token in the window at once and, for each one, works out how much every other token matters to it. The word "it" in "the parser failed because it expected UTC" gets to look straight at "parser". Nothing fades with distance, at least inside the window.
+
+<Figure src={attention} alt="Attention diagram: a query is compared against a set of keys, and the matching values are combined into the output" caption="Attention in one picture: a query asks the memory which keys match, and the matching values are blended into the output." author="Zhang, Lipton, Li and Smola" license="CC BY-SA 4.0" licenseHref="https://creativecommons.org/licenses/by-sa/4.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Attention_mechanism_overview.svg" locale="en" natural plate />
+
+Attention has a price that matters to you directly: the work grows with the square of the number of tokens in the window. Double the conversation, roughly quadruple the computation. That is why long sessions get slow, why providers cap the window, and why "compact this conversation" is a real saving and not a ritual.
+
+## 3. Training happens in three stages
+
+A raw next-token predictor is not an assistant. It will happily continue your question with three more questions, because that is what forum threads look like. Turning it into something that answers takes two more stages of training on top of the first.
+
+<Figure src={training} alt="Three-stage workflow: pretraining on web, books and code produces a base model; supervised fine-tuning on prompts with ideal answers produces an instruction-tuned model; reinforcement learning from human feedback produces the aligned assistant" caption="The three stages every modern assistant goes through. Only the first one is about knowledge; the other two are about behaviour." author="Kjerish" license="CC0 1.0" licenseHref="https://creativecommons.org/publicdomain/zero/1.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Three-stage_large_language_model_training_workflow.svg" locale="en" />
+
+1. **Pretraining.** The model reads a very large slice of the public internet, books and open-source code, and learns to predict the next token. This is where grammar, facts and the ability to write code come from. It is also the expensive part: training GPT-2, a 1.5-billion-parameter model, cost about $50,000 in 2019; PaLM, at 540 billion parameters, cost around $8 million in 2022. Frontier models today cost far more.
+2. **Supervised fine-tuning.** People write prompts with ideal answers, and the model is trained to imitate them. This is where it learns that a question deserves an answer, in the requested format and length.
+3. **Reinforcement learning from human feedback.** The model produces several answers to a prompt, humans rank them, a second model learns to predict those rankings, and the assistant is then optimised to score well on it. This is where "helpful, concise, refuses the dangerous stuff" comes from.
+
+Two consequences for your daily work. First, the knowledge has a **cutoff date**: the pretraining text ends somewhere, and the model knows nothing after it unless you paste it or give it a tool to fetch it. Anthropic publishes a "reliable knowledge cutoff" for each model for exactly this reason. Second, behaviour is shaped by preference, not by rules, which is why the same request phrased two ways can get two quite different answers.
+
+## 4. Everything is measured in tokens
+
+The model reads tokens and writes tokens, so every provider bills in tokens: hosted inference is priced per input token and per output token, and the subscription plans behind your coding assistant are windows of token spend that refill on a schedule.
+
+A token is a piece of text chosen by the model's tokenizer, usually with an algorithm called byte-pair encoding: it starts from single characters and repeatedly merges the most frequent adjacent pairs until it has a vocabulary of a fixed size. Common English words end up as one token. Rare words, identifiers and code get split. Wikipedia's example is a legacy GPT-3 tokenizer splitting `tokenizer: texts -> series of numerical "tokens"` into thirteen pieces: `token`, `izer`, `:`, ` texts`, ` ->`, `series`, ` of`, ` numerical`, ` "`, `t`, `ok`, `ens`, `"`. Your `handleUserAuthCallback` costs more than the word "hello".
+
+The **context window** is how many tokens the model can attend to at once: your conversation, the files the agent read, its own answers, the tool definitions, all of it. In 2026 Anthropic's Claude Fable 5.1, Opus 5 and Sonnet 5 accept a million tokens and can write up to 128,000 in one answer; Haiku 4.5 accepts 200,000. That sounds infinite. It is not, because everything in the window is re-read on every turn, and because your plan meters the tokens, not the turns.
+
+## What this means when you are coding
+
+- **Give it the facts it cannot know.** Anything after the cutoff, anything private to your project, anything in a file it has not read. Pointing the agent at the file is better than pasting it, because the agent reads only what it needs and the pasted copy would ride along in every later turn.
+- **Expect confident mistakes and verify.** A hallucinated API is the most natural output of a next-token predictor. Tests, type checkers and a quick read of the diff are not optional.
+- **Keep the window lean.** Attention cost grows with the square of the window, and your plan charges for every token re-read. Start a new conversation when the task changes; compact the current one when it drags.
+- **Watch the meter.** Whether you use Tokendial or the tool's own usage command, the number that limits your afternoon is tokens in the window, not messages sent.
+
+None of this requires a single equation. It requires remembering that the assistant is a very well-trained guesser of what text comes next, and treating its output accordingly.
