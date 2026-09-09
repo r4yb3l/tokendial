@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsModel: SettingsModel?
     private var welcome: HostedWindow<WelcomeView>?
     private var clock: Timer?
+    private var appearanceObserver: NSKeyValueObservation?
     private var muted = 0
 
     static var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev" }
@@ -55,6 +56,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hub.changed = { [weak self] in DispatchQueue.main.async { self?.onHubChanged() } }
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in self?.store.onWake() }
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in self?.panel.reposition() }
+
+        applyAppearance()
+        appearanceObserver = NSApp.observe(\.effectiveAppearance) { [weak self] _, _ in
+            guard let self, self.settings.appearance == .system else { return }
+            DispatchQueue.main.async { self.applyAppearance() }
+        }
 
         panel.setMode(settings.panel)
         refreshModel()
@@ -178,7 +185,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow?.show()
     }
 
+    /// The look the panel draws with: the system's while the setting says system, otherwise the one that was pinned.
+    private func applyAppearance() {
+        let dark: Bool
+        switch settings.appearance {
+        case .system: dark = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        case .dark: dark = true
+        case .light: dark = false
+        }
+        guard dark != Theme.dark else { return }
+        Theme.use(dark: dark)
+        panel.retheme()
+        refreshModel()
+    }
+
     private func applySettings() {
+        applyAppearance()
         panel.setMode(settings.panel)
         let current = settings
         alerts.reconfigure(current.alertConfig, wants: { current.wants($0) })

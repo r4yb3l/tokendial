@@ -100,6 +100,16 @@ final class PanelController: NSObject {
 
     var isExpanded: Bool { expanded }
 
+    /// Repaint after a theme switch: the capsule's layer colours, the contents, and the card if one is open.
+    func retheme() {
+        capsule.layer?.backgroundColor = Theme.surface.cgColor
+        capsule.layer?.borderColor = Theme.surfaceEdge.cgColor
+        content.retheme()
+        content.apply(model, now: now(), animated: false)
+        layout(animated: false)
+        if let id = cardFor { showCard(id) }
+    }
+
     func setMode(_ next: PanelMode) {
         mode = next
         if mode == .hidden { window.orderOut(nil); hideCard(); return }

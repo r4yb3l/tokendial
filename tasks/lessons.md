@@ -18,3 +18,15 @@ Debug app sat behind it. Synthetic input goes to whatever has focus, not to the 
 Rule: before SetCursorPos, mouse_event or keyboard input, read the foreground window; if it is not Tokendial,
 stop and verify another way (UI Automation tree, logs, PrintWindow). Prefer those three always; input is the
 last resort and only when the machine is visibly idle.
+
+## Parity between platforms includes the visual layer (2026-09-09)
+Asked to plan bringing macOS up to parity with Windows, I planned only the four functional features
+(Gemini, forecast, Codex profiles, updater) and left out the entire design layer: the light/dark themes
+and their switch, the redesigned settings and welcome windows, the four dock positions. The user caught
+it immediately — the running Mac app is stock SwiftUI with a system-blue button, nothing like the Windows
+redesign. The visual layer was ~1,520 lines on Windows against 1,796 for the whole macOS app target, so it
+was the biggest part of the gap, not a detail.
+Rule: when planning parity, diff the UI layer too, not just behaviour. Read the other platform's design
+files and the shared spec (`docs/design/tokens.md`) and list what the lagging platform does not have.
+A second reason to do design first: rows that live in a window being rebuilt (a new provider row, a new
+settings toggle) would otherwise be built twice.

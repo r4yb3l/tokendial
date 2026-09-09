@@ -106,7 +106,13 @@ final class CopyTests: XCTestCase {
         XCTAssertEqual("1 hr 5 min", Copy.elapsed(now.addingTimeInterval(-65 * 60), now: now))
         XCTAssertEqual("just now", Copy.elapsed(now.addingTimeInterval(120), now: now))
         XCTAssertEqual("6 min ago", Copy.ago(now.addingTimeInterval(-6 * 60), now: now))
-        XCTAssertEqual("Paused until Wed 4:00 AM", Copy.until("Paused", now.addingTimeInterval(6 * 3600 - 13 * 60 - 20), now: now, zone: utc))
+        XCTAssertEqual("Paused until Wed 4:00 AM", plainSpaces(Copy.until("Paused", now.addingTimeInterval(6 * 3600 - 13 * 60 - 20), now: now, zone: utc)))
+    }
+
+    /// macOS formats times with a narrow no-break space before AM/PM; compare on plain spaces so the
+    /// assertions read as the copy does and do not depend on the system's ICU version.
+    private func plainSpaces(_ text: String) -> String {
+        text.replacingOccurrences(of: "\u{202F}", with: " ").replacingOccurrences(of: "\u{00A0}", with: " ")
     }
 
     func testSummaryReadsBothEnds() {

@@ -7,6 +7,13 @@ enum PanelMode: String, Codable, CaseIterable {
     case hidden
 }
 
+/// Which look the app wears: the system's, or one the user pinned.
+enum Appearance: String, Codable, CaseIterable {
+    case system
+    case dark
+    case light
+}
+
 enum AlertDelivery: String, Codable, CaseIterable {
     case tokendialBanners
     case systemNotifications
@@ -31,6 +38,38 @@ struct Settings: Codable {
     var resetLeadMinutes = 10
     var waitingDebounceSeconds = 20
     var lastSeenVersion: String?
+    var appearance: Appearance = .dark
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case schema, panel, disconnected, known, launchAtLogin, firstRunDone, thresholds
+        case alertThresholds, alertResetSoon, alertWaiting, alertLimit, delivery
+        case resetLeadMinutes, waitingDebounceSeconds, lastSeenVersion, appearance
+    }
+
+    /// Every key is optional on the way in, so a file written by an older build keeps its values and the
+    /// fields that build did not know about fall back to their defaults instead of resetting everything.
+    init(from decoder: Decoder) throws {
+        let box = try decoder.container(keyedBy: CodingKeys.self)
+        self.init()
+        schema = try box.decodeIfPresent(Int.self, forKey: .schema) ?? schema
+        panel = try box.decodeIfPresent(PanelMode.self, forKey: .panel) ?? panel
+        disconnected = try box.decodeIfPresent(Set<String>.self, forKey: .disconnected) ?? disconnected
+        known = try box.decodeIfPresent(Set<String>.self, forKey: .known) ?? known
+        launchAtLogin = try box.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? launchAtLogin
+        firstRunDone = try box.decodeIfPresent(Bool.self, forKey: .firstRunDone) ?? firstRunDone
+        thresholds = try box.decodeIfPresent([Int].self, forKey: .thresholds) ?? thresholds
+        alertThresholds = try box.decodeIfPresent(Bool.self, forKey: .alertThresholds) ?? alertThresholds
+        alertResetSoon = try box.decodeIfPresent(Bool.self, forKey: .alertResetSoon) ?? alertResetSoon
+        alertWaiting = try box.decodeIfPresent(Bool.self, forKey: .alertWaiting) ?? alertWaiting
+        alertLimit = try box.decodeIfPresent(Bool.self, forKey: .alertLimit) ?? alertLimit
+        delivery = try box.decodeIfPresent(AlertDelivery.self, forKey: .delivery) ?? delivery
+        resetLeadMinutes = try box.decodeIfPresent(Int.self, forKey: .resetLeadMinutes) ?? resetLeadMinutes
+        waitingDebounceSeconds = try box.decodeIfPresent(Int.self, forKey: .waitingDebounceSeconds) ?? waitingDebounceSeconds
+        lastSeenVersion = try box.decodeIfPresent(String.self, forKey: .lastSeenVersion)
+        appearance = try box.decodeIfPresent(Appearance.self, forKey: .appearance) ?? appearance
+    }
 
     var alertConfig: AlertConfig {
         var config = AlertConfig.default

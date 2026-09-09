@@ -221,6 +221,13 @@ final class PanelContentView: NSView {
         sessionsLine.textColor = model.anyWaiting ? Theme.waiting : Theme.textSecondary
     }
 
+    /// After a theme switch: repaint what is kept between updates, and drop the cells so the next apply rebuilds them.
+    func retheme() {
+        mutedBadge.layer?.backgroundColor = Theme.watch.cgColor
+        sessionsLine.textColor = Theme.textSecondary
+        order = []
+    }
+
     private func rebuild(_ model: PanelModel) {
         compactRow.views.forEach { compactRow.removeView($0) }
         cellRow.views.forEach { cellRow.removeView($0) }
