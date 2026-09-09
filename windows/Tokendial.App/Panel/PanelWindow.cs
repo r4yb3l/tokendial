@@ -102,6 +102,13 @@ public sealed class PanelWindow : Window
     private bool Vertical => edge is DockEdge.Left or DockEdge.Right;
     private int Count => Math.Max(model.Tiles.Count, 0);
 
+    /// <summary>How the expanded dock arranges itself on this screen, wrapping into more columns when a side dock would otherwise run off it.</summary>
+    private Theme.DockLayout Box()
+    {
+        var available = screen is null ? 1080 : (Vertical ? screen.Work.Height : screen.Work.Width) / screen.Scale;
+        return new Theme.DockLayout(Count, Vertical, available);
+    }
+
     private void OnSourceReady()
     {
         var hwnd = new WindowInteropHelper(this).Handle;
@@ -128,7 +135,6 @@ public sealed class PanelWindow : Window
     public void SetEdge(DockEdge next)
     {
         edge = next;
-        content.SetVertical(Vertical);
         capsuleContent.Margin = Vertical ? new Thickness(0, Theme.DockSlant, 0, Theme.DockSlant) : new Thickness(Theme.DockSlant, 0, Theme.DockSlant, 0);
         HideCard();
         Reposition();
@@ -179,17 +185,18 @@ public sealed class PanelWindow : Window
         var hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd == IntPtr.Zero) return;
         screen = Native.PrimaryScreen();
-        var n = Math.Max(Count, 1);
+        var box = Box();
+        content.SetShape(Vertical, box.CellsPerColumn);
         double widthDip, heightDip;
         if (Vertical)
         {
-            widthDip = PanelContent.ExpandedAcross(true) + Theme.HotZone + CardGap + Theme.CardWidth + Theme.ExpandedPadding;
-            heightDip = Math.Min(PanelContent.ExpandedLength(n, true) + 2 * Theme.DockSlant + CardReserve, screen.Work.Height / screen.Scale);
+            widthDip = box.Across + Theme.HotZone + CardGap + Theme.CardWidth + Theme.ExpandedPadding;
+            heightDip = box.Along + 2 * Theme.DockSlant + CardReserve;
         }
         else
         {
-            widthDip = PanelContent.ExpandedLength(n, false) + 2 * Theme.ExpandedPadding + 2 * Theme.DockSlant;
-            heightDip = PanelContent.ExpandedAcross(false) + Theme.HotZone + CardReserve;
+            widthDip = box.Along + 2 * Theme.ExpandedPadding + 2 * Theme.DockSlant;
+            heightDip = box.Across + Theme.HotZone + CardReserve;
         }
         root.Width = widthDip;
         root.Height = heightDip;
@@ -291,8 +298,10 @@ public sealed class PanelWindow : Window
 
     private void Resize(bool animate)
     {
-        var along = (expanded ? PanelContent.ExpandedLength(Count, Vertical) : PanelContent.CompactLength(Count)) + 2 * Theme.DockSlant;
-        var across = expanded ? PanelContent.ExpandedAcross(Vertical) : Theme.CompactHeight;
+        var box = Box();
+        content.SetShape(Vertical, box.CellsPerColumn);
+        var along = (expanded ? box.Along : PanelContent.CompactLength(Count)) + 2 * Theme.DockSlant;
+        var across = expanded ? box.Across : Theme.CompactHeight;
         var width = Vertical ? across : along;
         var height = Vertical ? along : across;
         var duration = animate ? Theme.DurationOf(Theme.Expand) : new Duration(TimeSpan.Zero);

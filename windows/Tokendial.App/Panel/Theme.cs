@@ -81,6 +81,42 @@ public static class Theme
     public const double CardWidth = 280;
     public const double CardRadius = 16;
     public const double CardPadding = 14;
+    /// <summary>The inset above the cells in a dock along the top or bottom edge.</summary>
+    public const double ExpandedLead = 10;
+    /// <summary>The inset at both ends of a dock down a side, where the cells run along the long axis. The slanted corners eat into the ends, so it has to clear DockSlant.</summary>
+    public const double SideLead = 18;
+    /// <summary>The one line of session copy under the cells, plus the gap above it.</summary>
+    public const double SessionsLine = 18;
+
+    /// <summary>The expanded dock's box: how the cells are arranged and how big that makes it. The length is exactly what the cells and the session line need, so nothing is left over at the far end. A dock down a side can ask for more length than the screen has, and then it wraps into as many columns as it takes and grows across instead: nothing is pushed off screen and nothing has to be scrolled to.</summary>
+    public readonly record struct DockLayout
+    {
+        /// <summary>`available` is the room along the edge the dock hangs from. The capsule adds DockSlant beyond each end of this box, so the lead reserved here is what is left of SideLead.</summary>
+        public DockLayout(int count, bool vertical, double available)
+        {
+            var cells = Math.Max(count, 1);
+            if (!vertical)
+            {
+                CellsPerColumn = cells;
+                Columns = 1;
+                Along = Math.Max(2 * ExpandedPadding + cells * CellWidth, CardWidth + 2 * ExpandedPadding);
+                Across = ExpandedHeight;
+                return;
+            }
+            var ends = 2 * (SideLead - DockSlant) + SessionsLine;
+            var room = Math.Max(CellHeight, available - 2 * DockSlant - 24 - ends);
+            var fit = Math.Max(1, (int)((room + CellGap) / (CellHeight + CellGap)));
+            CellsPerColumn = Math.Min(cells, fit);
+            Columns = (int)Math.Ceiling((double)cells / CellsPerColumn);
+            Along = ends + CellsPerColumn * CellHeight + (CellsPerColumn - 1) * CellGap;
+            Across = Columns * CellWidth + 2 * ExpandedPadding;
+        }
+
+        public int CellsPerColumn { get; }
+        public int Columns { get; }
+        public double Along { get; }
+        public double Across { get; }
+    }
 
     public static Brush Of(Band? band) => band switch
     {
