@@ -38,7 +38,7 @@ function trapezoid(width: number, height: number, radius: number): string {
 }
 ---
 
-<div class="ltr theme-dark scene-frame relative mx-auto aspect-[16/10] w-full max-w-[560px] overflow-hidden rounded-2xl border border-ink-700/60 bg-[#0d1017] shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)]" role="img" aria-label={t('demo.caption')}>
+<div class="ltr theme-dark scene-frame relative mx-auto aspect-[560/300] w-full max-w-[560px] overflow-hidden rounded-2xl border border-ink-700/60 bg-[#0d1017] shadow-[0_40px_80px_-40px_rgb(0_0_0/0.9)]" role="img" aria-label={t('demo.caption')}>
   <div class="absolute inset-0 bg-[radial-gradient(40rem_20rem_at_30%_120%,rgb(16_185_129/0.10),transparent_60%),radial-gradient(30rem_18rem_at_90%_-10%,rgb(56_67_88/0.35),transparent_60%)]"></div>
   <div class="absolute inset-x-0 top-0 h-px bg-white/10"></div>
   <div class="scene absolute inset-0">
@@ -74,10 +74,10 @@ function trapezoid(width: number, height: number, radius: number): string {
   </div>
 
   <!-- expanded dock, as under the cursor -->
-  <div class="reveal absolute start-1/2 top-[34%] -translate-x-1/2" style={`width:${expandedWidth}px;height:132px`}>
-    <svg class="absolute inset-0" width={expandedWidth} height="132" viewBox={`0 0 ${expandedWidth} 132`} aria-hidden="true">
-      <path d={trapezoid(expandedWidth, 132, 20)} fill="rgb(16 17 20 / 0.92)" />
-      <path d={trapezoid(expandedWidth, 132, 20).replace(/^M 0 0 H \S+ /, `M ${expandedWidth} 0 `).replace(/Z$/, 'L 0 0')} fill="none" stroke="rgb(255 255 255 / 0.08)" />
+  <div class="reveal absolute start-1/2 top-[110px] -translate-x-1/2" style={`width:${expandedWidth}px;height:160px`}>
+    <svg class="absolute inset-0" width={expandedWidth} height="160" viewBox={`0 0 ${expandedWidth} 160`} aria-hidden="true">
+      <path d={trapezoid(expandedWidth, 160, 20)} fill="rgb(16 17 20 / 0.92)" />
+      <path d={trapezoid(expandedWidth, 160, 20).replace(/^M 0 0 H \S+ /, `M ${expandedWidth} 0 `).replace(/Z$/, 'L 0 0')} fill="none" stroke="rgb(255 255 255 / 0.08)" />
     </svg>
     <div class="absolute inset-x-[34px] top-[10px] flex">
       {tiles.map((tile) => (
@@ -99,7 +99,7 @@ function trapezoid(width: number, height: number, radius: number): string {
         </div>
       ))}
     </div>
-    <p class="absolute inset-x-0 bottom-[12px] text-center text-[11px] text-brand-400">{t('demo.session')}</p>
+    <p class="absolute inset-x-0 bottom-[14px] text-center text-[11px] text-brand-400">{t('demo.session')}</p>
   </div>
   </div>
 </div>

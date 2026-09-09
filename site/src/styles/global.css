@@ -196,14 +196,14 @@ body {
   animation: pulse-soft 1.4s ease-in-out infinite;
 }
 
-/* The dock demo is laid out at 560×350 and scaled down with its container, so nothing is clipped on phones. */
+/* The dock demo is laid out at 560×300 and scaled down with its container, so nothing is clipped on phones. */
 .scene-frame {
   container-type: inline-size;
 }
 
 .scene {
   width: 560px;
-  height: 350px;
+  height: 300px;
   transform-origin: 0 0;
   transform: scale(calc(100cqw / 560px));
 }
