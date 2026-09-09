@@ -69,6 +69,7 @@ final class CellView: NSView {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         widthAnchor.constraint(equalToConstant: Theme.cellWidth).isActive = true
+        heightAnchor.constraint(equalToConstant: Theme.cellHeight).isActive = true
 
         let dialHost = NSView()
         dialHost.translatesAutoresizingMaskIntoConstraints = false
@@ -152,7 +153,8 @@ final class CellView: NSView {
 final class PanelContentView: NSView {
     let compactRow = NSStackView()
     let expanded = NSView()
-    private let cellRow = NSStackView()
+    private let cellGrid = NSStackView()
+    private var cellColumns: [NSStackView] = []
     private let sessionsLine = Label.make("", size: 11, color: Theme.textSecondary, alignment: .center)
     private let mutedBadge = NSView()
     private var compactDials: [String: DialView] = [:]
@@ -160,7 +162,10 @@ final class PanelContentView: NSView {
     private var cells: [String: CellView] = [:]
     private var order: [String] = []
     private var vertical = false
-    private var cellRowHeight: NSLayoutConstraint?
+    private var cellsPerColumn = 0
+    private var gridHeight: NSLayoutConstraint?
+    private var gridTop: NSLayoutConstraint!
+    private var gridCentre: NSLayoutConstraint!
     var onCellClick: ((String) -> Void)?
 
     override init(frame: NSRect) {
@@ -175,11 +180,11 @@ final class PanelContentView: NSView {
         expanded.alphaValue = 0
         expanded.isHidden = true
         addSubview(expanded)
-        cellRow.orientation = .horizontal
-        cellRow.spacing = 0
-        cellRow.alignment = .top
-        cellRow.translatesAutoresizingMaskIntoConstraints = false
-        expanded.addSubview(cellRow)
+        cellGrid.orientation = .vertical
+        cellGrid.spacing = 0
+        cellGrid.alignment = .centerX
+        cellGrid.translatesAutoresizingMaskIntoConstraints = false
+        expanded.addSubview(cellGrid)
         expanded.addSubview(sessionsLine)
         mutedBadge.wantsLayer = true
         mutedBadge.layer?.backgroundColor = Theme.watch.cgColor
@@ -188,6 +193,8 @@ final class PanelContentView: NSView {
         mutedBadge.widthAnchor.constraint(equalToConstant: 8).isActive = true
         mutedBadge.heightAnchor.constraint(equalToConstant: 8).isActive = true
         mutedBadge.isHidden = true
+        gridTop = cellGrid.topAnchor.constraint(equalTo: expanded.topAnchor, constant: Theme.expandedLead)
+        gridCentre = cellGrid.centerYAnchor.constraint(equalTo: expanded.centerYAnchor, constant: -Theme.sessionsLine / 2)
         NSLayoutConstraint.activate([
             compactRow.centerXAnchor.constraint(equalTo: centerXAnchor),
             compactRow.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -195,9 +202,9 @@ final class PanelContentView: NSView {
             expanded.trailingAnchor.constraint(equalTo: trailingAnchor),
             expanded.topAnchor.constraint(equalTo: topAnchor),
             expanded.bottomAnchor.constraint(equalTo: bottomAnchor),
-            cellRow.topAnchor.constraint(equalTo: expanded.topAnchor, constant: 10),
-            cellRow.centerXAnchor.constraint(equalTo: expanded.centerXAnchor),
-            sessionsLine.topAnchor.constraint(equalTo: cellRow.bottomAnchor, constant: 2),
+            gridTop,
+            cellGrid.centerXAnchor.constraint(equalTo: expanded.centerXAnchor),
+            sessionsLine.topAnchor.constraint(equalTo: cellGrid.bottomAnchor, constant: 2),
             sessionsLine.leadingAnchor.constraint(equalTo: expanded.leadingAnchor, constant: Theme.expandedPadding),
             sessionsLine.trailingAnchor.constraint(equalTo: expanded.trailingAnchor, constant: -Theme.expandedPadding)
         ])
@@ -205,16 +212,46 @@ final class PanelContentView: NSView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    /// A dock on a side stacks its cells instead of lining them up, with a gap so the bars do not touch.
-    func setVertical(_ value: Bool) {
-        guard value != vertical || cellRowHeight == nil else { return }
+    /// The dock's grid: one row of cells along the top or bottom edge, or one column per `cellsPerColumn`
+    /// down a side. On a side the cells and the session line are centred in the dock rather than pinned to
+    /// its near end, so a dock that ends up taller than its contents stays balanced.
+    func setShape(vertical value: Bool, cellsPerColumn per: Int) {
+        guard value != vertical || per != cellsPerColumn else { return }
         vertical = value
+        cellsPerColumn = per
         compactRow.orientation = value ? .vertical : .horizontal
-        cellRow.orientation = value ? .vertical : .horizontal
-        cellRow.spacing = value ? Theme.cellGap : 0
-        cellRowHeight?.isActive = false
-        cellRowHeight = value ? nil : cellRow.heightAnchor.constraint(equalToConstant: Theme.cellHeight)
-        cellRowHeight?.isActive = true
+        cellGrid.orientation = value ? .horizontal : .vertical
+        cellGrid.alignment = value ? .top : .centerX
+        cellGrid.spacing = value ? Theme.cellGap : 0
+        gridTop.isActive = !value
+        gridCentre.isActive = value
+        gridHeight?.isActive = false
+        gridHeight = value ? nil : cellGrid.heightAnchor.constraint(equalToConstant: Theme.cellHeight)
+        gridHeight?.isActive = true
+        placeCells()
+    }
+
+    /// Deal the cells into columns in the dock's order, so wrapping never reorders them.
+    private func placeCells() {
+        for column in cellColumns {
+            column.views.forEach { column.removeView($0) }
+            cellGrid.removeView(column)
+        }
+        cellColumns = []
+        let ordered = cellViews
+        guard !ordered.isEmpty else { return }
+        let per = max(1, min(cellsPerColumn == 0 ? ordered.count : cellsPerColumn, ordered.count))
+        for start in stride(from: 0, to: ordered.count, by: per) {
+            let column = NSStackView()
+            column.orientation = vertical ? .vertical : .horizontal
+            column.spacing = vertical ? Theme.cellGap : 0
+            column.alignment = vertical ? .centerX : .top
+            column.distribution = .gravityAreas
+            column.translatesAutoresizingMaskIntoConstraints = false
+            for cell in ordered[start..<min(start + per, ordered.count)] { column.addView(cell, in: vertical ? .top : .leading) }
+            cellGrid.addView(column, in: vertical ? .leading : .top)
+            cellColumns.append(column)
+        }
     }
 
     var count: Int { order.count }
@@ -251,7 +288,12 @@ final class PanelContentView: NSView {
 
     private func rebuild(_ model: PanelModel) {
         compactRow.views.forEach { compactRow.removeView($0) }
-        cellRow.views.forEach { cellRow.removeView($0) }
+        for column in cellColumns {
+            column.views.forEach { column.removeView($0) }
+            cellGrid.removeView(column)
+        }
+        cellColumns = []
+        cellGrid.views.forEach { cellGrid.removeView($0) }
         compactDials = [:]
         compactMarks = [:]
         cells = [:]
@@ -259,7 +301,7 @@ final class PanelContentView: NSView {
             compactRow.addView(Label.make(Strings.t("app.name"), size: 11, color: Theme.textDisabled), in: .center)
             let empty = Label.make(Strings.t("panel.noProviders"), size: 11, color: Theme.textSecondary, alignment: .center)
             empty.widthAnchor.constraint(equalToConstant: Theme.cellWidth * 2.6).isActive = true
-            cellRow.addView(empty, in: .center)
+            cellGrid.addView(empty, in: .center)
         }
         for tile in model.tiles {
             let mini = DialView(diameter: Theme.compactDial, stroke: Theme.compactStroke)
@@ -277,8 +319,8 @@ final class PanelContentView: NSView {
             let cell = CellView(id: tile.id, mark: tile.mark)
             cell.onClick = { [weak self] in self?.onCellClick?(tile.id) }
             cells[tile.id] = cell
-            cellRow.addView(cell, in: .center)
         }
         compactRow.addView(mutedBadge, in: .center)
+        placeCells()
     }
 }

@@ -70,6 +70,12 @@ enum Theme {
     static let activityDial: CGFloat = 40
     static let activityStroke: CGFloat = 2
     static let slant: CGFloat = 14
+    /// The inset above the cells in a dock along the top or bottom edge.
+    static let expandedLead: CGFloat = 10
+    /// The inset at both ends of a dock down a side, where the cells run along the long axis.
+    static let sideLead: CGFloat = 18
+    /// The one line of session copy under the cells, plus the gap above it.
+    static let sessionsLine: CGFloat = 18
     static let compactMark: CGFloat = 11
     static let expandedMark: CGFloat = 13
     static let compactRadius: CGFloat = 14
@@ -93,13 +99,6 @@ enum Theme {
 
     /// The dock's size along the edge it hangs from, and its depth across it.
     static func compactLength(_ n: Int) -> CGFloat { n == 0 ? 2 * compactPadding + 40 : 2 * compactPadding + CGFloat(n) * compactDial + CGFloat(n - 1) * compactSpacing }
-
-    static func expandedLength(_ n: Int, vertical: Bool) -> CGFloat {
-        vertical ? 10 + CGFloat(max(n, 1)) * (cellHeight + cellGap) + 62
-                 : max(2 * expandedPadding + CGFloat(max(n, 1)) * cellWidth, cardWidth + 2 * expandedPadding)
-    }
-
-    static func expandedAcross(vertical: Bool) -> CGFloat { vertical ? cellWidth + 2 * expandedPadding : expandedHeight }
 
     private static func rgb(_ r: Int, _ g: Int, _ b: Int) -> NSColor {
         NSColor(srgbRed: CGFloat(r) / 255, green: CGFloat(g) / 255, blue: CGFloat(b) / 255, alpha: 1)
@@ -126,6 +125,36 @@ extension Theme {
         static var textSecondary: Color { Color(nsColor: Theme.textSecondary) }
         static var textDisabled: Color { Color(nsColor: Theme.textDisabled) }
         static var hairline: Color { Color(nsColor: Theme.hairline) }
+    }
+}
+
+/// The expanded dock's box: how the cells are arranged and how big that makes it. The length is exactly
+/// what the cells and the session line need, so nothing is left over at the far end. A dock down a side can
+/// ask for more length than the screen has, and then it wraps into as many columns as it takes and grows
+/// across instead: nothing is pushed off screen and nothing has to be scrolled to.
+struct DockLayout {
+    let cellsPerColumn: Int
+    let columns: Int
+    let along: CGFloat
+    let across: CGFloat
+
+    /// `available` is the room along the edge the dock hangs from.
+    init(count: Int, vertical: Bool, available: CGFloat) {
+        let cells = max(count, 1)
+        let ends = 2 * Theme.sideLead + Theme.sessionsLine
+        guard vertical else {
+            cellsPerColumn = cells
+            columns = 1
+            along = max(2 * Theme.expandedPadding + CGFloat(cells) * Theme.cellWidth, Theme.cardWidth + 2 * Theme.expandedPadding)
+            across = Theme.expandedHeight
+            return
+        }
+        let room = max(Theme.cellHeight, available - 24 - ends)
+        let fit = max(1, Int((room + Theme.cellGap) / (Theme.cellHeight + Theme.cellGap)))
+        cellsPerColumn = min(cells, fit)
+        columns = Int(ceil(Double(cells) / Double(cellsPerColumn)))
+        along = ends + CGFloat(cellsPerColumn) * Theme.cellHeight + CGFloat(cellsPerColumn - 1) * Theme.cellGap
+        across = CGFloat(columns) * Theme.cellWidth + 2 * Theme.expandedPadding
     }
 }
 

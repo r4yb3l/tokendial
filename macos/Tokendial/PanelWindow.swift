@@ -32,6 +32,14 @@ struct PanelGeometry {
         return screenFrame.maxY - menuBar
     }
 
+    /// The room the dock has along the edge it hangs from.
+    func available(edge: DockEdge) -> CGFloat {
+        switch edge {
+        case .top, .bottom: return visibleFrame.width
+        case .left, .right: return visibleFrame.height
+        }
+    }
+
     /// The window for a dock of the given length along its edge and depth across it, centred on that edge.
     /// The other three edges follow the visible frame, so the Dock never sits under the panel.
     func frame(along: CGFloat, across: CGFloat, edge: DockEdge) -> NSRect {
@@ -109,7 +117,6 @@ final class PanelController: NSObject {
             content.bottomAnchor.constraint(equalTo: capsule.bottomAnchor)
         ])
         content.onCellClick = { [weak self] id in self?.onProviderClicked?(id) }
-        content.setVertical(false)
         layout(animated: false)
     }
 
@@ -136,7 +143,6 @@ final class PanelController: NSObject {
     func setEdge(_ next: DockEdge) {
         guard next != edge else { return }
         edge = next
-        content.setVertical(next == .left || next == .right)
         layout(animated: false)
         if let id = cardFor { showCard(id) }
     }
@@ -211,8 +217,10 @@ final class PanelController: NSObject {
         let geometry = PanelGeometry(screen: screen)
         let n = model.tiles.count
         let vertical = edge == .left || edge == .right
-        let along = expanded ? Theme.expandedLength(n, vertical: vertical) : Theme.compactLength(n)
-        let across = expanded ? Theme.expandedAcross(vertical: vertical) : Theme.compactHeight
+        let box = DockLayout(count: n, vertical: vertical, available: geometry.available(edge: edge))
+        content.setShape(vertical: vertical, cellsPerColumn: box.cellsPerColumn)
+        let along = expanded ? box.along : Theme.compactLength(n)
+        let across = expanded ? box.across : Theme.compactHeight
         let frame = geometry.frame(along: along, across: across + Theme.hotZone, edge: edge)
         let capsuleFrame = switch edge {
         case .top: NSRect(x: 0, y: Theme.hotZone, width: along, height: across)
