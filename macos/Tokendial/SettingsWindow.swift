@@ -72,6 +72,7 @@ final class SettingsModel: ObservableObject {
 /// the Windows window. Every change saves immediately and takes effect through the host.
 struct SettingsView: View {
     @ObservedObject var model: SettingsModel
+    @ObservedObject var installer: InstallAssistant
 
     var body: some View {
         VStack(spacing: 0) {
@@ -79,7 +80,7 @@ struct SettingsView: View {
             HStack(spacing: 0) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        ProvidersSection(model: model)
+                        ProvidersSection(model: model, installer: installer)
                         ChromeRule().padding(.top, 20).padding(.bottom, 16)
                         GeneralSection(model: model)
                         AboutSection(model: model)
@@ -102,12 +103,16 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Chrome.windowBackground)
         .environment(\.layoutDirection, Strings.rightToLeft ? .rightToLeft : .leftToRight)
+        .sheet(item: $installer.sheet) { request in
+            RunSheet(request: request, missingManager: installer.missingManager(request.recipe),
+                     run: { installer.run(request) }, dismiss: { installer.sheet = nil })
+        }
     }
 
     private var statusPill: some View {
         HStack(spacing: 8) {
             Circle().fill(Chrome.accent).frame(width: 6, height: 6)
-            Text(Strings.plural("settings.connectedCount", model.summaries.filter { $0.connected }.count))
+            Text(Strings.plural("settings.connectedCount", model.summaries.filter { $0.connected && !installer.assisted($0) }.count))
                 .font(Chrome.font(11)).foregroundStyle(Chrome.slate300)
         }
         .padding(.horizontal, 10).padding(.vertical, 3)
@@ -118,6 +123,7 @@ struct SettingsView: View {
 
 private struct ProvidersSection: View {
     @ObservedObject var model: SettingsModel
+    @ObservedObject var installer: InstallAssistant
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -137,7 +143,7 @@ private struct ProvidersSection: View {
 
             VStack(spacing: 10) {
                 ForEach(model.summaries, id: \.id) { summary in
-                    ProviderCard(model: model, summary: summary)
+                    ProviderCard(model: model, installer: installer, summary: summary)
                 }
             }
             .padding(.top, 12)
@@ -147,8 +153,13 @@ private struct ProvidersSection: View {
 
 private struct ProviderCard: View {
     @ObservedObject var model: SettingsModel
+    @ObservedObject var installer: InstallAssistant
     let summary: ProviderSummary
     @State private var hover = false
+
+    /// While a tool is still being installed or signed in, the assistant owns the row's words and buttons.
+    private var assisted: Bool { installer.assisted(summary) }
+    private var recipe: InstallRecipe? { installer.recipe(summary.id) }
 
     private var reading: ProviderReading? { summary.connected ? model.reading(summary.id) : nil }
     private var fraction: Double? { reading?.hasReading == true ? reading?.headlineFraction : nil }
@@ -169,11 +180,14 @@ private struct ProviderCard: View {
                             .foregroundStyle(summary.connected ? Chrome.strong : Chrome.slate300)
                         if let fraction { usedBadge(fraction) }
                     }
-                    Text(model.detail(summary))
+                    Text(assisted && recipe != nil ? InstallDetail.text(summary, recipe!, installer) : model.detail(summary))
                         .font(Chrome.font(11))
                         .foregroundStyle(summary.connected ? Chrome.slate400 : Chrome.slate500)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
+                    if assisted {
+                        InstallStrip(state: installer.state(summary)).padding(.top, 4)
+                    }
                     if model.keychainRefused(summary) {
                         Text(Strings.t("card.keychainWhy"))
                             .font(Chrome.font(11))
@@ -242,7 +256,9 @@ private struct ProviderCard: View {
     }
 
     @ViewBuilder private var actions: some View {
-        if summary.connected {
+        if assisted {
+            installAction
+        } else if summary.connected {
             HStack(spacing: 8) {
                 if summary.account == nil, case .openApp(_, let name) = summary.signIn {
                     ChromeButton(label: Strings.t("settings.open", ["name": name])) { model.openSource(summary.id) }
@@ -253,6 +269,21 @@ private struct ProviderCard: View {
                 ChromeButton(label: Strings.t("settings.refresh")) { model.refresh(summary.id) }
             }
         } else {
+            Text(Strings.t("settings.inactive")).font(Chrome.mono(11)).foregroundStyle(Chrome.slate500)
+        }
+    }
+
+    /// One button, whichever step comes next; nothing once the tool is signed in and only the store is
+    /// catching up.
+    @ViewBuilder private var installAction: some View {
+        switch installer.state(summary) {
+        case .notInstalled:
+            ChromeButton(label: Strings.t("install.button.install"), primary: true) { installer.ask(summary, .install) }
+        case .installed where recipe?.kind == .cli:
+            ChromeButton(label: Strings.t("install.button.signIn"), primary: true) { installer.ask(summary, .signIn) }
+        case .installed:
+            ChromeButton(label: Strings.t("settings.open", ["name": summary.name]), primary: true) { model.openSource(summary.id) }
+        default:
             Text(Strings.t("settings.inactive")).font(Chrome.mono(11)).foregroundStyle(Chrome.slate500)
         }
     }
@@ -495,12 +526,14 @@ private struct AlertCard<Input: View>: View {
 struct WelcomeView: View {
     let detected: [ProviderSummary]
     let absent: [ProviderSummary]
+    @ObservedObject var installer: InstallAssistant
     let finish: ([String], Bool) -> Void
     @State private var chosen: Set<String>
 
-    init(detected: [ProviderSummary], absent: [ProviderSummary], finish: @escaping ([String], Bool) -> Void) {
+    init(detected: [ProviderSummary], absent: [ProviderSummary], installer: InstallAssistant, finish: @escaping ([String], Bool) -> Void) {
         self.detected = detected
         self.absent = absent
+        self.installer = installer
         self.finish = finish
         _chosen = State(initialValue: Set(detected.map { $0.id }))
     }
@@ -525,6 +558,10 @@ struct WelcomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Chrome.windowBackground)
         .environment(\.layoutDirection, Strings.rightToLeft ? .rightToLeft : .leftToRight)
+        .sheet(item: $installer.sheet) { request in
+            RunSheet(request: request, missingManager: installer.missingManager(request.recipe),
+                     run: { installer.run(request) }, dismiss: { installer.sheet = nil })
+        }
     }
 
     private var found: some View {
@@ -552,7 +589,18 @@ struct WelcomeView: View {
                         mark(provider.id, colour: Chrome.slate500).padding(.top, 1)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(provider.name).font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate200)
-                            ChromeBody(provider.signIn.explanation, size: 11)
+                            if let recipe = installer.recipe(provider.id) {
+                                ChromeBody(InstallDetail.text(provider, recipe, installer), size: 11)
+                                InstallStrip(state: installer.state(provider)).padding(.top, 4)
+                            } else {
+                                ChromeBody(provider.signIn.explanation, size: 11)
+                            }
+                        }
+                        Spacer(minLength: 8)
+                        if installer.recipe(provider.id) != nil, installer.state(provider) == .notInstalled {
+                            ChromeButton(label: Strings.t("install.button.install"), primary: true) {
+                                installer.ask(provider, .install)
+                            }
                         }
                     }
                 }

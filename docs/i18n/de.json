@@ -142,6 +142,7 @@
     "install.button.signIn": "Anmelden",
     "install.button.run": "Ausführen",
     "install.button.copy": "Kopieren",
+    "install.button.cancel": "Jetzt nicht",
     "install.button.download": "Downloadseite",
     "install.sheet.title": "{name} installieren",
     "install.sheet.signInTitle": "Bei {name} anmelden",

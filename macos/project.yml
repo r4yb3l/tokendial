@@ -27,6 +27,9 @@ targets:
       - path: ../docs/i18n
         type: folder
         buildPhase: resources
+      - path: ../docs/providers
+        type: folder
+        buildPhase: resources
       - path: ../docs/design/marks/normalized
         buildPhase: resources
     dependencies:

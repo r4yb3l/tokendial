@@ -142,6 +142,7 @@
     "install.button.signIn": "تسجيل الدخول",
     "install.button.run": "تشغيل",
     "install.button.copy": "نسخ",
+    "install.button.cancel": "ليس الآن",
     "install.button.download": "صفحة التنزيل",
     "install.sheet.title": "تثبيت {name}",
     "install.sheet.signInTitle": "تسجيل الدخول إلى {name}",

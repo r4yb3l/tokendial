@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var notifications: NotificationSink!
     private var banners: BannerSink!
     private var router: AlertRouter!
+    private var installer: InstallAssistant!
     private let panel = PanelController()
     private let statusItem = StatusItemController()
     private var settingsWindow: HostedWindow<SettingsView>?
@@ -26,10 +27,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         FileLog.install()
         Log.ui.info("Tokendial \(Self.version) starting")
         loadStrings()
+        loadRecipes()
 
         var providers: [UsageProvider] = ClaudeProfile.discover().map { ClaudeProvider(profile: $0, archive: archive) }
         providers += [CodexProvider(archive: archive), CopilotProvider(archive: archive), CursorProvider(), AntigravityProvider(), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
         store = UsageStore(providers: providers, archive: archive, disconnected: settings.disconnected, launcher: WorkspaceLauncher())
+        installer = InstallAssistant(providers: providers)
+        installer.signedIn = { [weak self] id in self?.onToolSignedIn(id) }
         hub = ActivityHub(monitors: ClaudeProfile.discover().map { ClaudeSessions(providerId: $0.id, directory: $0.sessionsDirectory) })
         store.isBusy = { [weak self] in self?.hub.anyWorking ?? false }
 
@@ -104,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        installer.stop()
         store.stop()
         hub.stop()
         alerts.stop()
@@ -128,7 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let all = store.summaries
         let detected = all.filter { $0.account != nil }
         let absent = all.filter { $0.account == nil }
-        welcome = HostedWindow(title: Strings.t("welcome.title"), width: absent.isEmpty ? 520 : 560, height: absent.isEmpty ? 580 : 620, content: WelcomeView(detected: detected, absent: absent) { [weak self] chosen, openSettings in
+        welcome = HostedWindow(title: Strings.t("welcome.title"), width: absent.isEmpty ? 520 : 560, height: absent.isEmpty ? 580 : 620, content: WelcomeView(detected: detected, absent: absent, installer: installer) { [weak self] chosen, openSettings in
             guard let self else { return }
             self.settings.disconnected = Set(all.map { $0.id }).subtracting(chosen)
             self.settings.known = Set(all.map { $0.id })
@@ -181,7 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model.summaries = store.summaries
             model.readings = store.readings
             settingsModel = model
-            settingsWindow = HostedWindow(title: Strings.t("settings.title"), width: 1120, height: 860, content: SettingsView(model: model))
+            settingsWindow = HostedWindow(title: Strings.t("settings.title"), width: 1120, height: 860, content: SettingsView(model: model, installer: installer))
             settingsWindow?.onClose = { [weak self] in self?.settingsWindow = nil; self?.settingsModel = nil }
         }
         settingsWindow?.show()
@@ -194,6 +199,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         Strings.load(from: directory, language: settings.language)
+    }
+
+    /// The install recipes ride in the bundle the same way the translations do.
+    private func loadRecipes() {
+        guard let directory = Bundle.main.url(forResource: "providers", withExtension: nil) else {
+            Log.ui.error("install: no provider specs in the bundle, the assistant will offer nothing")
+            return
+        }
+        InstallCatalog.load(from: directory)
+    }
+
+    /// A tool finished signing in: connect it, the way ticking its box would have.
+    private func onToolSignedIn(_ providerId: String) {
+        guard welcome == nil else { return }
+        connect(providerId, true)
     }
 
     /// A new language: reload the catalogue, then rebuild everything that holds text.
