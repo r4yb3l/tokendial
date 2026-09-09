@@ -78,3 +78,13 @@ the shared catalogue silently lost it, because the catalogue never had that key:
 one macOS-only sentence living in the source.
 Rule: when replacing hardcoded strings with catalogue keys, diff the old literals against the new keys and
 account for every sentence that has no key yet. A missing key is visible; a dropped sentence is not.
+
+## A duplicate JSON key parses differently in every language (2026-09-09)
+Editing a provider spec by text, I inserted `"requires": ["brew"]` into a block that already carried an
+empty `"requires": []`. The file then had the key twice. Python keeps the last occurrence, so the script
+that wrote the change verified itself and reported success; ajv validated the file happily; Foundation keeps
+the *first*, so the Swift side read an empty list and only the new test caught it, two steps later.
+Rule: when editing JSON by string surgery, re-read the file with a parser that rejects or reports duplicate
+keys (`json.loads(..., object_pairs_hook=...)`), not with the default one that silently picks a winner. And
+prefer inserting a key only after proving it is absent from *that* object — not from the file, which may
+hold several objects with the same shape.

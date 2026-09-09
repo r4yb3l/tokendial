@@ -55,7 +55,6 @@
     "macos": {
       "kind": "cli",
       "detect": {"commands": ["codex"], "paths": ["~/.local/bin/codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex"]},
-      "requires": [],
       "requires": ["brew"],
       "install": "brew install --cask codex",
       "signIn": {"command": "codex login", "hint": "install.hint.codex"}
