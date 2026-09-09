@@ -20,25 +20,10 @@ public sealed record ClaudeProfile(string? Slug, string Directory)
     public static ClaudeProfile Default(string? home = null) => new(null, Path.Combine(home ?? Http.Home, ".claude"));
 
     /// <summary>The default first, then every ~/.claude-&lt;slug&gt; Claude Code has actually used, slugs in ordinal order.</summary>
-    public static IReadOnlyList<ClaudeProfile> Discover(string? home = null)
-    {
-        home ??= Http.Home;
-        var extras = new List<ClaudeProfile>();
-        if (System.IO.Directory.Exists(home))
-        {
-            foreach (var dir in System.IO.Directory.EnumerateDirectories(home, ".claude-*"))
-            {
-                var slug = Path.GetFileName(dir)[".claude-".Length..];
-                if (slug.Length == 0) continue;
-                if (!Markers.Any(m => Path.Exists(Path.Combine(dir, m)))) continue;
-                extras.Add(new ClaudeProfile(slug, dir));
-            }
-        }
-        extras.Sort((a, b) => string.CompareOrdinal(a.Slug, b.Slug));
-        return [Default(home), .. extras];
-    }
+    public static IReadOnlyList<ClaudeProfile> Discover(string? home = null) =>
+        Profiles.Discover(home ?? Http.Home, ".claude", Markers).Select(p => new ClaudeProfile(p.Slug, p.Directory)).ToList();
 
-    public static bool IsClaude(string providerId) => providerId == "claude" || providerId.StartsWith("claude-", StringComparison.Ordinal);
+    public static bool IsClaude(string providerId) => ProviderFamily.Of(providerId) == "claude";
 }
 
 /// <summary>The OAuth token Claude Code stores. Read when the file changes, never written or refreshed.</summary>
@@ -133,7 +118,7 @@ public static class ClaudeUsage
 }
 
 /// <summary>Claude Code's own usage endpoint, one provider per profile. Exponential back-off on 429, persisted.</summary>
-public sealed class ClaudeProvider : IUsageProvider, IDisposable
+public sealed class ClaudeProvider : IUsageProvider, IProfiled, IDisposable
 {
     private static readonly Uri Endpoint = new("https://api.anthropic.com/api/oauth/usage");
     private readonly HttpClient http;
@@ -158,6 +143,7 @@ public sealed class ClaudeProvider : IUsageProvider, IDisposable
     public string Id => Profile.Id;
     public string DisplayName => Profile.DisplayName;
     public SignInRoute SignIn => new SignInRoute.Guidance("signin.claude", ("command", Profile.SignInCommand));
+    public string SignInCommand => Profile.SignInCommand;
 
     public ProviderAccount? Account()
     {

@@ -32,9 +32,9 @@ public sealed record Tile(
         _ => ""
     };
 
-    public static string MarkFor(string id) => id switch
+    public static string MarkFor(string id) => ProviderFamily.Of(id) switch
     {
-        _ when id.StartsWith("claude", StringComparison.Ordinal) => "CL",
+        "claude" => "CL",
         "codex" => "CX",
         "copilot" => "CP",
         "cursor" => "CU",

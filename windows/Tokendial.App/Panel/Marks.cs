@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
+using Tokendial.Core.Providers;
+
 namespace Tokendial.App.Panel;
 
 /// <summary>A provider's mark as one-colour geometry, or a raster alpha mask when no vector exists. From docs/design/marks/normalized.</summary>
@@ -33,14 +35,13 @@ public static class Marks
         ["opencode"] = Color.FromRgb(0xFB, 0xBF, 0x24)
     };
 
-    /// <summary>The brand colour a provider's tile takes once it is connected; Claude profiles share Claude's.</summary>
+    /// <summary>The brand colour a provider's tile takes once it is connected; a profile shares its tool's.</summary>
     public static Color Tint(string providerId) =>
-        Tints.GetValueOrDefault(providerId.StartsWith("claude", StringComparison.Ordinal) ? "claude" : providerId, Color.FromRgb(0xCB, 0xD5, 0xE1));
+        Tints.GetValueOrDefault(ProviderFamily.Of(providerId), Color.FromRgb(0xCB, 0xD5, 0xE1));
 
     public static Mark? For(string providerId)
     {
-        var key = providerId.StartsWith("claude", StringComparison.Ordinal) ? "claude" : providerId;
-        return Table.Value.GetValueOrDefault(key);
+        return Table.Value.GetValueOrDefault(ProviderFamily.Of(providerId));
     }
 
     private static Dictionary<string, Mark> Load()

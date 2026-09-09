@@ -21,7 +21,7 @@ public static class ProviderCatalog
     {
         var list = new List<IUsageProvider>();
         foreach (var profile in ClaudeProfile.Discover()) list.Add(new ClaudeProvider(profile, archive: archive));
-        list.Add(new CodexProvider(archive: archive));
+        foreach (var profile in CodexProfile.Discover()) list.Add(new CodexProvider(archive: archive, profile: profile));
         list.Add(new CopilotProvider(archive: archive));
         list.Add(new CursorProvider());
         list.Add(new AntigravityProvider());
@@ -37,7 +37,7 @@ public static class ProviderCatalog
         var list = new List<IActivityMonitor>();
         foreach (var profile in ClaudeProfile.Discover()) list.Add(new ClaudeSessions(profile.Id, profile.SessionsDirectory));
         list.Add(new CursorSessions());
-        list.Add(new CodexSessions());
+        foreach (var profile in CodexProfile.Discover()) list.Add(new CodexSessions(profile));
         list.Add(new AntigravitySessions());
         list.Add(new GrokSessions());
         return list;

@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using Tokendial.Core.Providers;
 
 namespace Tokendial.Core.Install;
 
@@ -13,7 +14,7 @@ public static class InstallCatalog
     /// <summary>The recipe for a provider; Claude profiles (claude-&lt;slug&gt;) share Claude's.</summary>
     public static InstallRecipe? For(string providerId) => All.GetValueOrDefault(Family(providerId));
 
-    public static string Family(string providerId) => providerId.StartsWith("claude-", StringComparison.Ordinal) ? "claude" : providerId;
+    public static string Family(string providerId) => ProviderFamily.Of(providerId);
 
     private static IReadOnlyDictionary<string, InstallRecipe> Load()
     {

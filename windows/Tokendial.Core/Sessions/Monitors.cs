@@ -36,9 +36,9 @@ public sealed class ClaudeSessions : PolledMonitor
         catch (Exception) { watcher = null; }
     }
 
-    protected override IReadOnlyList<AgentSession> Read() => Read(directory, alive);
+    protected override IReadOnlyList<AgentSession> Read() => Read(ProviderId, directory, alive);
 
-    public static IReadOnlyList<AgentSession> Read(string directory, Func<int, DateTimeOffset?, bool> alive)
+    public static IReadOnlyList<AgentSession> Read(string providerId, string directory, Func<int, DateTimeOffset?, bool> alive)
     {
         if (!Directory.Exists(directory)) return [];
         var found = new List<AgentSession>();
@@ -46,7 +46,7 @@ public sealed class ClaudeSessions : PolledMonitor
         {
             string text;
             try { text = File.ReadAllText(file); } catch (IOException) { continue; }
-            var parsed = Parse(text);
+            var parsed = Parse(text, providerId);
             if (parsed is null) continue;
             var (pid, started, session) = parsed.Value;
             if (alive(pid, started)) found.Add(session);
@@ -55,7 +55,7 @@ public sealed class ClaudeSessions : PolledMonitor
     }
 
     /// <summary>Decoded leniently: an unknown field must never cost a session.</summary>
-    public static (int Pid, DateTimeOffset? StartedAt, AgentSession Session)? Parse(string json)
+    public static (int Pid, DateTimeOffset? StartedAt, AgentSession Session)? Parse(string json, string providerId = "claude")
     {
         using var document = Json.Parse(json);
         if (document is null) return null;
@@ -78,7 +78,7 @@ public sealed class ClaudeSessions : PolledMonitor
         };
         var started = root.EpochMillis("startedAt") ?? ProcStart(root.Str("procStart"));
         var since = root.EpochMillis("statusUpdatedAt") ?? root.EpochMillis("updatedAt") ?? DateTimeOffset.UtcNow;
-        return ((int)pid, started, new AgentSession($"claude.{(int)pid}", root.Str("name") ?? folder, $"{surface} · {folder}", state, root.Str("waitingFor") ?? root.Str("needs"), since));
+        return ((int)pid, started, new AgentSession($"{providerId}.{(int)pid}", root.Str("name") ?? folder, $"{surface} · {folder}", state, root.Str("waitingFor") ?? root.Str("needs"), since));
     }
 
     /// <summary>A UTC ctime string with a space-padded day.</summary>
@@ -156,24 +156,25 @@ public sealed class CodexSessions : PolledMonitor
 {
     public static readonly TimeSpan StaleAfter = TimeSpan.FromSeconds(8);
     private readonly string stateFile;
-    private readonly string desktopFile;
+    private readonly string? desktopFile;
 
-    public CodexSessions(string? stateFile = null, string? desktopFile = null) : base("codex", TimeSpan.FromSeconds(2))
+    public CodexSessions(CodexProfile? profile = null, string? stateFile = null, string? desktopFile = null) : base((profile ?? CodexProfile.Default()).Id, TimeSpan.FromSeconds(2))
     {
-        this.stateFile = stateFile ?? CodexStores.StateFile;
-        this.desktopFile = desktopFile ?? CodexStores.DesktopFile;
+        profile ??= CodexProfile.Default();
+        this.stateFile = stateFile ?? profile.StateFile;
+        this.desktopFile = desktopFile ?? profile.DesktopFile;
     }
 
-    protected override IReadOnlyList<AgentSession> Read() => Read(stateFile, desktopFile, StaleAfter, DateTimeOffset.UtcNow);
+    protected override IReadOnlyList<AgentSession> Read() => Read(ProviderId, stateFile, desktopFile, StaleAfter, DateTimeOffset.UtcNow);
 
-    public static IReadOnlyList<AgentSession> Read(string stateFile, string desktopFile, TimeSpan staleAfter, DateTimeOffset now)
+    public static IReadOnlyList<AgentSession> Read(string providerId, string stateFile, string? desktopFile, TimeSpan staleAfter, DateTimeOffset now)
     {
         var candidates = new List<(DateTimeOffset At, string Id, string Name)>();
         if (CodexStores.NewestRollout(stateFile) is string rollout)
         {
-            try { candidates.Add((new DateTimeOffset(File.GetLastWriteTimeUtc(rollout)), $"codex.{Path.GetFileName(rollout)}", "Codex")); } catch (IOException) { }
+            try { candidates.Add((new DateTimeOffset(File.GetLastWriteTimeUtc(rollout)), $"{providerId}.{Path.GetFileName(rollout)}", "Codex")); } catch (IOException) { }
         }
-        if (CodexStores.NewestDesktopThread(desktopFile) is var (at, title)) candidates.Add((at, "codex.desktop", title));
+        if (desktopFile is not null && CodexStores.NewestDesktopThread(desktopFile) is var (at, title)) candidates.Add((at, $"{providerId}.desktop", title));
         if (candidates.Count == 0) return [];
         var newest = candidates.MaxBy(c => c.At);
         return now - newest.At > staleAfter ? [] : [new AgentSession(newest.Id, newest.Name, "Working", SessionState.Working, null, newest.At)];

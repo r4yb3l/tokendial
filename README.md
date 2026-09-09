@@ -24,6 +24,13 @@ the vendor's own install command before running it in a visible terminal, chains
 and connects the dial the moment the sign-in lands. Nothing runs until you press Run; see
 `SECURITY.md`. GLM is a key rather than a tool and keeps its instructions instead.
 
+## Several accounts
+
+Tokendial reads what a tool stores, so a second account is a second configuration directory. Claude Code
+signed in with `CLAUDE_CONFIG_DIR=~/.claude-work` and Codex with `CODEX_HOME=~/.codex-work` each get their own
+dial ("Claude Code (work)", "Codex (work)"), their own alerts and their own sessions. The other tools keep a
+single sign-in.
+
 ## Alerts
 
 | Alert | When |

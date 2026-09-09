@@ -83,7 +83,7 @@ public static class CodexUsage
     }
 }
 
-public sealed class CodexProvider : IUsageProvider, IDisposable
+public sealed class CodexProvider : IUsageProvider, IProfiled, IDisposable
 {
     private static readonly Uri Endpoint = new("https://chatgpt.com/backend-api/wham/usage");
     private readonly HttpClient http;
@@ -92,18 +92,21 @@ public sealed class CodexProvider : IUsageProvider, IDisposable
     private readonly Func<DateTimeOffset> now;
     private DateTimeOffset? retryAt;
 
-    public CodexProvider(HttpMessageHandler? handler = null, ReadingArchive? archive = null, string? file = null, Func<DateTimeOffset>? now = null)
+    public CodexProvider(HttpMessageHandler? handler = null, ReadingArchive? archive = null, string? file = null, Func<DateTimeOffset>? now = null, CodexProfile? profile = null)
     {
+        Profile = profile ?? CodexProfile.Default();
         http = Http.Client(handler);
         this.archive = archive ?? new ReadingArchive();
-        this.file = file ?? CodexCredential.DefaultFile;
+        this.file = file ?? Profile.AuthFile;
         this.now = now ?? (() => DateTimeOffset.UtcNow);
         retryAt = this.archive.BackoffUntil(Id);
     }
 
-    public string Id => "codex";
-    public string DisplayName => "Codex";
-    public SignInRoute SignIn => new SignInRoute.OpenApp("codex", "Codex");
+    public CodexProfile Profile { get; }
+    public string Id => Profile.Id;
+    public string DisplayName => Profile.DisplayName;
+    public string SignInCommand => Profile.SignInCommand;
+    public SignInRoute SignIn => Profile.Slug is null ? new SignInRoute.OpenApp("codex", "Codex") : new SignInRoute.Guidance("signin.claude", ("command", Profile.SignInCommand));
 
     public ProviderAccount? Account()
     {

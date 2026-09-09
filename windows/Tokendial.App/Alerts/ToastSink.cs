@@ -4,6 +4,7 @@ using Tokendial.Core.Alerts;
 using Tokendial.Core.Diagnostics;
 using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
+using Tokendial.Core.Providers;
 using Tokendial.Core.Sessions;
 
 namespace Tokendial.App.Alerts;
@@ -76,9 +77,9 @@ public sealed class ToastSink : IAlertSink
 
     private static string Join(params string?[] parts) => string.Join(" · ", parts.Where(p => !string.IsNullOrEmpty(p)));
 
-    private static string Humanize(string id) => id switch
+    private static string Humanize(string id) => ProviderFamily.Of(id) switch
     {
-        _ when id.StartsWith("claude", StringComparison.Ordinal) => "Claude Code",
+        "claude" => "Claude Code",
         "codex" => "Codex", "copilot" => "GitHub Copilot", "cursor" => "Cursor", "antigravity" => "Antigravity", "gemini" => "Gemini CLI", "glm" => "GLM", "grok" => "Grok", "opencode" => "OpenCode",
         _ => id
     };

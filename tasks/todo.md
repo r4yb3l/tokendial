@@ -71,9 +71,9 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [ ] macOS settings to the same tokens
 
 ## 10 — From the TokenMeter comparison (approved 2026-09-08)
-- [ ] Gemini CLI provider (Workspace/Enterprise only): shared Google CodeAssist transport, spec, fixtures, sign-in guidance, mark
-- [ ] Forecast sentence on the hover card from an in-memory usage history (least squares over the current epoch)
-- [ ] Codex profiles via CODEX_HOME directories; shared Profiles.Discover; ProviderFamily helper; session ids carry the profile
+- [x] Gemini CLI provider (Workspace/Enterprise only): shared Google CodeAssist transport, spec, fixtures, sign-in guidance, mark
+- [x] Forecast sentence on the hover card from an in-memory usage history (least squares over the current epoch)
+- [x] Codex profiles via CODEX_HOME directories; shared Profiles.Discover; ProviderFamily helper; session ids carry the profile
 - [ ] Velopack auto-update with a settings switch; folder publish + vpk pack; release workflow; SECURITY/site copy updated
 - Out of scope by decision: quiet hours and changes to the "available again" alert
 

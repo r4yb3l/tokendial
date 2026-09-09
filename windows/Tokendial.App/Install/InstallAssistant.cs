@@ -3,7 +3,6 @@ using System.Windows.Threading;
 using Tokendial.Core.Diagnostics;
 using Tokendial.Core.Install;
 using Tokendial.Core.Providers;
-using Tokendial.Core.Providers.Claude;
 
 namespace Tokendial.App.Install;
 
@@ -38,12 +37,12 @@ public sealed class InstallAssistant : IDisposable
 
     public bool WingetMissing => !locator.IsInstalled(Winget);
 
-    /// <summary>Where the provider's tool stands right now, from the disk: a Claude profile beyond the default only exists once Claude is installed.</summary>
+    /// <summary>Where the provider's tool stands right now, from the disk: a profile beyond the default only exists once its tool is installed.</summary>
     public InstallState State(ProviderSummary summary)
     {
         var provider = providers.First(p => p.Id == summary.Id);
         var recipe = Recipe(summary.Id);
-        var installed = recipe is null || summary.Id != "claude" && ClaudeProfile.IsClaude(summary.Id) || locator.IsInstalled(recipe.Here.Detect);
+        var installed = recipe is null || ProviderFamily.IsProfile(summary.Id) || locator.IsInstalled(recipe.Here.Detect);
         return InstallProgress.Of(installed, provider.Account() is not null, summary.Connected);
     }
 
@@ -51,12 +50,12 @@ public sealed class InstallAssistant : IDisposable
 
     public InstallOutcome? Outcome(string providerId) => outcomes.TryGetValue(providerId, out var outcome) ? outcome : null;
 
-    /// <summary>The platform recipe with the sign-in a Claude profile actually needs.</summary>
+    /// <summary>The platform recipe with the sign-in a profile actually needs.</summary>
     public PlatformRecipe Platform(string providerId)
     {
         var platform = Recipe(providerId)!.Here;
-        if (providers.First(p => p.Id == providerId) is ClaudeProvider claude && platform.SignIn is SignInStep signIn)
-            return platform with { SignIn = signIn with { Command = claude.Profile.SignInCommand } };
+        if (providers.First(p => p.Id == providerId) is IProfiled profiled && ProviderFamily.IsProfile(providerId) && platform.SignIn is SignInStep signIn)
+            return platform with { SignIn = signIn with { Command = profiled.SignInCommand } };
         return platform;
     }
 
