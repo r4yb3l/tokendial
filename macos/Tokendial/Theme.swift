@@ -65,6 +65,9 @@ enum Theme {
     static let expandedStroke: CGFloat = 6
     static let activityDial: CGFloat = 40
     static let activityStroke: CGFloat = 2
+    static let slant: CGFloat = 14
+    static let compactMark: CGFloat = 11
+    static let expandedMark: CGFloat = 13
     static let compactRadius: CGFloat = 14
     static let expandedRadius: CGFloat = 20
     static let hotZone: CGFloat = 24

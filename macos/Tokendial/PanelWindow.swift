@@ -43,11 +43,14 @@ struct PanelGeometry {
 final class PanelController: NSObject {
     private let window: UnobtrusivePanel
     private let capsule = NSView()
+    private let fillLayer = CAShapeLayer()
+    private let hairlineLayer = CAShapeLayer()
     private let content = PanelContentView(frame: .zero)
     private var card: NSPanel?
     private var cardFor: String?
     private var model = PanelModel.empty
     private var mode = PanelMode.expandOnHover
+    private var edge = DockEdge.top
     private var hovering = false
     private var expanded = false
     private var pinned = false
@@ -81,11 +84,12 @@ final class PanelController: NSObject {
         window.contentView = root
 
         capsule.wantsLayer = true
-        capsule.layer?.backgroundColor = Theme.surface.cgColor
-        capsule.layer?.borderColor = Theme.surfaceEdge.cgColor
-        capsule.layer?.borderWidth = 1
-        capsule.layer?.cornerRadius = Theme.compactRadius
-        capsule.layer?.cornerCurve = .continuous
+        fillLayer.fillColor = Theme.surface.cgColor
+        hairlineLayer.fillColor = nil
+        hairlineLayer.strokeColor = Theme.surfaceEdge.cgColor
+        hairlineLayer.lineWidth = 1
+        capsule.layer?.addSublayer(fillLayer)
+        capsule.layer?.addSublayer(hairlineLayer)
         root.addSubview(capsule)
         capsule.addSubview(content)
         NSLayoutConstraint.activate([
@@ -102,8 +106,8 @@ final class PanelController: NSObject {
 
     /// Repaint after a theme switch: the capsule's layer colours, the contents, and the card if one is open.
     func retheme() {
-        capsule.layer?.backgroundColor = Theme.surface.cgColor
-        capsule.layer?.borderColor = Theme.surfaceEdge.cgColor
+        fillLayer.fillColor = Theme.surface.cgColor
+        hairlineLayer.strokeColor = Theme.surfaceEdge.cgColor
         content.retheme()
         content.apply(model, now: now(), animated: false)
         layout(animated: false)
@@ -189,8 +193,8 @@ final class PanelController: NSObject {
         let width = expanded ? Theme.expandedWidth(n) : Theme.compactWidth(n)
         let height = expanded ? Theme.expandedHeight : Theme.compactHeight
         let frame = geometry.frame(width: width, height: height + Theme.hotZone)
-        capsule.layer?.cornerRadius = expanded ? Theme.expandedRadius : Theme.compactRadius
         let capsuleFrame = NSRect(x: 0, y: Theme.hotZone, width: width, height: height)
+        reshape(along: width, across: height)
         let duration = animated && !Theme.reduceMotion ? Spring.expand.settle * 0.6 : 0
         NSAnimationContext.runAnimationGroup { context in
             context.duration = duration
@@ -203,6 +207,15 @@ final class PanelController: NSObject {
         let area = NSTrackingArea(rect: NSRect(x: 0, y: 0, width: width, height: height + Theme.hotZone), options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways], owner: window.contentView, userInfo: nil)
         window.contentView?.addTrackingArea(area)
         tracking = area
+    }
+
+    /// The trapezoid for the current size: filled, plus the hairline that leaves the base against the edge open.
+    private func reshape(along: CGFloat, across: CGFloat) {
+        let radius = expanded ? Theme.expandedRadius : Theme.compactRadius
+        let bounds = CGRect(x: 0, y: 0, width: along, height: across)
+        for layer in [fillLayer, hairlineLayer] { layer.frame = bounds }
+        fillLayer.path = DockShape.fill(along: along, across: across, slant: Theme.slant, radius: radius, edge: edge)
+        hairlineLayer.path = DockShape.edge(along: along, across: across, slant: Theme.slant, radius: radius, edge: edge)
     }
 
     private func crossfade() {

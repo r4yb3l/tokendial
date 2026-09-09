@@ -27,9 +27,7 @@ targets:
       - path: ../docs/i18n
         type: folder
         buildPhase: resources
-      - path: ../docs/design/marks/normalized/marks.json
-        buildPhase: resources
-      - path: ../docs/design/marks/normalized/opencode.png
+      - path: ../docs/design/marks/normalized
         buildPhase: resources
     dependencies:
       - package: TokendialCore

@@ -54,7 +54,8 @@ final class CellView: NSView {
     let id: String
     private let dial = DialView(diameter: Theme.expandedDial, stroke: Theme.expandedStroke)
     private let activity = ActivityArcView()
-    private let mark: NSTextField
+    private let mark: MarkView
+    private let initials: NSTextField?
     private let percent = Label.make("", size: 15, color: Theme.textPrimary, weight: .semibold, alignment: .center)
     private let name = Label.make("", size: 11, color: Theme.textPrimary, weight: .semibold, alignment: .center)
     private let label = Label.make("", size: 10, color: Theme.textSecondary, alignment: .center)
@@ -63,7 +64,8 @@ final class CellView: NSView {
 
     init(id: String, mark markText: String) {
         self.id = id
-        mark = Label.make(markText, size: 9, color: Theme.textSecondary, weight: .semibold, alignment: .center)
+        mark = MarkView(providerId: id, size: Theme.expandedMark)
+        initials = mark.hasMark ? nil : Label.make(markText, size: 9, color: Theme.textSecondary, weight: .semibold, alignment: .center)
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         widthAnchor.constraint(equalToConstant: Theme.cellWidth).isActive = true
@@ -73,6 +75,7 @@ final class CellView: NSView {
         dialHost.addSubview(dial)
         dialHost.addSubview(activity)
         dialHost.addSubview(mark)
+        if let initials { dialHost.addSubview(initials) }
         dialHost.addSubview(percent)
         addSubview(dialHost)
         for field in [name, label] {
@@ -96,7 +99,7 @@ final class CellView: NSView {
             activity.centerXAnchor.constraint(equalTo: dialHost.centerXAnchor),
             activity.centerYAnchor.constraint(equalTo: dialHost.centerYAnchor),
             mark.centerXAnchor.constraint(equalTo: dialHost.centerXAnchor),
-            mark.topAnchor.constraint(equalTo: dialHost.topAnchor, constant: 13),
+            mark.topAnchor.constraint(equalTo: dialHost.topAnchor, constant: 11),
             percent.centerXAnchor.constraint(equalTo: dialHost.centerXAnchor),
             percent.topAnchor.constraint(equalTo: dialHost.topAnchor, constant: 24),
             percent.widthAnchor.constraint(equalToConstant: 48),
@@ -125,7 +128,9 @@ final class CellView: NSView {
         else if tile.hasReading, let c = tile.headline?.count { percent.stringValue = String(c) }
         else { percent.stringValue = "–" }
         percent.textColor = tile.hasReading ? Theme.textPrimary : Theme.textDisabled
-        mark.textColor = tile.hasReading ? Theme.textSecondary : Theme.textDisabled
+        mark.pulse(tile.activity?.state == .waiting, bright: Theme.ample, dim: Theme.textDisabled,
+                   steady: tile.hasReading ? Theme.textSecondary : Theme.textDisabled)
+        initials?.textColor = tile.hasReading ? Theme.textSecondary : Theme.textDisabled
         name.stringValue = tile.name
         name.textColor = tile.hasReading ? Theme.textPrimary : Theme.textDisabled
         label.stringValue = tile.hasReading ? tile.headlineLabel : tile.statusLabel
@@ -151,6 +156,7 @@ final class PanelContentView: NSView {
     private let sessionsLine = Label.make("", size: 11, color: Theme.textSecondary, alignment: .center)
     private let mutedBadge = NSView()
     private var compactDials: [String: DialView] = [:]
+    private var compactMarks: [String: MarkView] = [:]
     private var cells: [String: CellView] = [:]
     private var order: [String] = []
     var onCellClick: ((String) -> Void)?
@@ -214,6 +220,8 @@ final class PanelContentView: NSView {
                 mini.color = Theme.color(tile.band)
                 mini.set(fraction, animated: animated)
             }
+            compactMarks[tile.id]?.pulse(tile.activity?.state == .waiting, bright: Theme.ample, dim: Theme.textDisabled,
+                                         steady: tile.hasReading ? Theme.textSecondary : Theme.textDisabled)
             cells[tile.id]?.apply(tile, animated: animated)
         }
         mutedBadge.isHidden = model.muted == 0
@@ -232,6 +240,7 @@ final class PanelContentView: NSView {
         compactRow.views.forEach { compactRow.removeView($0) }
         cellRow.views.forEach { cellRow.removeView($0) }
         compactDials = [:]
+        compactMarks = [:]
         cells = [:]
         if model.tiles.isEmpty {
             compactRow.addView(Label.make(Strings.t("app.name"), size: 11, color: Theme.textDisabled), in: .center)
@@ -243,6 +252,15 @@ final class PanelContentView: NSView {
             let mini = DialView(diameter: Theme.compactDial, stroke: Theme.compactStroke)
             compactDials[tile.id] = mini
             compactRow.addView(mini, in: .center)
+            let mark = MarkView(providerId: tile.id, size: Theme.compactMark)
+            if mark.hasMark {
+                compactMarks[tile.id] = mark
+                mini.addSubview(mark)
+                NSLayoutConstraint.activate([
+                    mark.centerXAnchor.constraint(equalTo: mini.centerXAnchor),
+                    mark.centerYAnchor.constraint(equalTo: mini.centerYAnchor)
+                ])
+            }
             let cell = CellView(id: tile.id, mark: tile.mark)
             cell.onClick = { [weak self] in self?.onCellClick?(tile.id) }
             cells[tile.id] = cell

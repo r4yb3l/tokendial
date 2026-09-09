@@ -7,6 +7,14 @@ enum PanelMode: String, Codable, CaseIterable {
     case hidden
 }
 
+/// Which screen edge the dock hangs from.
+enum DockEdge: String, Codable, CaseIterable {
+    case top
+    case bottom
+    case left
+    case right
+}
+
 /// Which look the app wears: the system's, or one the user pinned.
 enum Appearance: String, Codable, CaseIterable {
     case system
@@ -41,13 +49,14 @@ struct Settings: Codable {
     var appearance: Appearance = .dark
     /// A code from Strings.languages, or nil to follow the system.
     var language: String?
+    var edge: DockEdge = .top
 
     init() {}
 
     private enum CodingKeys: String, CodingKey {
         case schema, panel, disconnected, known, launchAtLogin, firstRunDone, thresholds
         case alertThresholds, alertResetSoon, alertWaiting, alertLimit, delivery
-        case resetLeadMinutes, waitingDebounceSeconds, lastSeenVersion, appearance, language
+        case resetLeadMinutes, waitingDebounceSeconds, lastSeenVersion, appearance, language, edge
     }
 
     /// Every key is optional on the way in, so a file written by an older build keeps its values and the
@@ -72,6 +81,7 @@ struct Settings: Codable {
         lastSeenVersion = try box.decodeIfPresent(String.self, forKey: .lastSeenVersion)
         appearance = try box.decodeIfPresent(Appearance.self, forKey: .appearance) ?? appearance
         language = try box.decodeIfPresent(String.self, forKey: .language)
+        edge = try box.decodeIfPresent(DockEdge.self, forKey: .edge) ?? edge
     }
 
     var alertConfig: AlertConfig {
