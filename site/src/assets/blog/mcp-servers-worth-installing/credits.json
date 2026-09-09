@@ -1,0 +1,9 @@
+[
+  {
+    "file": "server-costs-en.svg / server-costs-es.svg",
+    "title": "What each server's tool definitions cost",
+    "author": "Tokendial",
+    "license": "MIT (repository licence)",
+    "builtFrom": "local tools/list measurements with tiktoken, 2026-09-08 (scratch script mcp_measure.py)"
+  }
+]

@@ -65,7 +65,7 @@ El paso 2 es el que toca tu factura, y de eso va la siguiente sección.
 
 ## Qué te cuesta en contexto
 
-Cada herramienta que expone un servidor conectado se describe al modelo como texto: un nombre, una descripción y un esquema de sus parámetros. Ese texto está en la ventana de contexto en **cada turno**, se use la herramienta o no, porque el modelo tiene que saber qué podría llamar. Un servidor con cuarenta herramientas y descripciones largas puede añadir varios miles de tokens a cada petición antes de que escribas una palabra, y como explica el artículo sobre la ventana de contexto, la entrada se relee en cada turno.
+Cada herramienta que expone un servidor conectado se describe al modelo como texto: un nombre, una descripción y un esquema de sus parámetros. En la mayoría de los hosts ese texto está en la ventana de contexto en **cada turno**, se use la herramienta o no, porque el modelo tiene que saber qué podría llamar. Un servidor con cuarenta herramientas y descripciones largas puede añadir varios miles de tokens a cada petición antes de que escribas una palabra, y como explica el artículo sobre la ventana de contexto, la entrada se relee en cada turno. Los hosts empiezan a suavizarlo: la documentación de Claude Code dice que sus definiciones de herramientas MCP se difieren por defecto, así que solo los nombres de las herramientas y las instrucciones del servidor entran en el contexto hasta que se usa una en concreto, y `/context` muestra qué está ocupando el sitio. Aun así, cada servidor que conectas añade nombres en cada turno, y cada resultado de herramienta sigue cayendo entero.
 
 Tres consecuencias prácticas:
 

@@ -1,0 +1,74 @@
+---
+title: "MCP servers worth installing for code, and what each one costs in context"
+description: "Eight servers started locally and measured: how many tools each one exposes, how many tokens their definitions take, and which ones earn a place next to a coding agent."
+date: 2026-09-09
+section: tools
+cover: ../../../assets/blog/mcp-servers-worth-installing/server-costs-en.svg
+coverAlt: "Bar chart of tool-definition tokens for eight MCP servers"
+sources:
+  - title: "Model Context Protocol: reference servers repository"
+    href: "https://github.com/modelcontextprotocol/servers"
+  - title: "Microsoft: Playwright MCP"
+    href: "https://github.com/microsoft/playwright-mcp"
+  - title: "GitHub: GitHub MCP Server (toolsets)"
+    href: "https://github.com/github/github-mcp-server"
+  - title: "Upstash: Context7"
+    href: "https://github.com/upstash/context7"
+  - title: "Repomix"
+    href: "https://github.com/yamadashy/repomix"
+  - title: "Claude Code docs: Reduce MCP server overhead"
+    href: "https://code.claude.com/docs/en/costs#reduce-token-usage"
+  - title: "Hou et al. 2025, MCP: Landscape, Security Threats, and Future Research Directions"
+    href: "https://arxiv.org/abs/2503.23278"
+---
+import Figure from '../../../components/Figure.astro';
+import costs from '../../../assets/blog/mcp-servers-worth-installing/server-costs-en.svg';
+
+The MCP article explained the mechanism: every server you connect describes its tools to the model, and that description lives in the context window. This one puts numbers on it. On 8 September 2026 we started eight popular servers locally over stdio, asked each for its tool list, and counted the JSON with OpenAI's tokenizer. Then we asked the only question that matters for a coding agent: is what the server gives you worth what it costs on every turn?
+
+## The measurement
+
+<Figure src={costs} alt="Horizontal bars: Playwright 4,796 tokens for 24 tools; GitHub reference build 4,473 for 26; Repomix 4,308 for 6; Filesystem 3,360 for 14; Pencil 2,997 for 7; Memory 2,982 for 9; Sequential thinking 1,110 for 1; Context7 1,106 for 2. A dark sliver on each bar shows the tokens for names only, between 5 and 128." caption="Full definitions run from about 1,100 to 4,800 tokens per server. The names alone are 5 to 128, which is what a host that defers definitions loads by default." ours="local tools/list measurements counted with tiktoken" locale="en" plate />
+
+| Server | Tools | Definition tokens | Names only |
+|---|---|---|---|
+| Playwright (Microsoft) | 24 | 4,796 | 114 |
+| GitHub, reference build (archived) | 26 | 4,473 | 128 |
+| Repomix | 6 | 4,308 | 34 |
+| Filesystem (reference) | 14 | 3,360 | 64 |
+| Pencil | 7 | 2,997 | 29 |
+| Memory (reference) | 9 | 2,982 | 42 |
+| Sequential thinking (reference) | 1 | 1,110 | 5 |
+| Context7 | 2 | 1,106 | 10 |
+
+Two things stand out. Tool count is a poor predictor: Repomix has six tools and costs more than Filesystem's fourteen, because its descriptions are long. And the spread is narrow, roughly one to five thousand tokens, so with five servers connected you are carrying 10,000 to 20,000 tokens of definitions on every turn in a host that sends them all. Claude Code's documentation says it now defers definitions and loads names only until a tool is used, which turns that into a few hundred tokens; other hosts still send everything. Run `/context` in Claude Code, or the equivalent in your host, to see which case you are in.
+
+## Which ones earn their place
+
+**Context7** (two tools, 1,106 tokens). Fetches current documentation for a library into the conversation: `resolve-library-id` finds the library, `query-docs` pulls the relevant passage. It attacks the knowledge-cutoff problem directly, and a well-targeted doc excerpt is far cheaper than the agent guessing an API and fixing it later. The cheapest server on the list and the one with the clearest payoff.
+
+**Playwright** (24 tools, 4,796 tokens). Lets the agent drive a real browser through accessibility snapshots rather than screenshots, which its README stresses is what keeps the token cost down. Indispensable when you are debugging a web front end; dead weight when you are writing a CLI. Microsoft itself now suggests that coding agents may prefer the Playwright CLI plus skills over the MCP server, which is a point the next section returns to.
+
+**GitHub** (official server). The archived reference build we measured exposes 26 tools for 4,473 tokens. GitHub's maintained server is bigger, but it ships a `--toolsets` flag and a `--tools` allow-list precisely so you can load `repos,issues,pull_requests` and nothing else; its README says enabling only what you need "can help the LLM with tool choice and reduce the context size". Do that. Or skip it: the `gh` CLI does most of the same work with no definitions in context at all.
+
+**Filesystem** (14 tools, 3,360 tokens). Useful in a chat app like Claude Desktop, which cannot otherwise touch your disk. Redundant in a coding agent, which already has read, write and search tools built in. Do not connect it to Claude Code, Codex or Cursor.
+
+**Repomix** (6 tools, 4,308 tokens). Packs a repository into one AI-friendly file with per-file token counts and a `--compress` mode that keeps signatures and drops bodies. The MCP server is convenient, but the CLI does the same thing once and costs nothing afterwards; the tools article covers that use.
+
+**Memory** and **Sequential thinking** (reference servers). Interesting demonstrations of the protocol; for day-to-day coding the agent's own instruction files and plan mode cover the same ground without 3,000 tokens of definitions.
+
+**Pencil** (7 tools, 2,997 tokens). A design-tool server, the subject of the article on Claude as your designer. Connect it in the projects where you design, not globally.
+
+## When a CLI beats a server
+
+Anthropic's cost documentation makes a point the numbers above support: tools like `gh`, `aws`, `gcloud` and `sentry-cli` "are still more context-efficient than MCP servers because they don't add any per-tool listing", and a coding agent can run them directly. The agent already knows how to call a command and read its output. A server earns its place when it gives the model something a CLI cannot: a structured snapshot of a browser, a live design canvas, documentation the model does not have. When the server merely wraps an API that already has a CLI, prefer the CLI.
+
+## Before you connect one
+
+The 2025 security analysis of MCP that the basics article cited lists prompt injection through tool results and poisoned tool descriptions as open problems, and the protocol does not verify what a server says about itself. Three habits keep you safe:
+
+- **Prefer official or reference servers.** Playwright from Microsoft, the GitHub server from GitHub, Context7 from Upstash, the reference servers from the protocol's own repository.
+- **Read the tool list before trusting it.** It is the permission list. Trim it with toolsets or read-only flags when the server offers them.
+- **Keep the host's approvals on.** A tool call you did not expect should ask before it runs.
+
+And scope every server to the project that needs it. A browser server in a repository with no browser is 4,796 tokens per turn buying nothing, which is the whole argument of this article in one number.

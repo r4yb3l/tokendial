@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="444" viewBox="0 0 820 444" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+<text x="20" y="30" font-size="15" font-weight="600" fill="#0f172a">What each server's tool definitions cost, measured</text>
+<text x="218" y="73" font-size="12.5" text-anchor="end" fill="#0f172a">Playwright</text>
+<rect x="230" y="58" width="370.0" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="58" width="8.794829024186823" height="22" rx="3" fill="#1d4ed8"/>
+<text x="608.0" y="73" font-size="12" fill="#334155">4,796 · 24 tools</text>
+<text x="218" y="109" font-size="12.5" text-anchor="end" fill="#0f172a">GitHub (reference build)</text>
+<rect x="230" y="94" width="345.081317764804" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="94" width="9.87489574645538" height="22" rx="3" fill="#1d4ed8"/>
+<text x="583.081317764804" y="109" font-size="12" fill="#334155">4,473 · 26 tools</text>
+<text x="218" y="145" font-size="12.5" text-anchor="end" fill="#0f172a">Repomix</text>
+<rect x="230" y="130" width="332.35195996663884" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="130" width="2.62301918265221" height="22" rx="3" fill="#1d4ed8"/>
+<text x="570.3519599666388" y="145" font-size="12" fill="#334155">4,308 · 6 tools</text>
+<text x="218" y="181" font-size="12.5" text-anchor="end" fill="#0f172a">Filesystem</text>
+<rect x="230" y="166" width="259.2160133444537" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="166" width="4.93744787322769" height="22" rx="3" fill="#1d4ed8"/>
+<text x="497.2160133444537" y="181" font-size="12" fill="#334155">3,360 · 14 tools</text>
+<text x="218" y="217" font-size="12.5" text-anchor="end" fill="#0f172a">Pencil</text>
+<rect x="230" y="202" width="231.2114261884904" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="202" width="2.237281067556297" height="22" rx="3" fill="#1d4ed8"/>
+<text x="469.2114261884904" y="217" font-size="12" fill="#334155">2,997 · 7 tools</text>
+<text x="218" y="253" font-size="12.5" text-anchor="end" fill="#0f172a">Memory</text>
+<rect x="230" y="238" width="230.05421184320267" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="238" width="3.2402001668056712" height="22" rx="3" fill="#1d4ed8"/>
+<text x="468.05421184320267" y="253" font-size="12" fill="#334155">2,982 · 9 tools</text>
+<text x="218" y="289" font-size="12.5" text-anchor="end" fill="#0f172a">Sequential thinking</text>
+<rect x="230" y="274" width="85.63386155129274" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="274" width="2" height="22" rx="3" fill="#1d4ed8"/>
+<text x="323.63386155129274" y="289" font-size="12" fill="#334155">1,110 · 1 tools</text>
+<text x="218" y="325" font-size="12.5" text-anchor="end" fill="#0f172a">Context7</text>
+<rect x="230" y="310" width="85.325271059216" height="22" rx="5" fill="#bfdbfe" stroke="#60a5fa" stroke-width="0.8"/>
+<rect x="230" y="310" width="2" height="22" rx="3" fill="#1d4ed8"/>
+<text x="323.325271059216" y="325" font-size="12" fill="#334155">1,106 · 2 tools</text>
+<rect x="230" y="352" width="14" height="14" rx="3" fill="#bfdbfe" stroke="#60a5fa"/><text x="250" y="363" font-size="11.5" fill="#334155">Full definitions (name, description, parameter schema)</text>
+<rect x="230" y="372" width="14" height="14" rx="3" fill="#1d4ed8"/><text x="250" y="383" font-size="11.5" fill="#334155">Tool names only (what a deferring host loads)</text>
+<text x="20" y="418" font-size="11" fill="#64748b">Measurement: Tokendial, 8 September 2026. Each server was started locally over stdio, asked for tools/list, and the JSON was counted with tiktoken (o200k_base).</text>
+<text x="20" y="433" font-size="11" fill="#64748b">Playwright 1.63, GitHub reference server 0.6.2, Repomix 1.18, Filesystem 0.2, Pencil 1.0, Memory 0.6.3, Sequential thinking 2026.8, Context7 4.0.6.</text>
+</svg>

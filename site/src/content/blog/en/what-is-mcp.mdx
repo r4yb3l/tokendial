@@ -65,7 +65,7 @@ Step 2 is the one that touches your bill, and the next section is about it.
 
 ## What it costs you in context
 
-Every tool a connected server exposes is described to the model as text: a name, a description, and a schema of its parameters. That text sits in the context window on **every turn**, whether or not the tool gets used, because the model has to know what it could call. A server with forty tools and verbose descriptions can add several thousand tokens to each request before you have typed a word, and as the article on context windows explains, input is re-read on every turn.
+Every tool a connected server exposes is described to the model as text: a name, a description, and a schema of its parameters. In most hosts that text sits in the context window on **every turn**, whether or not the tool gets used, because the model has to know what it could call. A server with forty tools and verbose descriptions can add several thousand tokens to each request before you have typed a word, and as the article on context windows explains, input is re-read on every turn. Hosts are starting to soften this: Claude Code's documentation says its MCP tool definitions are now deferred by default, so only the tool names and the server's instructions enter context until a specific tool is used, and `/context` shows what is taking the space. Even then, every server you connect adds names on every turn, and every tool result still lands in full.
 
 Three practical consequences:
 

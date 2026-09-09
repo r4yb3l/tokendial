@@ -1,0 +1,74 @@
+---
+title: "Servidores MCP que merecen la pena para programar, y lo que cuesta cada uno en contexto"
+description: "Ocho servidores arrancados en local y medidos: cuántas herramientas expone cada uno, cuántos tokens ocupan sus definiciones y cuáles se ganan el sitio junto a un agente de código."
+date: 2026-09-09
+section: tools
+cover: ../../../assets/blog/mcp-servers-worth-installing/server-costs-es.svg
+coverAlt: "Gráfico de barras de los tokens de definición de herramientas de ocho servidores MCP"
+sources:
+  - title: "Model Context Protocol: repositorio de servidores de referencia"
+    href: "https://github.com/modelcontextprotocol/servers"
+  - title: "Microsoft: Playwright MCP"
+    href: "https://github.com/microsoft/playwright-mcp"
+  - title: "GitHub: GitHub MCP Server (toolsets)"
+    href: "https://github.com/github/github-mcp-server"
+  - title: "Upstash: Context7"
+    href: "https://github.com/upstash/context7"
+  - title: "Repomix"
+    href: "https://github.com/yamadashy/repomix"
+  - title: "Documentación de Claude Code: Reduce MCP server overhead"
+    href: "https://code.claude.com/docs/en/costs#reduce-token-usage"
+  - title: "Hou et al. 2025, MCP: Landscape, Security Threats, and Future Research Directions"
+    href: "https://arxiv.org/abs/2503.23278"
+---
+import Figure from '../../../components/Figure.astro';
+import costs from '../../../assets/blog/mcp-servers-worth-installing/server-costs-es.svg';
+
+El artículo sobre MCP explicaba el mecanismo: cada servidor que conectas describe sus herramientas al modelo, y esa descripción vive en la ventana de contexto. Este le pone números. El 8 de septiembre de 2026 arrancamos ocho servidores populares en local por stdio, pedimos a cada uno su lista de herramientas y contamos el JSON con el tokenizador de OpenAI. Después hicimos la única pregunta que importa para un agente de código: ¿lo que te da el servidor vale lo que cuesta en cada turno?
+
+## La medición
+
+<Figure src={costs} alt="Barras horizontales: Playwright 4.796 tokens por 24 herramientas; GitHub versión de referencia 4.473 por 26; Repomix 4.308 por 6; Filesystem 3.360 por 14; Pencil 2.997 por 7; Memory 2.982 por 9; Sequential thinking 1.110 por 1; Context7 1.106 por 2. Una franja oscura en cada barra muestra los tokens de solo los nombres, entre 5 y 128." caption="Las definiciones completas van de unos 1.100 a 4.800 tokens por servidor. Los nombres solos son de 5 a 128, que es lo que carga por defecto un host que difiere las definiciones." ours="mediciones locales de tools/list contadas con tiktoken" locale="es" plate />
+
+| Servidor | Herramientas | Tokens de definición | Solo nombres |
+|---|---|---|---|
+| Playwright (Microsoft) | 24 | 4.796 | 114 |
+| GitHub, versión de referencia (archivada) | 26 | 4.473 | 128 |
+| Repomix | 6 | 4.308 | 34 |
+| Filesystem (referencia) | 14 | 3.360 | 64 |
+| Pencil | 7 | 2.997 | 29 |
+| Memory (referencia) | 9 | 2.982 | 42 |
+| Sequential thinking (referencia) | 1 | 1.110 | 5 |
+| Context7 | 2 | 1.106 | 10 |
+
+Dos cosas saltan a la vista. El número de herramientas predice mal: Repomix tiene seis y cuesta más que las catorce de Filesystem, porque sus descripciones son largas. Y el rango es estrecho, de mil a cinco mil tokens, así que con cinco servidores conectados llevas de 10.000 a 20.000 tokens de definiciones en cada turno en un host que las manda todas. La documentación de Claude Code dice que ahora difiere las definiciones y carga solo los nombres hasta que se usa una herramienta, lo que convierte eso en unos cientos de tokens; otros hosts siguen mandando todo. Ejecuta `/context` en Claude Code, o el equivalente de tu host, para ver en qué caso estás.
+
+## Cuáles se ganan el sitio
+
+**Context7** (dos herramientas, 1.106 tokens). Trae a la conversación documentación actual de una librería: `resolve-library-id` encuentra la librería, `query-docs` saca el pasaje relevante. Ataca de frente el problema de la fecha de corte, y un extracto de documentación bien dirigido es mucho más barato que el agente adivinando una API y arreglándola después. El servidor más barato de la lista y el de retorno más claro.
+
+**Playwright** (24 herramientas, 4.796 tokens). Deja que el agente maneje un navegador real mediante instantáneas de accesibilidad y no capturas, que es lo que según su README mantiene bajo el coste en tokens. Imprescindible cuando depuras un front web; lastre cuando escribes una CLI. La propia Microsoft sugiere ya que los agentes de código pueden preferir la CLI de Playwright más skills al servidor MCP, un punto al que vuelve la siguiente sección.
+
+**GitHub** (servidor oficial). La versión de referencia archivada que medimos expone 26 herramientas por 4.473 tokens. El servidor que mantiene GitHub es mayor, pero trae un indicador `--toolsets` y una lista `--tools` precisamente para cargar `repos,issues,pull_requests` y nada más; su README dice que activar solo lo necesario "ayuda al LLM a elegir herramienta y reduce el tamaño del contexto". Hazlo. O sáltatelo: la CLI `gh` hace casi lo mismo sin ninguna definición en el contexto.
+
+**Filesystem** (14 herramientas, 3.360 tokens). Útil en una app de chat como Claude Desktop, que de otro modo no toca tu disco. Redundante en un agente de código, que ya trae leer, escribir y buscar. No lo conectes a Claude Code, Codex ni Cursor.
+
+**Repomix** (6 herramientas, 4.308 tokens). Empaqueta un repositorio en un archivo pensado para la IA, con recuento de tokens por archivo y un modo `--compress` que conserva las firmas y quita los cuerpos. El servidor MCP es cómodo, pero la CLI hace lo mismo una vez y después no cuesta nada; el artículo de herramientas cubre ese uso.
+
+**Memory** y **Sequential thinking** (servidores de referencia). Demostraciones interesantes del protocolo; para programar a diario, los archivos de instrucciones del agente y el modo plan cubren lo mismo sin 3.000 tokens de definiciones.
+
+**Pencil** (7 herramientas, 2.997 tokens). Un servidor de herramienta de diseño, protagonista del artículo sobre Claude como diseñador. Conéctalo en los proyectos donde diseñes, no en global.
+
+## Cuándo una CLI gana a un servidor
+
+La documentación de costes de Anthropic hace una observación que los números de arriba respaldan: herramientas como `gh`, `aws`, `gcloud` y `sentry-cli` "siguen siendo más eficientes en contexto que los servidores MCP porque no añaden ningún listado por herramienta", y un agente de código puede ejecutarlas directamente. El agente ya sabe llamar a un comando y leer su salida. Un servidor se gana el sitio cuando le da al modelo algo que una CLI no puede: una instantánea estructurada de un navegador, un lienzo de diseño en vivo, documentación que el modelo no tiene. Cuando el servidor solo envuelve una API que ya tiene CLI, prefiere la CLI.
+
+## Antes de conectar uno
+
+El análisis de seguridad de MCP de 2025 que citaba el artículo de fundamentos lista la inyección de prompts vía resultados de herramientas y las descripciones envenenadas como problemas abiertos, y el protocolo no verifica lo que un servidor dice de sí mismo. Tres hábitos te mantienen a salvo:
+
+- **Prefiere servidores oficiales o de referencia.** Playwright de Microsoft, el servidor de GitHub de GitHub, Context7 de Upstash, los de referencia del repositorio del propio protocolo.
+- **Lee la lista de herramientas antes de fiarte.** Es la lista de permisos. Recórtala con toolsets o modo de solo lectura cuando el servidor lo ofrezca.
+- **Deja puestas las aprobaciones del host.** Una llamada a herramienta que no esperabas debería preguntar antes de correr.
+
+Y limita cada servidor al proyecto que lo necesita. Un servidor de navegador en un repositorio sin navegador son 4.796 tokens por turno comprando nada, que es todo el argumento de este artículo en un número.
