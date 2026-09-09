@@ -161,7 +161,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.update(model)
         let worst = model.tiles.filter { $0.hasReading }.compactMap { $0.fraction }.max()
         let lines = model.tiles.filter { $0.hasReading }.map { "\($0.name) \(Int(($0.fraction ?? 0) * 100).description)%" }
-        statusItem.update(worst: worst, tooltip: lines.isEmpty ? "Tokendial · no providers connected" : "Tokendial\n" + lines.joined(separator: "\n"), launchAtLogin: settings.launchAtLogin)
+        let tooltip = lines.isEmpty ? Strings.t("tray.noProviders") : Strings.t("app.name") + "\n" + lines.joined(separator: "\n")
+        statusItem.update(worst: worst, tooltip: tooltip, launchAtLogin: settings.launchAtLogin)
     }
 
     private func openProvider(_ id: String) {

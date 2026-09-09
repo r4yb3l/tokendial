@@ -10,21 +10,37 @@ enum AlertCopy {
         let windowLabel = window.map { Strings.label($0.label) } ?? Strings.t("alert.usage")
         let reset = (window?.resetsAt ?? alert.resetsAt).map { Copy.reset($0, now: now) }
         switch alert.kind {
-        case .threshold: return ("\(name) at \(alert.pct ?? 0)%", join(windowLabel, reset))
-        case .limit: return ("\(name) limit reached", join(windowLabel, reset ?? "Waiting for the window to reset"))
-        case .resetSoon: return ("\(name) resets soon", join(windowLabel, reset, alert.pct.map { "\($0)% used" }))
-        case .resetDone: return ("\(name) is available again", "\(windowLabel) has reset")
+        case .threshold:
+            return (Strings.t("alert.threshold.title", ["name": name, "pct": alert.pct ?? 0]), join(windowLabel, reset))
+        case .limit:
+            return (Strings.t("alert.limit.title", ["name": name]), join(windowLabel, reset ?? Strings.t("alert.limit.waiting")))
+        case .resetSoon:
+            return (Strings.t("alert.resetSoon.title", ["name": name]),
+                    join(windowLabel, reset, alert.pct.map { Strings.t("alert.resetSoon.used", ["pct": $0]) }))
+        case .resetDone:
+            return (Strings.t("alert.resetDone.title", ["name": name]), Strings.t("alert.resetDone.body", ["window": windowLabel]))
         case .waiting:
             let session = activity?.sessions.first { $0.id == alert.sessionId }
-            return ("\(name) is waiting for you", session.map { join($0.location, $0.waitingFor) } ?? "An agent is waiting for your input")
+            return (Strings.t("alert.waiting.title", ["name": name]),
+                    session.map { join($0.location, $0.waitingFor) } ?? Strings.t("alert.waiting.body"))
         }
     }
 
     private static func join(_ parts: String?...) -> String { parts.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ") }
 
     private static func humanize(_ id: String) -> String {
-        if id.hasPrefix("claude") { return "Claude Code" }
-        switch id { case "codex": return "Codex"; case "copilot": return "GitHub Copilot"; case "cursor": return "Cursor"; case "antigravity": return "Antigravity"; case "glm": return "GLM"; case "grok": return "Grok"; case "opencode": return "OpenCode"; default: return id }
+        switch ProviderFamily.of(id) {
+        case "claude": return "Claude Code"
+        case "codex": return "Codex"
+        case "copilot": return "GitHub Copilot"
+        case "cursor": return "Cursor"
+        case "antigravity": return "Antigravity"
+        case "gemini": return "Gemini CLI"
+        case "glm": return "GLM"
+        case "grok": return "Grok"
+        case "opencode": return "OpenCode"
+        default: return id
+        }
     }
 }
 
