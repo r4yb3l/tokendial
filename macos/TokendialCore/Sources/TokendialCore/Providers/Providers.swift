@@ -51,7 +51,7 @@ public struct ClaudeCredential: Equatable {
 
     /// Keychain first (service "Claude Code-credentials", one item per profile), then the file.
     public static func read(profile: ClaudeProfile) throws -> ClaudeCredential {
-        if let data = Keychain.genericPassword(service: profile.slug.map { "Claude Code-credentials-\($0)" } ?? "Claude Code-credentials") {
+        if let data = try Keychain.genericPassword(service: profile.slug.map { "Claude Code-credentials-\($0)" } ?? "Claude Code-credentials") {
             return try parse(data)
         }
         if let data = try? Data(contentsOf: profile.credentialsFile) { return try parse(data) }
@@ -60,8 +60,12 @@ public struct ClaudeCredential: Equatable {
 }
 
 public enum Keychain {
-    /// The first generic password for a service, whatever the account. Never prompts.
-    public static func genericPassword(service: String) -> Data? {
+    /// The read did not go through: macOS asks the user before one app may read an item another app owns,
+    /// and the answer was no, or the dialog could not be shown. Retrying straight away only asks again.
+    public struct Refused: Error {}
+
+    /// The first generic password for a service, whatever the account; nil when there is no such item.
+    public static func genericPassword(service: String) throws -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -69,9 +73,11 @@ public enum Keychain {
             kSecReturnData as String: true
         ]
         var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess else { return nil }
-        return item as? Data
+        switch SecItemCopyMatching(query as CFDictionary, &item) {
+        case errSecSuccess: return item as? Data
+        case errSecItemNotFound: return nil
+        default: throw Refused()
+        }
     }
 }
 
@@ -83,7 +89,9 @@ public final class ClaudeProvider: UsageProvider {
     private let archive: ReadingArchive
     private let now: () -> Date
     private let credentialReader: (ClaudeProfile) throws -> ClaudeCredential
+    private static let quietAfterRefusal: TimeInterval = 15 * 60
     private var held: ClaudeCredential?
+    private var refusedAt: Date?
     private var retryAt: Date?
     private var consecutive429 = 0
 
@@ -105,13 +113,26 @@ public final class ClaudeProvider: UsageProvider {
         return ProviderAccount(label: nil, plan: credential.plan, source: profile.slug.map { "Claude Code in ~/.claude-\($0)" } ?? "Claude Code", manageURL: URL(string: "https://claude.ai/settings/usage"))
     }
 
-    public func forgetCredential() { held = nil }
+    public func forgetCredential() {
+        held = nil
+        refusedAt = nil
+    }
 
+    /// The credential is held until it ages out, so the keychain is read once per run rather than once per
+    /// poll. A refusal is held too: without that, one "Deny" would raise the same dialog every poll.
     private func load() throws -> ClaudeCredential {
         if let held, !held.expired(now()) { return held }
-        let fresh = try credentialReader(profile)
-        held = fresh
-        return fresh
+        if let refusedAt, now().timeIntervalSince(refusedAt) < Self.quietAfterRefusal { throw UsageError.needsSignIn() }
+        do {
+            let fresh = try credentialReader(profile)
+            refusedAt = nil
+            held = fresh
+            return fresh
+        } catch is Keychain.Refused {
+            refusedAt = now()
+            Log.usage.info("\(id): the keychain read was refused, asking again in \(Int(Self.quietAfterRefusal / 60)) min")
+            throw UsageError.needsSignIn()
+        }
     }
 
     public func read() async throws -> ProviderReading {
