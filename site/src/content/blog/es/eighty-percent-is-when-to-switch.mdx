@@ -1,31 +1,46 @@
 ---
 title: "Por qué el 80 % es el momento de cambiar de herramienta"
-description: "Las bandas del dial no son decoración. Verde, ámbar y rojo piden cada una un movimiento distinto, y la ámbar es la que te salva la tarde."
+description: "Las bandas del dial no son decoración. Verde, ámbar y rojo piden cada una un movimiento distinto, la roja empieza antes de lo que esperarías a propósito, y una línea de pronóstico te dice si la ventana llegará al reinicio."
 date: 2026-09-08
+updated: 2026-09-09
 section: save-tokens
+sources:
+  - title: "Documentación de Claude Code: Errors, You've hit your session limit"
+    href: "https://code.claude.com/docs/en/errors#youve-hit-your-session-limit"
+  - title: "Tokens de diseño de Tokendial: bandas, alertas y la frase de ritmo"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/design/tokens.md"
 ---
 
-Tokendial colorea todos los diales igual: **verde por debajo del 50 %**, **ámbar del 50 al 80 %**, **rojo desde el 80 %**. La banda roja empieza antes del 70 % habitual a propósito, para que el cambio de color y la alerta del 80 % caigan en el mismo momento. Esto es lo que te pide cada banda.
+Tokendial pinta todos los diales igual: **verde por debajo del 50 %**, **ámbar del 50 al 80 %**, **rojo desde el 80 %**. La mayoría de los indicadores se ponen rojos mucho más tarde, hacia el 90 o el 95 %. El nuestro se pone rojo a los 80 a propósito, y la razón es la esencia del producto: el cambio de color y la alerta caen en el mismo instante, y el 80 % es el último momento en el que cambiar todavía te compra algo.
+
+## La aritmética del último quinto
+
+Piensa en una ventana de cinco horas como un depósito. Al 80 % te queda un quinto, y tienes un agente cuya siguiente tarea es de tamaño desconocido. El artículo sobre agentes de código explica por qué: un prompt puede ser una llamada al modelo o cuarenta, cada una releyendo toda la conversación. Una tarea que parece pequeña puede llevarse un 15 % de la ventana sola.
+
+Empieza esa tarea al 80 % y hay una posibilidad real de que se pare a medias, con el agente a mitad de una edición y las pruebas a medio correr. La documentación de Anthropic describe exactamente ese final: "Claude Code bloquea más peticiones hasta la hora de reinicio que muestra el mensaje." Ahora tienes un árbol de trabajo roto y ningún asistente para arreglarlo. El último quinto de una ventana es la parte más cara, porque cada prompt que gastas ahí es uno que puedes necesitar cuando el agente esté a medio cambio y choque con el muro.
+
+Empieza la misma tarea en otro asistente que esté en verde y nada de eso pasa. Para eso están las bandas.
 
 ## Verde: gasta sin pensar
 
-Por debajo de la mitad de la ventana, lo más barato que puedes hacer es no pensar en ello. Empieza la tarea grande, deja que el agente lea el repositorio entero, lanza la suite de pruebas larga. Para eso está la ventana.
+Por debajo de la mitad de la ventana, lo más barato que puedes hacer es no pensar en ello. Empieza la tarea grande, deja que el agente lea el módulo entero, corre la suite larga. Para eso es la ventana, y ser cuidadoso aquí solo deja capacidad sin usar en el reinicio.
 
 ## Ámbar: termina, no empieces
 
-Entre el 50 y el 80 % la pregunta cambia de "¿puedo?" a "¿debería empezar algo nuevo aquí?". La respuesta honesta suele ser no. Termina la idea en la que estás, aterriza el cambio, haz commit. No abras una conversación exploratoria nueva sobre una ventana que ya va por la mitad.
+Entre el 50 y el 80 % la pregunta cambia de "¿puedo?" a "¿debería empezar algo nuevo en esta ventana?". Casi siempre la respuesta honesta es no. Termina la idea en la que estás, aterriza el cambio, haz commit. No abras una conversación exploratoria nueva en una ventana que ya está medio gastada.
 
-La tarjeta te dice cuánto falta para el reinicio. Si es menos de una hora, un café sale más barato que un prompt desperdiciado.
+Dos líneas de la tarjeta ayudan aquí. **"Se reinicia en 51 min"** te dice cuánto le queda a la ventana; cuando es poco, esperar es más barato que cualquier prompt. Y cuando ha habido lecturas suficientes aparece una línea de ritmo bajo la ventana principal: **"A este ritmo, vacío a las 16:40"** o **"A este ritmo dura hasta el reinicio"**. Es una recta ajustada a la última hora de lecturas, mostrada solo tras al menos tres lecturas que abarquen diez minutos, y se calla mientras la ventana descansa. Si dice que la ventana dura hasta el reinicio, el ámbar está bien. Si nombra una hora anterior al reinicio, vas camino del muro, y cuanto antes cambies algo más barato sale el cambio.
 
 ## Rojo: cambia o espera
 
-Al 80 % Tokendial manda la alerta. Dos movimientos tienen sentido:
+Al 80 % Tokendial manda la alerta, una vez por umbral y ventana. Dos movimientos tienen sentido.
 
-1. **Pasa la tarea a otro asistente.** Si Codex o Copilot están en verde, dales el siguiente paso. La mayoría de los vibecoders tienen dos o tres suscripciones justo para esto; el dial es lo que convierte el traspaso en algo evidente en vez de una apuesta.
-2. **Espera al reinicio.** Si el reinicio está cerca, la alerta de "reinicio inminente" te avisa diez minutos antes de que vuelva, y otra vez cuando un límite se levanta. Ve a estirar las piernas.
+**Pasa la siguiente tarea a otro asistente.** Supón que estás en Claude Code al 82 % con el reinicio a dos horas, y Codex está al 15 %. Termina la edición actual en Claude, haz commit y abre Codex en el mismo repositorio para la siguiente tarea. Al código no le importa qué agente lo escribió; los archivos de instrucciones que mantienes para uno sirven para el otro con pequeños cambios, y el historial de commits es el traspaso. La mayoría de los vibecoders llevan dos o tres suscripciones precisamente para esto. El dial es lo que convierte el traspaso en algo evidente en vez de una suposición.
 
-Lo que no tiene sentido es seguir empujando. El último 20 % de una ventana es la parte más cara: cada prompt que gastas ahí es uno que no tendrás cuando el agente esté a mitad de un cambio y se pare contra el muro.
+**Espera al reinicio.** Si el reinicio está cerca, la alerta de "reinicio inminente" te avisa diez minutos antes de que vuelva la ventana, y otra vez cuando se levanta un límite que te había parado. El propio Claude Code puede ahora esperar en la sesión abierta y continuar la tarea interrumpida tras el reinicio. Ve a estirar las piernas.
+
+Lo que no tiene sentido es empujar. Si al final chocas con el muro, la tarjeta sigue mostrando la hora de reinicio, y la alerta cuando el límite se levanta hace que no tengas que estar mirando.
 
 ## Cambia los números si tu ritmo es otro
 
-Los umbrales son tuyos. Quien trabaja en sesiones largas y únicas quizá quiera 60, 85 y 95; quien salta entre herramientas todo el día quizá prefiera un toque temprano al 40 %. Abre Ajustes, edita la lista, listo. Las bandas del dial te siguen.
+Los umbrales son tuyos. En Ajustes hay una lista separada por comas, 50, 80, 95 por defecto, aplicada a la ventana principal de cada proveedor. Quien trabaja en sesiones largas y únicas puede querer 60, 85 y 95; quien salta entre herramientas todo el día puede preferir un aviso temprano al 40 %. Las bandas del dial siguen los números que pongas, así que el color siempre significa lo que tú decidiste.

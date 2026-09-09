@@ -1,34 +1,67 @@
 ---
 title: "Seis hábitos para que tus tokens duren"
-description: "No hace falta entender los tokens para dejar de quemarlos. Seis cambios pequeños en cómo hablas con un agente, cada uno visible en el dial esa misma tarde."
+description: "No hace falta entender los tokens para dejar de quemarlos. Seis cambios en cómo trabajas con un agente, cada uno medido sobre archivos reales, salidas de pruebas reales y prompts reales."
 date: 2026-09-08
+updated: 2026-09-09
 section: save-tokens
+sources:
+  - title: "Anthropic: Context windows"
+    href: "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  - title: "Documentación de Claude Code: Manage costs effectively, Reduce token usage"
+    href: "https://code.claude.com/docs/en/costs#reduce-token-usage"
+  - title: "Ayuda de OpenAI: Understanding and counting tokens"
+    href: "https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them"
+  - title: "tiktoken, usado para todas las mediciones de este artículo"
+    href: "https://github.com/openai/tiktoken"
 ---
 
-Todos los asistentes de código te cobran en la misma moneda: el texto que leen más el texto que escriben. No tienes que contarlo. Sí tienes que dejar de hacer las seis cosas que lo queman para nada.
+Todos los asistentes de código te cobran en la misma moneda: el texto que el modelo lee más el texto que escribe. No tienes que contarlo. Sí tienes que dejar de hacer el puñado de cosas que lo gastan para nada. Las seis de abajo son las que aparecen en casi todas las sesiones, y para cada una hay un número, medido con el tokenizador de OpenAI sobre archivos y salidas de un proyecto real, para que veas cuánto vale el hábito.
 
-## 1. Deja que el agente lea los archivos en vez de pegarlos
+| Qué se midió | Tokens |
+|---|---|
+| Un archivo C# de 309 líneas (12.298 caracteres) | 2.561 |
+| El mismo archivo arrastrado diez turnos más | 25.610 |
+| Salida de `dotnet test`, detallada (291 líneas) | 41.803 |
+| Salida de `dotnet test`, silenciosa (8 líneas) | 220 |
+| `git diff` de tres commits (1.018 líneas) | 41.289 |
+| `git diff --stat` de los mismos commits | 391 |
+| "fix the bug" | 3 |
+| Un prompt que nombra la prueba, el valor y la línea | 36 |
+| "Antes de escribir código, dime en cinco líneas cómo…" | 20 |
 
-Pegar un archivo de 400 líneas en el chat manda esas 400 líneas con cada turno que viene después, porque la conversación las arrastra. Señalarle el archivo deja que el agente lea lo que necesita, cuando lo necesita. Mismo resultado, una fracción del gasto.
+## 1. Señala los archivos, no los pegues
 
-## 2. Compacta o reinicia las conversaciones largas
+Una conversación arrastra todo lo que se ha dicho en ella, así que lo que pegas se reenvía con cada mensaje posterior. El archivo de 309 líneas de arriba cuesta 2.561 tokens en el momento de pegarlo, y unos 25.000 más si la conversación sigue diez turnos, porque cada turno lo vuelve a leer. Señálale la ruta al agente y lo leerá una vez, cuando lo necesite, y muchas veces solo la parte que necesita.
 
-Una conversación que lleva dos horas arrastra dos horas de contexto detrás de cada mensaje nuevo. La mayoría de los agentes tienen un comando para compactarla (Claude Code tiene `/compact`); el resto te dejan empezar una nueva. Cuando el dial sube más rápido que tu progreso, esa es la señal.
+**Antes:** *"Aquí está mi UsageStore.cs: [400 líneas]. ¿Por qué no se actualiza la lectura?"*
+**Después:** *"La lectura de `Store/UsageStore.cs` no se actualiza tras un sondeo. Léelo y dime por qué."*
+
+## 2. Compacta o reinicia cuando cambie la tarea
+
+La documentación de Anthropic sobre la ventana de contexto es directa con las conversaciones largas: al crecer el número de tokens "la precisión y la memoria se degradan", un fenómeno que llaman *context rot*. Las conversaciones largas son además las más caras, porque cada turno paga todo el historial. Dos movimientos arreglan los dos problemas. Cuando la tarea actual termina y empieza otra, abre una conversación nueva. Cuando la misma tarea se arrastra y el historial es sobre todo callejones sin salida, compáctala: `/compact` en Claude Code pide al modelo que resuma la conversación y sigue desde el resumen. El comando en sí cuesta dos tokens.
+
+La señal es que el medidor de tu plan sube más rápido de lo que avanza el trabajo. Esa diferencia es el historial releyéndose.
 
 ## 3. Pide el plan antes que el código
 
-"Dime cómo lo harías, en cinco líneas" cuesta unos cientos de tokens. Dejar que el agente escriba la implementación equivocada y corregirla después cuesta la implementación equivocada, la corrección y el arreglo. Planifica primero cualquier cosa mayor que una función.
+*"Antes de escribir código, dime en cinco líneas cómo añadirías un reintento al cliente de subida"* son veinte tokens. La respuesta, unos cientos. Si el plan está mal, has gastado unos cientos de tokens en descubrirlo. Si te saltas el plan y la implementación está mal, has gastado la implementación, tu corrección y la segunda implementación, y cada uno de esos turnos releyó el primero.
 
-## 4. No vuelvas a ejecutar lo que ya pasó
+Para cualquier cosa mayor que una función, planifica primero. Casi todos los agentes tienen un modo para ello (Claude Code tiene el modo plan); una frase también sirve.
 
-A los agentes les encanta relanzar toda la suite de pruebas tras cada cambio y leer cada línea de la salida. Pide solo las pruebas que fallan, o un resumen. La salida también son tokens.
+## 4. Baja el volumen de la salida
 
-## 5. Ajusta el modelo al trabajo
+A los agentes les encanta correr toda la suite de pruebas tras cada cambio y leer cada línea. La salida detallada de una ejecución de `dotnet test` en un proyecto pequeño fueron 41.803 tokens; la silenciosa de la misma ejecución, 220. Es una diferencia de 190 veces por exactamente la misma información, y cae en la ventana de contexto, donde se relee en cada paso siguiente del bucle del agente.
 
-Renombrar una variable en todo un proyecto no necesita el modelo más capaz. Si tu herramienta te deja elegir, manda lo rutinario al más barato y guarda el caro para diseño y depuración. En Claude Code, las ventanas semanales por modelo del dial te muestran exactamente dónde cae el reparto.
+Lo mismo con los diffs: el diff completo de tres commits fueron 41.289 tokens; `--stat`, 391. Pide al agente solo las pruebas que fallan, la línea de resumen, los archivos cambiados y no las líneas cambiadas. Mejor aún, ponlo en el archivo de instrucciones de tu proyecto para que sea lo normal.
 
-## 6. Para en ámbar, cambia en rojo
+## 5. Di lo que sabes
 
-Las bandas del dial son el hábito que hace que los otros cinco se queden. Por debajo del 50 %, gasta sin pensar; desde el 50 %, termina lo que empezaste en vez de abrir algo nuevo; al 80 %, pasa la tarea a un asistente que esté en verde, o espera al reinicio que la tarjeta ya está contando.
+*"fix the bug"* son tres tokens y manda al agente a buscar: leer la prueba que falla, leer el código que cubre, formar una teoría, probarla. Cada paso es una llamada al modelo. *"La prueba `AppliesDiscount` falla con esperado 90 pero da 100; el descuento se lee en `Cart.Total()` en la línea 42. Arregla solo eso."* son treinta y seis tokens y se salta casi toda la búsqueda. Los treinta y tres tokens extra del prompt ahorran decenas de miles en el bucle.
 
-Ninguno de estos necesita que sepas qué es un token. Necesitan una mirada al borde de la pantalla.
+La precisión también te protege del arreglo que no pediste. "Arregla solo eso" es barato de escribir.
+
+## 6. Ajusta el modelo al trabajo, y para en ámbar
+
+Renombrar una variable en todo un proyecto no necesita el modelo más capaz. Todos los fabricantes cobran más por su modelo tope, directamente o con una cuota más pequeña, así que si tu herramienta te deja elegir, manda lo rutinario al barato y guarda el caro para diseño y depuración.
+
+Luego deja que el medidor decida por ti. Tokendial pinta el dial verde por debajo del 50 %, ámbar del 50 al 80 % y rojo por encima. Verde es gastar sin pensar. Ámbar es terminar lo que empezaste y no abrir nada nuevo en esta ventana. Rojo es pasar la siguiente tarea a un asistente que esté en verde, o esperar al reinicio que la tarjeta ya está contando. Nada de esto exige saber qué es un token. Exige una mirada al borde de la pantalla antes de la tarea larga, no después.

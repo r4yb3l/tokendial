@@ -1,34 +1,67 @@
 ---
 title: "Six habits that make your tokens last"
-description: "You do not need to understand tokens to stop burning them. Six small changes to how you talk to an agent, each one visible on the dial the same afternoon."
+description: "You do not need to understand tokens to stop burning them. Six changes to how you work with an agent, each one measured on real files, real test output and real prompts."
 date: 2026-09-08
+updated: 2026-09-09
 section: save-tokens
+sources:
+  - title: "Anthropic: Context windows"
+    href: "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  - title: "Claude Code docs: Manage costs effectively, Reduce token usage"
+    href: "https://code.claude.com/docs/en/costs#reduce-token-usage"
+  - title: "OpenAI Help: Understanding and counting tokens"
+    href: "https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them"
+  - title: "tiktoken, used for every measurement in this article"
+    href: "https://github.com/openai/tiktoken"
 ---
 
-Every coding assistant charges you in the same currency: the text it reads plus the text it writes. You do not have to count it. You do have to stop doing the six things that burn it for nothing.
+Every coding assistant charges you in the same currency: the text the model reads plus the text it writes. You do not have to count it. You do have to stop doing the handful of things that spend it for nothing. The six below are the ones that show up in almost every session, and for each one there is a number, measured with OpenAI's tokenizer on files and output from a real project, so you can see what the habit is worth.
 
-## 1. Let the agent read files instead of pasting them
+| What was measured | Tokens |
+|---|---|
+| A 309-line C# file (12,298 characters) | 2,561 |
+| The same file carried through ten more turns | 25,610 |
+| `dotnet test` output, verbose (291 lines) | 41,803 |
+| `dotnet test` output, quiet (8 lines) | 220 |
+| `git diff` of three commits (1,018 lines) | 41,289 |
+| `git diff --stat` of the same commits | 391 |
+| "fix the bug" | 3 |
+| A prompt naming the test, the value and the line | 36 |
+| "Before writing code, tell me in five lines how you would…" | 20 |
 
-Pasting a 400-line file into the chat sends those 400 lines with every single turn that follows, because the conversation carries them. Pointing the agent at the file lets it read what it needs, when it needs it. Same result, a fraction of the spend.
+## 1. Point at files, do not paste them
 
-## 2. Compact or restart long conversations
+A conversation carries everything that has been said in it, so anything you paste is re-sent with every later message. The 309-line file above costs 2,561 tokens the moment you paste it, and about 25,000 more if the conversation goes on for ten turns, because each turn reads it again. Point the agent at the path instead and it reads the file once, when it needs it, and often only the part it needs.
 
-A conversation that has been going for two hours drags two hours of context behind every new message. Most agents have a command to compact it (Claude Code has `/compact`); the rest let you start a fresh one. When the dial climbs faster than your progress, that is the signal.
+**Before:** *"Here is my UsageStore.cs: [400 lines]. Why does the reading not update?"*
+**After:** *"The reading in `Store/UsageStore.cs` does not update after a poll. Read it and tell me why."*
+
+## 2. Compact or restart when the task changes
+
+Anthropic's documentation on context windows is blunt about long conversations: as the token count grows, "accuracy and recall degrade", a phenomenon they call context rot. Long conversations are also the most expensive kind, because every turn pays for the whole history. Two moves fix both problems. When the current task is done and a new one starts, start a new conversation. When the same task is dragging and the history is mostly dead ends, compact it: Claude Code's `/compact` asks the model to summarise the conversation and continues from the summary. The command itself costs two tokens.
+
+The signal to watch is your plan's meter rising faster than the work is moving. That gap is the history being re-read.
 
 ## 3. Ask for the plan before the code
 
-"Tell me how you would do this, in five lines" costs a few hundred tokens. Letting the agent write the wrong implementation and then correcting it costs the wrong implementation, the correction, and the fix. Plan first on anything bigger than a function.
+*"Before writing code, tell me in five lines how you would add a retry to the upload client"* is twenty tokens. The reply is a few hundred. If the plan is wrong you have spent a few hundred tokens finding out. If you skip the plan and the implementation is wrong, you have spent the implementation, your correction, and the second implementation, and each of those turns re-read the first one.
 
-## 4. Do not re-run what already passed
+For anything bigger than a single function, plan first. Most agents have a mode for it (Claude Code has plan mode); a sentence works too.
 
-Agents love to re-run the whole test suite after every change and read every line of output. Ask for the failing tests only, or for a summary. Output is tokens too.
+## 4. Turn the output down
 
-## 5. Match the model to the job
+Agents love to run the whole test suite after every change and read every line. The verbose output of one `dotnet test` run on a small project was 41,803 tokens; the quiet output of the same run was 220. That is a 190-fold difference for exactly the same information, and it lands in the context window where it is re-read on every following step of the agent's loop.
 
-Renaming a variable across a project does not need the most capable model. If your tool lets you pick, run the routine work on the cheaper one and keep the expensive one for design and debugging. On Claude Code, the per-model weekly windows on the dial show you exactly where the split lands.
+The same applies to diffs: the full diff of three commits was 41,289 tokens, `--stat` was 391. Ask the agent for failing tests only, for the summary line, for the changed files rather than the changed lines. Better still, put that in your project's instruction file so it is the default.
 
-## 6. Stop at amber, switch at red
+## 5. Say what you know
 
-The dial's bands are the habit that makes the other five stick. Under 50 % spend freely; from 50 % finish what you started instead of opening something new; at 80 % move the task to an assistant that is green, or wait for the reset the card is already counting down.
+*"fix the bug"* is three tokens and sends the agent on a search: read the failing test, read the code it covers, form a theory, try it. Each of those is a model call. *"The test `AppliesDiscount` fails with expected 90 but got 100; the discount is read in `Cart.Total()` at line 42. Fix only that."* is thirty-six tokens and skips most of the search. The extra thirty-three tokens in the prompt save tens of thousands in the loop.
 
-None of these need you to know what a token is. They need a glance at the edge of the screen.
+Precision also protects you from the fix you did not ask for. "Fix only that" is cheap to write.
+
+## 6. Match the model to the job, and stop at amber
+
+Renaming a variable across a project does not need the most capable model. Every vendor prices its top model higher, either directly or through a smaller quota, so if your tool lets you choose, run the routine work on the cheaper one and keep the expensive one for design and debugging.
+
+Then let the meter make the decision for you. Tokendial colours the dial green under 50 %, amber from 50 to 80 %, red above. Green means spend freely. Amber means finish what you started and do not open something new on this window. Red means move the next task to an assistant that is green, or wait for the reset the card is already counting down. None of these need you to know what a token is. They need a glance at the edge of the screen before the long task, not after.

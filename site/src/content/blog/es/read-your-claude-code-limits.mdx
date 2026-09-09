@@ -1,36 +1,75 @@
 ---
 title: "Cómo leer tus límites de Claude Code"
-description: "Ventana de sesión, ventanas semanales, ventanas por modelo: qué significa cada una, cuándo se reinicia y cuál muestra el dial."
+description: "Sesión, semanal, Opus, Sonnet: Claude Code tiene cuatro límites que se llenan a la vez, y el que te para casi nunca es el que estabas mirando. Qué significa cada mensaje, qué dice la documentación de Anthropic y cómo leer la tarjeta."
 date: 2026-09-08
+updated: 2026-09-09
 section: save-tokens
 provider: claude
+cover: ../../../assets/blog/how-plans-meter-you/windows-es.svg
+coverAlt: "Línea de tiempo de una ventana deslizante de cinco horas y una ventana semanal"
+sources:
+  - title: "Documentación de Claude Code: Errors, You've hit your session limit"
+    href: "https://code.claude.com/docs/en/errors#youve-hit-your-session-limit"
+  - title: "Documentación de Claude Code: Manage costs effectively"
+    href: "https://code.claude.com/docs/en/costs"
+  - title: "Documentación de Claude Code: Wait for a usage limit to reset"
+    href: "https://code.claude.com/docs/en/interactive-mode#wait-for-a-usage-limit-to-reset"
+  - title: "Ayuda de Anthropic: Using Claude Code with your Pro or Max plan"
+    href: "https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan"
 ---
+import Figure from '../../../components/Figure.astro';
+import windows from '../../../assets/blog/how-plans-meter-you/windows-es.svg';
 
-Claude Code no tiene un límite. Tiene varias ventanas que se llenan y se vacían cada una a su ritmo, y la que te para casi nunca es la que estabas mirando. Así se leen.
+Claude Code no tiene un límite. La propia documentación de errores de Anthropic lista cuatro mensajes con los que te puedes topar, cada uno con su hora de reinicio:
 
-## La ventana de sesión
+```
+You've hit your session limit · resets 3:45pm
+You've hit your weekly limit · resets Mon 12:00am
+You've hit your Opus limit · resets 3:45pm
+You've hit your Sonnet limit · resets 3:45pm
+```
 
-Cada mensaje que envías cuenta contra una **ventana deslizante de cinco horas**. Se abre con tu primer mensaje y se cierra cinco horas después, hagas lo que hagas entre medias. Lanza tres turnos pesados de agente en los primeros veinte minutos y puede que pases el resto de la ventana esperando.
+Detrás de esos cuatro mensajes hay dos clases de ventana y dos alcances. Cuando sabes distinguirlos, el muro deja de ser una sorpresa.
 
-Es la ventana que Tokendial pone en el dial por defecto, porque es la que interrumpe una tarde de trabajo.
+## Dos ventanas que se llenan a la vez
 
-## Las ventanas semanales
+<Figure src={windows} alt="Línea de tiempo: una ventana de cinco horas se abre con el primer mensaje y se reinicia cinco horas después; debajo, una barra semanal se rellena a una hora fija cada semana" caption="La ventana de sesión es la corta. La semanal es la que olvidas hasta el jueves." ours="las páginas de planes de los fabricantes listadas en Fuentes" locale="es" plate />
 
-Encima de la sesión, Anthropic mide una **ventana de siete días para todos los modelos** y, en algunos planes, **ventanas semanales por modelo** (Opus, Sonnet o un modelo propio del plan). Estas se reinician una vez por semana a una hora fija, no desde tu primer mensaje.
+**La ventana de sesión** es una asignación deslizante de cinco horas. Se abre con tu primer mensaje y se cierra cinco horas después hagas lo que hagas entre medias; el siguiente mensaje abre una nueva. Lanza tres turnos pesados de agente en los primeros veinte minutos y puede que pases el resto de la ventana esperando.
 
-Chocar con una ventana semanal se siente distinto: el dial de sesión puede estar en verde y Claude Code seguir diciendo que no. Cuando pase, pasa el cursor por el dial. La tarjeta lista todas las ventanas con su barra y su hora de reinicio, así ves cuál está llena de verdad.
+**La ventana semanal** es una asignación mayor que se reinicia a una hora fija cada semana, no desde tu primer mensaje. La documentación de Claude Code añade la frase que explica a casi todos los usuarios confundidos: "el uso cuenta contra las asignaciones de sesión y semanal al mismo tiempo. Una sola ráfaga de actividad intensa, como un despliegue grande de subagentes, puede agotar la asignación semanal antes de que se reinicie la ventana de sesión." El dial de sesión puede estar en verde y Claude Code seguir diciendo que no, porque lo que se acabó fue la semana.
+
+En los planes Team y Enterprise la documentación describe las mismas dos ventanas por asiento, "una ventana deslizante de cinco horas y una ventana semanal", y señala que la asignación se comparte con el chat de Claude y con Cowork. En Pro y Max, el centro de ayuda de Anthropic dice que los límites también se comparten entre Claude y Claude Code: una charla larga en el navegador y una sesión larga de agente en la terminal vacían las mismas ventanas.
+
+## Dos alcances: todos los modelos, o una familia
+
+Los límites de sesión y semanal "se comparten entre todos los modelos, así que cambiar de modelo no devuelve el acceso". Los de Opus y Sonnet son distintos: cada uno "se aplica solo a las peticiones a esa familia de modelos, así que cambiar a un modelo de otra familia con `/model` te deja seguir trabajando". Si chocas con el límite de Opus con la sesión aún abierta, pasar a Sonnet el resto de la tarde es una salida legítima. Si chocas con el de sesión, solo ayuda el reinicio.
+
+Un coste que conviene saber al cambiar: cada modelo guarda su propia caché de prompt, así que la primera petición en el modelo nuevo relee toda la conversación sin aciertos de caché.
 
 ## Leer la tarjeta
 
-- **Sesión actual** es la ventana de cinco horas. A menos de una hora del reinicio la tarjeta dice "Se reinicia en 51 min"; más lejos, da el día y la hora.
+Pasa el cursor por el dial de Claude y la tarjeta lista cada ventana que informa el propio endpoint de uso de Claude Code, cada una con su barra y su reinicio:
+
+- **Sesión actual** es la ventana de cinco horas, y la que el dial muestra por defecto porque es la que interrumpe una tarde. A menos de una hora del reinicio la línea dice "Se reinicia en 51 min"; más lejos, da el día y la hora.
 - **Todos los modelos** es la ventana semanal a la que suma cada mensaje.
-- **Opus**, **Sonnet** o un modelo con nombre son las ventanas semanales por modelo. Las vacías no se muestran.
-- Una tilde delante de un número significa que el valor se calculó en tu equipo en vez de publicarlo Anthropic.
+- **Opus**, **Sonnet** o un modelo con nombre son las ventanas semanales por modelo. Las que Anthropic no informa para tu plan no se muestran.
+- Una línea que dice **"A este ritmo, vacío a las 16:40"** es un pronóstico: una recta ajustada a la última hora de lecturas de la ventana principal. Aparece solo cuando hay lecturas suficientes para fiarse, y dice "dura hasta el reinicio" cuando el ritmo va bien.
+- Una nota **"Derivado de la actividad local"** marca un valor que Tokendial calculó por su cuenta y no uno publicado por el proveedor.
+
+Los números son de Anthropic. Tokendial pregunta al mismo endpoint que el comando `/usage` y nunca adivina un porcentaje.
+
+## Qué hacer con cada mensaje
+
+- **Límite de sesión.** Mira la hora de reinicio, no el porcentaje. Claude Code puede esperar en la sesión abierta y continuar la tarea interrumpida tras el reinicio: desde la versión 2.1.234 una línea al pie dice "Usage limit reached · continuing automatically at 3:45pm · esc to cancel". Si el reinicio está cerca, es la opción más barata que existe.
+- **Límite semanal.** Solo lo devuelven el reinicio o los créditos de uso. En Pro y Max, `/usage-credits` permite seguir a precio de API; la documentación insiste en que cada paso hacia créditos de pago exige tu consentimiento explícito. Si no, esta es la semana de pasar tareas a otro asistente.
+- **Límite de Opus o Sonnet.** Ejecuta `/model` y elige un modelo de otra familia.
+- **Cualquiera de ellos, una y otra vez.** La lista de remedios de la propia documentación es subir de plan, activar créditos de uso o reducir el uso de tokens. La tercera es gratis, y de eso va el artículo de los seis hábitos.
 
 ## Tres hábitos que ayudan
 
-1. **Mira antes de la tarea larga.** Si la sesión está al 70 % y el reinicio a 40 minutos, esa refactorización puede esperar 40 minutos y arrancar con la ventana llena.
-2. **Deja que la alerta del 80 % haga su trabajo.** Tokendial avisa una vez por ventana al cruzar el 50, el 80 y el 95 %. El 80 % es el momento de terminar la idea, no de empezar otra.
-3. **Vigila la barra semanal los lunes.** Una ventana semanal que se reinicia a mitad de semana convierte un lunes lento en un jueves rápido, o al revés.
+1. **Mira antes de la tarea larga.** Si la sesión está al 70 % y se reinicia en 40 minutos, el refactor puede esperar 40 minutos y empezar con la ventana llena.
+2. **Deja que la alerta del 80 % haga su trabajo.** Tokendial te avisa una vez por umbral y ventana, al 50, 80 y 95 % por defecto. Al 80 % toca terminar la idea, no empezar otra.
+3. **Mira la barra semanal el primer día laborable.** Una ventana semanal que se reinicia a mitad de semana hace que un lunes lento pueda ser un jueves rápido, o al revés, y la barra te dice en qué semana estás.
 
-Nada de esto necesita una terminal: el dial está siempre en el borde de la pantalla y la tarjeta a un cursor de distancia.
+Nada de esto necesita una terminal abierta: el dial está en el borde de la pantalla y la tarjeta a un cursor de distancia. Pero cuando quieras la vista del propio fabricante, `/usage` dentro de Claude Code muestra las mismas ventanas y las mismas horas de reinicio.

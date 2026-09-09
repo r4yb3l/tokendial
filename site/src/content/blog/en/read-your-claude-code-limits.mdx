@@ -1,36 +1,75 @@
 ---
 title: "How to read your Claude Code limits"
-description: "Session window, weekly windows, per-model windows: what each one means, when it resets, and which one the dial shows."
+description: "Session, weekly, Opus, Sonnet: Claude Code has four limits that fill at the same time, and the one that stops you is rarely the one you were watching. What each message means, what Anthropic's documentation says about them, and how to read the card."
 date: 2026-09-08
+updated: 2026-09-09
 section: save-tokens
 provider: claude
+cover: ../../../assets/blog/how-plans-meter-you/windows-en.svg
+coverAlt: "Timeline of a rolling five-hour window and a weekly window"
+sources:
+  - title: "Claude Code docs: Errors, You've hit your session limit"
+    href: "https://code.claude.com/docs/en/errors#youve-hit-your-session-limit"
+  - title: "Claude Code docs: Manage costs effectively"
+    href: "https://code.claude.com/docs/en/costs"
+  - title: "Claude Code docs: Wait for a usage limit to reset"
+    href: "https://code.claude.com/docs/en/interactive-mode#wait-for-a-usage-limit-to-reset"
+  - title: "Anthropic Help: Using Claude Code with your Pro or Max plan"
+    href: "https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan"
 ---
+import Figure from '../../../components/Figure.astro';
+import windows from '../../../assets/blog/how-plans-meter-you/windows-en.svg';
 
-Claude Code does not have one limit. It has several windows that fill and empty on their own schedules, and the one that stops you is rarely the one you were watching. Here is how to read them.
+Claude Code does not have one limit. Anthropic's own error documentation lists four messages you can run into, each with its own reset time:
 
-## The session window
+```
+You've hit your session limit · resets 3:45pm
+You've hit your weekly limit · resets Mon 12:00am
+You've hit your Opus limit · resets 3:45pm
+You've hit your Sonnet limit · resets 3:45pm
+```
 
-Every message you send counts against a rolling **five-hour window**. It opens with your first message and closes five hours later, whatever you did in between. Run three heavy agent turns in the first twenty minutes and you may spend the rest of the window waiting.
+Behind those four messages are two kinds of window and two scopes. Once you can tell them apart, the wall stops being a surprise.
 
-This is the window Tokendial puts on the dial by default, because it is the one that interrupts a working afternoon.
+## Two windows, filling at once
 
-## The weekly windows
+<Figure src={windows} alt="Timeline: a five-hour window opens with the first message and resets five hours later; below it a weekly bar refills at a fixed time each week" caption="The session window is the short one. The weekly window is the one you forget about until Thursday." ours="the vendors' plan pages listed under Sources" locale="en" plate />
 
-On top of the session, Anthropic meters a **seven-day window across all models**, and on some plans **per-model weekly windows** (Opus, Sonnet, or a plan-specific model). These reset once a week at a fixed time, not from your first message.
+**The session window** is a rolling five-hour allowance. It opens with your first message and closes five hours later whatever you did in between; the next message after that opens a fresh one. Run three heavy agent turns in the first twenty minutes and you may spend the rest of the window waiting.
 
-Hitting a weekly window feels different: the session dial can be green and Claude Code still refuses. When that happens, hover the dial. The card lists every window with its own bar and reset time, so you can see which one is actually full.
+**The weekly window** is a larger allowance that resets at a fixed time each week rather than from your first message. The Claude Code documentation adds the sentence that explains most confused users: "usage counts against the session and weekly allowances at the same time. A single burst of heavy activity, such as a large workflow fanout, can exhaust the weekly allowance before the session window resets." The session dial can be green and Claude Code still refuses, because the week is what ran out.
+
+On Team and Enterprise plans the documentation describes the same two windows per seat, "a rolling five-hour window and a weekly window", and notes that the allowance is shared with Claude chat and Cowork. On Pro and Max, Anthropic's help centre says the limits are shared between Claude and Claude Code too: a long chat in the browser and a long agent session in the terminal drain the same windows.
+
+## Two scopes: all models, or one family
+
+The session and weekly limits are "shared across all models, so switching models doesn't restore access". The Opus and Sonnet limits are different: each "applies only to requests to that model family, so switching to a model outside the family with `/model` keeps you working". If you hit the Opus limit with the session still open, moving to Sonnet for the rest of the afternoon is a legitimate escape. If you hit the session limit, nothing but the reset helps.
+
+One cost to know when you switch: each model keeps its own prompt cache, so the first request on the new model re-reads the whole conversation with no cache hits.
 
 ## Reading the card
 
-- **Current session** is the five-hour window. Under an hour to the reset, the card says "Resets in 51 min"; further away it gives the day and time.
+Hover the Claude dial and the card lists every window Claude Code's own usage endpoint reports, each with its own bar and reset:
+
+- **Current session** is the five-hour window, and the one the dial shows by default because it is the one that interrupts an afternoon. Under an hour from the reset the line reads "Resets in 51 min"; further out it gives the day and time.
 - **All models** is the weekly window every message counts towards.
-- **Opus**, **Sonnet** or a named model are the per-model weekly windows. Empty ones are not shown.
-- A tilde before a number means the value was worked out locally rather than published by Anthropic.
+- **Opus**, **Sonnet** or a named model are the per-model weekly windows. Windows Anthropic does not report for your plan are not shown.
+- A line saying **"At this pace, empty at 4:40 PM"** is a forecast: a straight line fitted to the last hour of readings on the headline window. It appears only after enough readings to trust, and says "lasts until the reset" when the pace is fine.
+- A note reading **"Derived from local activity"** marks a value Tokendial worked out itself rather than one the provider published.
+
+The numbers are Anthropic's. Tokendial asks the same endpoint the `/usage` command asks and never guesses a percentage.
+
+## What to do at each message
+
+- **Session limit.** Look at the reset time, not the percentage. Claude Code can wait in the open session and continue the interrupted task after the reset: since version 2.1.234 a line at the bottom reads "Usage limit reached · continuing automatically at 3:45pm · esc to cancel". If the reset is close, that is the cheapest option there is.
+- **Weekly limit.** Nothing short of the reset or usage credits restores it. On Pro and Max, `/usage-credits` lets you keep working at API rates; the documentation stresses that every step into paid credits requires your explicit consent. Otherwise this is the week to hand tasks to another assistant.
+- **Opus or Sonnet limit.** Run `/model` and pick a model outside that family.
+- **Any of them, repeatedly.** The documentation's own list of remedies is to upgrade the plan, enable usage credits, or reduce token usage. The third one is free, and the article on six habits is about it.
 
 ## Three habits that help
 
-1. **Look before the long task.** If the session is at 70 % and the reset is 40 minutes away, that refactor can wait 40 minutes and start with a full window.
-2. **Let the 80 % alert do its job.** Tokendial warns you once per window when you cross 50, 80 and 95 %. At 80 % is when to finish the thought, not start a new one.
-3. **Watch the weekly bar on Mondays.** A weekly window that resets mid-week means a slow Monday can be a fast Thursday, or the other way round.
+1. **Look before the long task.** If the session is at 70 % and resets in 40 minutes, the refactor can wait 40 minutes and start on a full window.
+2. **Let the 80 % alert do its job.** Tokendial warns you once per threshold per window, at 50, 80 and 95 % by default. At 80 % is when to finish the thought, not start a new one.
+3. **Check the weekly bar on the first working day.** A weekly window that resets mid-week means a slow Monday can be a fast Thursday, or the other way round, and the bar tells you which week you are in.
 
-None of this needs a terminal: the dial is always at the edge of the screen, and the card is one hover away.
+None of this needs a terminal open: the dial is at the edge of the screen and the card is one hover away. But when you want the vendor's own view, `/usage` inside Claude Code shows the same windows and the same reset times.

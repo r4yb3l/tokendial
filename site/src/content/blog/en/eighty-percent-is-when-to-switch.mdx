@@ -1,31 +1,46 @@
 ---
 title: "Why 80 % is the moment to switch tools"
-description: "The bands on the dial are not decoration. Green, amber and red each ask for a different move, and the amber one is the one that saves your afternoon."
+description: "The bands on the dial are not decoration. Green, amber and red each ask for a different move, the red one starts earlier than you would expect on purpose, and a forecast line tells you whether the window will make it to the reset."
 date: 2026-09-08
+updated: 2026-09-09
 section: save-tokens
+sources:
+  - title: "Claude Code docs: Errors, You've hit your session limit"
+    href: "https://code.claude.com/docs/en/errors#youve-hit-your-session-limit"
+  - title: "Tokendial design tokens: bands, alerts and the pace sentence"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/design/tokens.md"
 ---
 
-Tokendial colours every dial the same way: **green under 50 %**, **amber from 50 to 80 %**, **red from 80 %**. The red band starts earlier than the usual 70 % on purpose, so the colour change and the 80 % alert land at the same moment. Here is what each band is asking you to do.
+Tokendial colours every dial the same way: **green under 50 %**, **amber from 50 to 80 %**, **red from 80 %**. Most gauges turn red much later, around 90 or 95 %. Ours turns red at 80 on purpose, and the reason is the whole point of the product: the colour change and the alert land at the same moment, and 80 % is the last moment at which switching still buys you something.
+
+## The maths of the last fifth
+
+Think of a five-hour window as a tank. At 80 % you have a fifth of it left, and you have an agent whose next task is of unknown size. The article on coding agents works through why: one prompt can be a single model call or forty, each one re-reading everything in the conversation. A task that looks small can take 15 % of a window on its own.
+
+Start that task at 80 % and there is a real chance it stops halfway, with the agent mid-edit and the tests half run. Anthropic's documentation describes exactly that outcome: "Claude Code blocks further requests until the reset time shown in the message." Now you have a broken working tree and no assistant to fix it. The last fifth of a window is the most expensive part, because every prompt you spend there is one you may need when the agent is halfway through a change and stops at a wall.
+
+Start the same task on another assistant that is green and none of that happens. That is what the bands are for.
 
 ## Green: spend freely
 
-Under half the window, the cheapest thing you can do is not think about it. Start the big task, let the agent read the whole repository, run the long test suite. This is what the window is for.
+Under half the window, the cheapest thing you can do is not think about it. Start the big task, let the agent read the whole module, run the long suite. This is what the window is for, and being careful here just leaves capacity unused at the reset.
 
 ## Amber: finish, do not start
 
-Between 50 and 80 % the question changes from "can I?" to "should I start something new here?". The honest answer is usually no. Finish the thought you are in, land the change, commit. Do not open a fresh, exploratory conversation on a window that is already half spent.
+Between 50 and 80 % the question changes from "can I?" to "should I start something new on this window?". Usually the honest answer is no. Finish the thought you are in, land the change, commit. Do not open a fresh exploratory conversation on a window that is already half spent.
 
-The card tells you how long until the reset. If it is under an hour, a coffee is cheaper than a wasted prompt.
+Two lines on the card help here. **"Resets in 51 min"** tells you how long the window has left; when that is short, waiting is cheaper than any prompt. And when there have been enough readings, a pace line appears under the headline window: **"At this pace, empty at 4:40 PM"** or **"At this pace it lasts until the reset"**. It is a straight line fitted to the last hour of readings, shown only after at least three readings spanning ten minutes, and it goes quiet while the window is resting. If it says the window lasts until the reset, amber is fine. If it names a time before the reset, you are on course to hit the wall, and the sooner you change something the cheaper the change.
 
 ## Red: switch or wait
 
-At 80 % Tokendial sends the alert. Two moves make sense:
+At 80 % Tokendial sends the alert, once per threshold per window. Two moves make sense.
 
-1. **Move the task to another assistant.** If Codex or Copilot is green, hand it the next step. Most vibecoders run two or three subscriptions precisely for this; the dial is what makes the hand-off obvious instead of a guess.
-2. **Wait for the reset.** If the reset is close, the "reset soon" alert tells you ten minutes before it comes back, and again when a limit lifts. Go stretch.
+**Move the next task to another assistant.** Say you are on Claude Code at 82 % with the reset two hours away, and Codex sits at 15 %. Finish the current edit on Claude, commit, and open Codex in the same repository for the next task. Nothing about the code cares which agent wrote it; the instruction files you keep for one work for the other with small edits, and the commit history is the hand-off. Most vibecoders run two or three subscriptions precisely for this. The dial is what makes the hand-off obvious instead of a guess.
 
-What does not make sense is pushing through. The last 20 % of a window is the most expensive part: every prompt you spend there is one you will not have when the agent is halfway through a change and stops with a wall.
+**Wait for the reset.** If the reset is close, the "reset soon" alert tells you ten minutes before the window comes back, and again when a limit that stopped you lifts. Claude Code itself can now wait in the open session and continue the interrupted task after the reset. Go stretch.
+
+What does not make sense is pushing through. If you do hit the wall, the card still shows the reset time, and the alert when the limit lifts means you do not have to keep checking.
 
 ## Change the numbers if your rhythm is different
 
-The thresholds are yours to set. Someone who works in long single sessions may want 60, 85 and 95; someone who bounces between tools all day may prefer an early 40 % nudge. Open Settings, edit the list, done. The bands on the dial follow.
+The thresholds are yours. Settings has a comma-separated list, 50, 80, 95 by default, applied to the headline window of each provider. Someone who works in long single sessions may want 60, 85 and 95; someone who bounces between tools all day may prefer an early 40 % nudge. The bands on the dial follow the numbers you set, so the colour always means what you decided it means.
