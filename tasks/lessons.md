@@ -53,3 +53,28 @@ its titles in its initialiser, which runs as a stored property of the app delega
 Rule: audit from the user's side, not the code's. Run the app in a non-English language and read every
 surface, and check *when* each string is resolved, not only whether its key exists. A key that resolves
 before the catalogue loads is as broken as a missing one.
+
+## Report the binary that is running, not the source you just fixed (2026-09-09)
+I reverted a temporary "force Spanish" hack, rebuilt, ran the tests and reported the language work as
+finished. The Mac was still running the previous build, the one pinned to Arabic, and the user found the
+whole app in Arabic: "lo dejaste en arabe cacho e cabron, no entiendo nada". Reverting and compiling are not
+the same as relaunching, and `mac.ps1 build` does not replace a running app.
+Rule: a temporary change made for verification is only undone once the thing the user can see is back to
+normal. Revert, rebuild, **relaunch**, and look at it again before saying it is done.
+
+## A refused permission is not a missing credential (2026-09-09)
+Backing off after a denied keychain read, I mapped the refusal to `needsSignIn`. The user then saw "Claude
+Code · sin sesión iniciada" for a tool that was signed in, and would have been sent to run a login that
+could not have helped. The log said it plainly: `the keychain read was refused` followed by
+`UsageError(kind: needsSignIn)`.
+Rule: never fold an infrastructure refusal into a state that blames the user or their setup. Give it its
+own error, name the real cause in the copy, and say what the access was for — a permission prompt with no
+explanation reads like an app helping itself to credentials.
+
+## Rebuilding a screen from the catalogue drops the copy that was only in the code (2026-09-09)
+The old macOS welcome window had a hardcoded English sentence telling the user that macOS would ask once
+before Tokendial could read a tool's keychain item, and to choose Always Allow. Rebuilding the window from
+the shared catalogue silently lost it, because the catalogue never had that key: it was Windows copy plus
+one macOS-only sentence living in the source.
+Rule: when replacing hardcoded strings with catalogue keys, diff the old literals against the new keys and
+account for every sentence that has no key yet. A missing key is visible; a dropped sentence is not.

@@ -35,6 +35,8 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] tokendial:// URL scheme (show, show?provider=, settings, test-alert) for deep links and remote verification
 - [x] Hover card, banner, settings and menu bar item verified by screenshot on the Mac (2026-09-08)
 - [x] Stable dev signing identity (self-signed Tokendial Dev, trusted for code signing); remote builds run inside the GUI launchd domain so codesign reaches the keychain
+- [x] Panel brought to the Windows design (2026-09-09): trapezoid dock with the real provider marks, the four edges, surfaces opaque enough for Retina, exact length with the cells centred and wrapped into more columns when a side dock outgrows the screen
+- [x] Menu bar item titled from the catalogue, with the Windows gestures (click shows, double click opens settings, right click opens the menu)
 - [ ] Geometry tests for notch / no-notch / multiple screens
 
 ## 5 — Remaining providers and sessions
@@ -54,7 +56,7 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] Windows: every string through the catalogue, language selector with live switch, RTL for Arabic
 - [x] fr, de, en-GB catalogues
 - [x] Swift loader, Copy and sign-in copy through the catalogue, tests (run by CI on macos)
-- [ ] macOS app wiring: language picker, settings and welcome strings, RTL
+- [x] macOS app wiring: language picker, settings and welcome strings, alerts and menu bar item through the catalogue, RTL verified in Arabic
 
 ## 7 — Distribution
 - [x] `dotnet publish` self-contained folder, wrapped by `vpk pack` into Setup.exe and a portable zip (was a single exe until 2026-09-08)
@@ -69,8 +71,9 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] Theme switch (system / dark / light) with a derived light palette for panel and windows; follows Windows in system mode
 - [x] Dock position setting: top, bottom, left, right (rows and columns, same tiles); verified live in the four positions
 - [ ] Welcome window on the same components
-- [ ] Light palette reviewed by design (current one is derived from the dark mockup)
-- [ ] macOS settings to the same tokens
+- [ ] Light palette reviewed by design (derived from the dark mockup; the two quietest inks were darkened to #475569/#64748B on 2026-09-09 after measuring 4.75:1 on a white card, the rest is unreviewed)
+- [x] macOS settings and welcome rebuilt on the same tokens (Chrome.swift), two scrolling columns, provider cards with tinted marks and usage bar, panel modes, dock positions, alerts, language and theme
+- [x] The typed alert numbers replaced by fixed chips on both platforms (thresholds 50-95, lead 5-60 min, debounce 10-60 s)
 
 ## 10 — From the TokenMeter comparison (approved 2026-09-08)
 - [x] Gemini CLI provider (Workspace/Enterprise only): shared Google CodeAssist transport, spec, fixtures, sign-in guidance, mark
