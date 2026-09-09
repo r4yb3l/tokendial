@@ -5,7 +5,12 @@ import TokendialCore
 /// The menu bar item: a small dial coloured by the worst band, and the menu that reaches settings and quit.
 final class StatusItemController: NSObject {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-    private let launchItem = NSMenuItem(title: "Launch at login", action: #selector(toggleLaunch), keyEquivalent: "")
+    private let launchItem = NSMenuItem(title: "", action: #selector(toggleLaunch), keyEquivalent: "")
+    private let showItem = NSMenuItem(title: "", action: #selector(show), keyEquivalent: "")
+    private let refreshItem = NSMenuItem(title: "", action: #selector(refresh), keyEquivalent: "r")
+    private let settingsItem = NSMenuItem(title: "", action: #selector(settings), keyEquivalent: ",")
+    private let testItem = NSMenuItem(title: "", action: #selector(testAlert), keyEquivalent: "")
+    private let quitItem = NSMenuItem(title: "", action: #selector(quit), keyEquivalent: "q")
 
     var onShow: (() -> Void)?
     var onRefresh: (() -> Void)?
@@ -17,17 +22,25 @@ final class StatusItemController: NSObject {
     override init() {
         super.init()
         let menu = NSMenu()
-        menu.addItem(withTitle: "Show panel", action: #selector(show), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Refresh now", action: #selector(refresh), keyEquivalent: "r").target = self
+        for entry in [showItem, refreshItem] { entry.target = self; menu.addItem(entry) }
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Settings…", action: #selector(settings), keyEquivalent: ",").target = self
-        menu.addItem(withTitle: "Send a test alert", action: #selector(testAlert), keyEquivalent: "").target = self
-        launchItem.target = self
-        menu.addItem(launchItem)
+        for entry in [settingsItem, testItem, launchItem] { entry.target = self; menu.addItem(entry) }
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit Tokendial", action: #selector(quit), keyEquivalent: "q").target = self
+        quitItem.target = self
+        menu.addItem(quitItem)
         item.menu = menu
-        update(worst: nil, tooltip: "Tokendial", launchAtLogin: false)
+        relocalize()
+        update(worst: nil, tooltip: Strings.t("app.name"), launchAtLogin: false)
+    }
+
+    /// The menu titles come from the catalogue, so a language change re-titles them in place.
+    func relocalize() {
+        showItem.title = Strings.t("tray.show")
+        refreshItem.title = Strings.t("tray.refresh")
+        settingsItem.title = Strings.t("tray.settings")
+        testItem.title = Strings.t("tray.testAlert")
+        launchItem.title = Strings.t("settings.launchAtLogin")
+        quitItem.title = Strings.t("tray.quit")
     }
 
     func update(worst: Double?, tooltip: String, launchAtLogin: Bool) {

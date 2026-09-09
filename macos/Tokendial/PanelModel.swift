@@ -19,14 +19,14 @@ struct Tile {
         switch reading.status { case .needsSignIn, .unsupported: return false; default: return true }
     }
     var secondary: [UsageWindow] { reading.windows.filter { $0.id != headline?.id } }
-    var headlineLabel: String { headline?.label ?? statusLabel }
+    var headlineLabel: String { headline.map { Strings.label($0.label) } ?? statusLabel }
 
     var statusLabel: String {
         switch reading.status {
-        case .needsSignIn: return "Sign in"
-        case .unsupported: return "Nothing metered"
-        case .failed: return "Unavailable"
-        case .stale where !reading.hasReading: return inFlight ? "Reading…" : "No reading yet"
+        case .needsSignIn: return Strings.t("status.signIn")
+        case .unsupported: return Strings.t("status.nothingMetered")
+        case .failed: return Strings.t("status.unavailable")
+        case .stale where !reading.hasReading: return Strings.t(inFlight ? "status.reading" : "status.noReadingYet")
         default: return ""
         }
     }
@@ -66,15 +66,15 @@ struct PanelModel {
     var anyWaiting: Bool { sessions.contains { $0.state == .waiting } }
 
     static func sessionsCopy(_ sessions: [AgentSession], now: Date) -> String {
-        if sessions.isEmpty { return "No agents running" }
+        if sessions.isEmpty { return Strings.t("panel.noAgents") }
         let waiting = sessions.filter { $0.state == .waiting }
         if let first = waiting.first {
-            let rest = waiting.count > 1 ? " and \(waiting.count - 1) more" : ""
-            return "\(first.name) is waiting for you (\(Copy.elapsed(first.since, now: now)))\(rest)"
+            let rest = waiting.count > 1 ? Strings.plural("panel.waitingMore", waiting.count - 1) : ""
+            return Strings.t("panel.waiting", ["name": first.name, "elapsed": Copy.elapsed(first.since, now: now)]) + rest
         }
         let working = sessions.filter { $0.state == .working }
-        if working.count == 1 { return "\(working[0].name) working · \(Copy.elapsed(working[0].since, now: now))" }
-        if working.count > 1 { return "\(working.count) agents working · \(working.prefix(3).map { $0.name }.joined(separator: ", "))" }
-        return "\(sessions.count) idle session\(sessions.count == 1 ? "" : "s")"
+        if working.count == 1 { return Strings.t("panel.workingOne", ["name": working[0].name, "elapsed": Copy.elapsed(working[0].since, now: now)]) }
+        if working.count > 1 { return Strings.t("panel.workingMany", ["n": working.count, "names": working.prefix(3).map { $0.name }.joined(separator: ", ")]) }
+        return Strings.plural("panel.idle", sessions.count)
     }
 }

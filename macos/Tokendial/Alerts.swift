@@ -7,7 +7,7 @@ enum AlertCopy {
     static func compose(_ alert: Alert, reading: ProviderReading?, activity: Activity?, now: Date) -> (title: String, body: String) {
         let name = reading?.displayName ?? humanize(alert.provider)
         let window = alert.window.flatMap { id in reading?.windows.first { $0.id == id } }
-        let windowLabel = window?.label ?? "Usage"
+        let windowLabel = window.map { Strings.label($0.label) } ?? Strings.t("alert.usage")
         let reset = (window?.resetsAt ?? alert.resetsAt).map { Copy.reset($0, now: now) }
         switch alert.kind {
         case .threshold: return ("\(name) at \(alert.pct ?? 0)%", join(windowLabel, reset))

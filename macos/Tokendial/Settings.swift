@@ -39,13 +39,15 @@ struct Settings: Codable {
     var waitingDebounceSeconds = 20
     var lastSeenVersion: String?
     var appearance: Appearance = .dark
+    /// A code from Strings.languages, or nil to follow the system.
+    var language: String?
 
     init() {}
 
     private enum CodingKeys: String, CodingKey {
         case schema, panel, disconnected, known, launchAtLogin, firstRunDone, thresholds
         case alertThresholds, alertResetSoon, alertWaiting, alertLimit, delivery
-        case resetLeadMinutes, waitingDebounceSeconds, lastSeenVersion, appearance
+        case resetLeadMinutes, waitingDebounceSeconds, lastSeenVersion, appearance, language
     }
 
     /// Every key is optional on the way in, so a file written by an older build keeps its values and the
@@ -69,6 +71,7 @@ struct Settings: Codable {
         waitingDebounceSeconds = try box.decodeIfPresent(Int.self, forKey: .waitingDebounceSeconds) ?? waitingDebounceSeconds
         lastSeenVersion = try box.decodeIfPresent(String.self, forKey: .lastSeenVersion)
         appearance = try box.decodeIfPresent(Appearance.self, forKey: .appearance) ?? appearance
+        language = try box.decodeIfPresent(String.self, forKey: .language)
     }
 
     var alertConfig: AlertConfig {

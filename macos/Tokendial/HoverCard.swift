@@ -14,15 +14,15 @@ enum HoverCard {
         add(header, to: body, top: 0)
 
         switch tile.reading.status {
-        case .needsSignIn: add(wrap(Label.make("Not signed in.", size: 12, color: Theme.textSecondary)), to: body, top: 6)
+        case .needsSignIn: add(wrap(Label.make(Strings.t("card.notSignedIn"), size: 12, color: Theme.textSecondary)), to: body, top: 6)
         case .unsupported(let why): add(wrap(Label.make(why, size: 12, color: Theme.textSecondary)), to: body, top: 6)
-        case .failed(let why): add(wrap(Label.make("Could not read usage (\(why)). Showing nothing rather than a guess.", size: 12, color: Theme.textSecondary)), to: body, top: 6)
+        case .failed(let why): add(wrap(Label.make(Strings.t("card.failed", ["why": why]), size: 12, color: Theme.textSecondary)), to: body, top: 6)
         default: break
         }
 
         for window in tile.reading.windows {
             let reset = window.resetsAt.map { Copy.reset($0, now: now) } ?? ""
-            add(row(left: Label.make(window.label, size: 12, color: Theme.textPrimary), right: Label.make(reset, size: 11, color: Theme.textSecondary, alignment: .right)), to: body, top: 8)
+            add(row(left: Label.make(Strings.label(window.label), size: 12, color: Theme.textPrimary), right: Label.make(reset, size: 11, color: Theme.textSecondary, alignment: .right)), to: body, top: 8)
             if let fraction = window.usedFraction {
                 let bar = BarView(height: 4)
                 bar.set(fraction, color: Theme.color(tile.reading.block != nil ? .critical : Band.of(fraction)))
@@ -35,10 +35,10 @@ enum HoverCard {
             add(Label.make(Copy.until(block.reason, block.until, now: now), size: 11, color: Theme.critical), to: body, top: 8)
         }
         if case .stale(let since) = tile.reading.status, since > .distantPast {
-            add(Label.make("Last read \(Copy.ago(since, now: now))", size: 11, color: Theme.textDisabled), to: body, top: 8)
+            add(Label.make(Strings.t("card.lastRead", ["ago": Copy.ago(since, now: now)]), size: 11, color: Theme.textDisabled), to: body, top: 8)
         }
         if tile.reading.fidelity == .derived {
-            add(wrap(Label.make("Derived from local activity, not published by the provider", size: 11, color: Theme.textDisabled)), to: body, top: 6)
+            add(wrap(Label.make(Strings.t("card.derived"), size: 11, color: Theme.textDisabled)), to: body, top: 6)
         }
         if let activity = tile.activity, !activity.sessions.isEmpty {
             let line = NSView()
@@ -113,7 +113,7 @@ enum HoverCard {
         row.addView(dot, in: .leading)
         let label = session.state == .waiting && session.waitingFor != nil ? "\(session.name) · \(session.waitingFor!)" : "\(session.name) · \(session.location)"
         row.addView(Label.make(label, size: 12, color: Theme.textPrimary), in: .leading)
-        let when = Label.make(session.state == .waiting ? "waiting \(Copy.elapsed(session.since, now: now))" : Copy.elapsed(session.since, now: now), size: 11, color: Theme.textSecondary, alignment: .right)
+        let when = Label.make(session.state == .waiting ? Strings.t("card.waiting", ["elapsed": Copy.elapsed(session.since, now: now)]) : Copy.elapsed(session.since, now: now), size: 11, color: Theme.textSecondary, alignment: .right)
         when.setContentCompressionResistancePriority(.required, for: .horizontal)
         row.addView(when, in: .trailing)
         return row

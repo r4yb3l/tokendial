@@ -234,8 +234,8 @@ final class PanelContentView: NSView {
         compactDials = [:]
         cells = [:]
         if model.tiles.isEmpty {
-            compactRow.addView(Label.make("Tokendial", size: 11, color: Theme.textDisabled), in: .center)
-            let empty = Label.make("No providers connected. Right-click for settings.", size: 11, color: Theme.textSecondary, alignment: .center)
+            compactRow.addView(Label.make(Strings.t("app.name"), size: 11, color: Theme.textDisabled), in: .center)
+            let empty = Label.make(Strings.t("panel.noProviders"), size: 11, color: Theme.textSecondary, alignment: .center)
             empty.widthAnchor.constraint(equalToConstant: Theme.cellWidth * 2.6).isActive = true
             cellRow.addView(empty, in: .center)
         }

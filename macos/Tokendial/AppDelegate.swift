@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         FileLog.install()
         Log.ui.info("Tokendial \(Self.version) starting")
+        loadStrings()
 
         var providers: [UsageProvider] = ClaudeProfile.discover().map { ClaudeProvider(profile: $0, archive: archive) }
         providers += [CodexProvider(archive: archive), CopilotProvider(archive: archive), CursorProvider(), AntigravityProvider(), GlmProvider(archive: archive), GrokProvider(), OpenCodeProvider(archive: archive)]
@@ -185,6 +186,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow?.show()
     }
 
+    /// The shared catalogues ride in the bundle; without this every string would fall back to its key.
+    private func loadStrings() {
+        guard let directory = Bundle.main.url(forResource: "i18n", withExtension: nil) else {
+            Log.ui.error("i18n: no catalogue in the bundle, strings fall back to their keys")
+            return
+        }
+        Strings.load(from: directory, language: settings.language)
+    }
+
+    /// A new language: reload the catalogue, then rebuild everything that holds text.
+    private func relocalize() {
+        Strings.use(settings.language)
+        statusItem.relocalize()
+        panel.retheme()
+        refreshModel()
+    }
+
     /// The look the panel draws with: the system's while the setting says system, otherwise the one that was pinned.
     private func applyAppearance() {
         let dark: Bool
@@ -200,6 +218,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func applySettings() {
+        if Strings.language != Strings.resolve(settings.language ?? Locale.preferredLanguages.first ?? "en") { relocalize() }
         applyAppearance()
         panel.setMode(settings.panel)
         let current = settings
