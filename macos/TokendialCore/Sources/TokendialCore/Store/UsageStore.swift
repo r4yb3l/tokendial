@@ -113,9 +113,11 @@ public final class UsageStore {
         changed?()
     }
 
-    /// Refetch one provider without spending the others' rate-limit budget.
+    /// Refetch one provider without spending the others' rate-limit budget. The user asked for this one, so
+    /// the held credential goes with it: a read that was refused earlier is worth trying again now.
     public func poll(_ providerId: String) {
         guard let provider = providers.first(where: { $0.id == providerId }) else { return }
+        provider.forgetCredential()
         lock.lock()
         if disconnectedSet.contains(providerId) || inFlightSet.contains(providerId) { lock.unlock(); return }
         inFlightSet.insert(providerId)

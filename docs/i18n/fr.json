@@ -29,6 +29,7 @@
     "card.derived": "Déduit de l'activité locale ; le fournisseur ne le publie pas",
     "card.waiting": "en attente depuis {elapsed}",
     "card.unavailable": "Indisponible ({why})",
+    "error.keychainRefused": "macOS a bloqué la lecture du trousseau",
 
     "copy.resetIn": { "one": "Réinitialisation dans {n} min", "other": "Réinitialisation dans {n} min" },
     "copy.resetAt": "Réinitialisation {time}",

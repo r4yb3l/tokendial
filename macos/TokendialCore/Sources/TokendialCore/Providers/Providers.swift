@@ -62,7 +62,12 @@ public struct ClaudeCredential: Equatable {
 public enum Keychain {
     /// The read did not go through: macOS asks the user before one app may read an item another app owns,
     /// and the answer was no, or the dialog could not be shown. Retrying straight away only asks again.
-    public struct Refused: Error {}
+    /// It is not the same as being signed out, and must not read as that: the tool is signed in and we
+    /// were the ones turned away.
+    public struct Refused: LocalizedError {
+        public init() {}
+        public var errorDescription: String? { Strings.t("error.keychainRefused") }
+    }
 
     /// The first generic password for a service, whatever the account; nil when there is no such item.
     public static func genericPassword(service: String) throws -> Data? {
@@ -122,7 +127,7 @@ public final class ClaudeProvider: UsageProvider {
     /// poll. A refusal is held too: without that, one "Deny" would raise the same dialog every poll.
     private func load() throws -> ClaudeCredential {
         if let held, !held.expired(now()) { return held }
-        if let refusedAt, now().timeIntervalSince(refusedAt) < Self.quietAfterRefusal { throw UsageError.needsSignIn() }
+        if let refusedAt, now().timeIntervalSince(refusedAt) < Self.quietAfterRefusal { throw Keychain.Refused() }
         do {
             let fresh = try credentialReader(profile)
             refusedAt = nil
@@ -131,7 +136,7 @@ public final class ClaudeProvider: UsageProvider {
         } catch is Keychain.Refused {
             refusedAt = now()
             Log.usage.info("\(id): the keychain read was refused, asking again in \(Int(Self.quietAfterRefusal / 60)) min")
-            throw UsageError.needsSignIn()
+            throw Keychain.Refused()
         }
     }
 

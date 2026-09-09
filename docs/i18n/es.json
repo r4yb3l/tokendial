@@ -29,6 +29,7 @@
     "card.derived": "Derivado de la actividad local; el proveedor no lo publica",
     "card.waiting": "esperando {elapsed}",
     "card.unavailable": "No disponible ({why})",
+    "error.keychainRefused": "macOS bloqueó la lectura del llavero",
 
     "copy.resetIn": { "one": "Se reinicia en {n} min", "other": "Se reinicia en {n} min" },
     "copy.resetAt": "Se reinicia {time}",

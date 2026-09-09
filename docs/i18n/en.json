@@ -29,6 +29,7 @@
     "card.derived": "Derived from local activity, not published by the provider",
     "card.waiting": "waiting {elapsed}",
     "card.unavailable": "Unavailable ({why})",
+    "error.keychainRefused": "macOS blocked the keychain read",
 
     "copy.resetIn": { "one": "Resets in {n} min", "other": "Resets in {n} min" },
     "copy.resetAt": "Resets {time}",

@@ -10,7 +10,7 @@ enum HoverCard {
         body.spacing = 0
         body.translatesAutoresizingMaskIntoConstraints = false
 
-        let header = row(left: Label.make(tile.name, size: 14, color: Theme.textPrimary, weight: .semibold), right: tile.account.map { Label.make($0.summary, size: 11, color: Theme.textSecondary, alignment: .right) })
+        let header = row(left: named(tile), right: tile.account.map { Label.make($0.summary, size: 11, color: Theme.textSecondary, alignment: .right) })
         add(header, to: body, top: 0)
 
         switch tile.reading.status {
@@ -72,6 +72,21 @@ enum HoverCard {
         stack.addView(view, in: .bottom)
         view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         if top > 0 { stack.setCustomSpacing(top, after: stack.views[max(0, stack.views.count - 2)]) }
+    }
+
+    /// The provider's mark before its name, the way the Windows card opens. A provider with no mark of its
+    /// own keeps the name alone rather than leaving a gap.
+    private static func named(_ tile: Tile) -> NSView {
+        let name = Label.make(tile.name, size: 14, color: Theme.textPrimary, weight: .semibold)
+        let mark = MarkView(providerId: tile.id, size: 16)
+        guard mark.hasMark else { return name }
+        mark.retint(Theme.textPrimary)
+        let row = NSStackView(views: [mark, name])
+        row.orientation = .horizontal
+        row.spacing = 8
+        row.alignment = .centerY
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return row
     }
 
     private static func row(left: NSView, right: NSView?) -> NSView {

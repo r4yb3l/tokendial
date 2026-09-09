@@ -29,6 +29,7 @@
     "card.derived": "Aus lokaler Aktivität abgeleitet; der Anbieter veröffentlicht es nicht",
     "card.waiting": "wartet seit {elapsed}",
     "card.unavailable": "Nicht verfügbar ({why})",
+    "error.keychainRefused": "macOS hat den Schlüsselbundzugriff blockiert",
 
     "copy.resetIn": { "one": "Zurücksetzung in {n} Min.", "other": "Zurücksetzung in {n} Min." },
     "copy.resetAt": "Zurücksetzung {time}",
