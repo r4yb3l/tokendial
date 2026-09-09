@@ -70,6 +70,7 @@
     "tray.settings": "الإعدادات…",
     "tray.testAlert": "إرسال تنبيه تجريبي",
     "tray.quit": "إنهاء Tokendial",
+    "tray.restartToUpdate": "أعد التشغيل للتحديث إلى {version}",
     "tray.noProviders": "Tokendial · لا يوجد مزوّد متصل",
 
     "settings.title": "إعدادات Tokendial",
@@ -162,6 +163,8 @@
     "settings.inactive": "غير نشط",
     "settings.usedBadge": "{pct}% مستهلك",
     "settings.launchAtLoginHint": "تشغيل Tokendial في الخلفية عند بدء النظام.",
+    "settings.checkForUpdates": "البحث عن التحديثات",
+    "settings.checkForUpdatesHint": "مرة واحدة يوميًا يسأل Tokendial صفحة إصدارات GitHub عن وجود نسخة أحدث. لا يُرسل أي شيء عنك؛ وينتظر التنزيل حتى تعيد التشغيل.",
     "settings.license": "برمجية حرة برخصة MIT.",
     "settings.panelSub": "العرض",
     "settings.panel.alwaysHint": "يبقى مفتوحًا مع كل الأقراص وتفاصيلها.",

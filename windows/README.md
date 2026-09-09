@@ -15,13 +15,20 @@ dotnet test windows/Tokendial.slnx
 dotnet run --project windows/Tokendial.App
 ```
 
-Publish a single self-contained executable:
+Publish a self-contained folder and wrap it in a Velopack installer:
 
 ```
-dotnet publish windows/Tokendial.App -c Release -o windows/dist
+dotnet publish windows/Tokendial.App -c Release -o windows/publish
+dotnet tool install -g vpk
+vpk pack --packId Tokendial --packVersion $(cat VERSION) --packDir windows/publish --mainExe Tokendial.exe \
+  --packTitle Tokendial --icon windows/Tokendial.App/Assets/tokendial.ico --aumid Tokendial.Desktop --outputDir windows/dist
 ```
 
-`windows/dist/Tokendial.exe` runs on Windows 10 1809 or later with no runtime installed.
+`windows/dist/Tokendial-win-Setup.exe` installs per user on Windows 10 1809 or later with no runtime installed;
+`windows/dist/Tokendial-win-Portable.zip` runs from any folder. `.github/workflows/release.yml` does the same on a
+`v*` tag and attaches the result to the GitHub release. An installed copy asks GitHub Releases once a day for a newer
+version (Settings › Startup switches that off), downloads it in the background and offers "Restart to update" in
+the tray; a copy started from `bin/` or the portable zip never checks.
 
 ## Command line
 

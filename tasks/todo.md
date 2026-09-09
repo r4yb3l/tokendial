@@ -57,8 +57,8 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [ ] macOS app wiring: language picker, settings and welcome strings, RTL
 
 ## 7 — Distribution
-- [x] `dotnet publish` single-file self-contained exe (77 MB) runs from `windows/dist`
-- [ ] Code signing, installer (Velopack), GitHub Release, tokendial.app page
+- [x] `dotnet publish` self-contained folder, wrapped by `vpk pack` into Setup.exe and a portable zip (was a single exe until 2026-09-08)
+- [ ] Code signing, first GitHub Release (verifies the updater end to end), tokendial.app page
 - [ ] macOS zip/dmg
 
 ## 7b — Settings redesign (user's Tailwind mockup, 2026-09-08)
@@ -74,7 +74,7 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] Gemini CLI provider (Workspace/Enterprise only): shared Google CodeAssist transport, spec, fixtures, sign-in guidance, mark
 - [x] Forecast sentence on the hover card from an in-memory usage history (least squares over the current epoch)
 - [x] Codex profiles via CODEX_HOME directories; shared Profiles.Discover; ProviderFamily helper; session ids carry the profile
-- [ ] Velopack auto-update with a settings switch; folder publish + vpk pack; release workflow; SECURITY/site copy updated
+- [x] Velopack auto-update with a settings switch; folder publish + vpk pack; release workflow; SECURITY/site copy updated
 - Out of scope by decision: quiet hours and changes to the "available again" alert
 
 ## 9 — Website (tokendial.app)

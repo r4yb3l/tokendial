@@ -15,11 +15,16 @@ public sealed class TrayIcon : IDisposable
     private readonly Forms.ToolStripMenuItem settingsItem = new();
     private readonly Forms.ToolStripMenuItem testItem = new();
     private readonly Forms.ToolStripMenuItem quitItem = new();
+    private readonly Forms.ToolStripMenuItem updateItem = new() { Visible = false };
+    private readonly Forms.ToolStripSeparator updateRule = new() { Visible = false };
+    private string? readyVersion;
     private Drawing.Icon? current;
 
     public TrayIcon()
     {
         var menu = new Forms.ContextMenuStrip();
+        menu.Items.Add(updateItem);
+        menu.Items.Add(updateRule);
         menu.Items.Add(showItem);
         menu.Items.Add(refreshItem);
         menu.Items.Add(new Forms.ToolStripSeparator());
@@ -33,6 +38,7 @@ public sealed class TrayIcon : IDisposable
         settingsItem.Click += (_, _) => SettingsRequested?.Invoke();
         testItem.Click += (_, _) => TestAlertRequested?.Invoke();
         quitItem.Click += (_, _) => QuitRequested?.Invoke();
+        updateItem.Click += (_, _) => UpdateRequested?.Invoke();
         Relocalize();
         icon.DoubleClick += (_, _) => SettingsRequested?.Invoke();
         icon.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) ShowRequested?.Invoke(); };
@@ -45,6 +51,7 @@ public sealed class TrayIcon : IDisposable
     public event Action? SettingsRequested;
     public event Action? TestAlertRequested;
     public event Action? QuitRequested;
+    public event Action? UpdateRequested;
 
     public void Relocalize()
     {
@@ -53,7 +60,16 @@ public sealed class TrayIcon : IDisposable
         settingsItem.Text = Strings.T("tray.settings");
         testItem.Text = Strings.T("tray.testAlert");
         quitItem.Text = Strings.T("tray.quit");
+        if (readyVersion is not null) updateItem.Text = Strings.T("tray.restartToUpdate", ("version", readyVersion));
         icon.ContextMenuStrip!.RightToLeft = Strings.RightToLeft ? Forms.RightToLeft.Yes : Forms.RightToLeft.No;
+    }
+
+    /// <summary>Shows the restart item once a newer version is downloaded; null hides it again.</summary>
+    public void OfferUpdate(string? version)
+    {
+        readyVersion = version;
+        updateItem.Visible = updateRule.Visible = version is not null;
+        if (version is not null) updateItem.Text = Strings.T("tray.restartToUpdate", ("version", version));
     }
 
     public void Update(double? worstFraction, string tooltip)

@@ -91,7 +91,7 @@
   "install.step.ready": "Prêt",
   "security.eyebrow": "Sécurité",
   "security.title": "Vos clés ne quittent jamais votre machine",
-  "security.1": "Pas de compte, pas de télémétrie, pas de vérification de mise à jour, pas de rapport de plantage.",
+  "security.1": "Pas de compte, pas de télémétrie, pas de rapport de plantage. La seule requête qui ne va pas à un fournisseur est une par jour vers GitHub Releases pour savoir si une version plus récente existe, et les réglages permettent de la désactiver.",
   "security.2": "Les identifiants sont lus là où leur outil les conserve et ne sont jamais stockés, écrits ni renouvelés.",
   "security.3": "Chaque hôte est une constante dans le code et dans les fiches publiques ; les redirections sont refusées.",
   "security.4": "Les journaux contiennent des codes d'état et les messages de Tokendial, jamais d'en-têtes, de corps ni d'URL.",

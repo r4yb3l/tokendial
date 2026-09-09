@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: The tag must match VERSION
+        shell: bash
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          [ "${GITHUB_REF_NAME}" = "v${VERSION}" ] || { echo "tag ${GITHUB_REF_NAME} but VERSION is ${VERSION}"; exit 1; }
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+      - name: Test
+        run: dotnet test windows/Tokendial.slnx --configuration Release
+      - name: Publish
+        run: dotnet publish windows/Tokendial.App --configuration Release -o windows/publish
+      - name: Install Velopack
+        run: dotnet tool install -g vpk
+      - name: Fetch the previous release for deltas
+        run: vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} --outputDir windows/dist
+        continue-on-error: true
+      - name: Pack
+        run: >
+          vpk pack --packId Tokendial --packVersion ${{ env.VERSION }} --packDir windows/publish
+          --mainExe Tokendial.exe --packTitle Tokendial --packAuthors "Raybel Hernández"
+          --icon windows/Tokendial.App/Assets/tokendial.ico --aumid Tokendial.Desktop
+          --shortcuts Desktop,StartMenuRoot --outputDir windows/dist
+      - name: Upload to the GitHub release
+        run: >
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
+          --outputDir windows/dist --publish --releaseName "Tokendial ${{ env.VERSION }}" --tag ${{ github.ref_name }}

@@ -6,6 +6,7 @@ using Tokendial.App.Alerts;
 using Tokendial.App.Install;
 using Tokendial.App.Panel;
 using Tokendial.App.Tray;
+using Tokendial.App.Updates;
 using Tokendial.App.Windows;
 using Tokendial.Core.Alerts;
 using Tokendial.Core.Diagnostics;
@@ -26,6 +27,7 @@ public sealed class App : Application
     private readonly ReadingArchive archive = new();
     private UsageStore store = null!;
     private InstallAssistant installer = null!;
+    private Updater updater = null!;
     private readonly HashSet<string> adopted = new(StringComparer.Ordinal);
     private ActivityHub hub = null!;
     private AlertCoordinator alerts = null!;
@@ -80,6 +82,9 @@ public sealed class App : Application
         tray.SettingsRequested += ShowSettings;
         tray.TestAlertRequested += TestAlert;
         tray.QuitRequested += Quit;
+        updater = new Updater(() => settings.CheckForUpdates, Dispatcher);
+        updater.Changed += () => tray.OfferUpdate(updater.ReadyVersion);
+        tray.UpdateRequested += updater.RestartToUpdate;
 
         store.Changed += () => Dispatcher.BeginInvoke(DispatcherPriority.Background, OnStoreChanged);
         hub.Changed += () => Dispatcher.BeginInvoke(DispatcherPriority.Background, OnHubChanged);
@@ -134,7 +139,8 @@ public sealed class App : Application
         store.Start();
         hub.Start();
         alerts.Start();
-        if (settings.LaunchAtLogin != LaunchAtLogin.IsSet()) LaunchAtLogin.Set(settings.LaunchAtLogin);
+        LaunchAtLogin.Sync(settings.LaunchAtLogin);
+        updater.Start();
     }
 
     private void FirstRun()
@@ -286,6 +292,7 @@ public sealed class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         clockTimer?.Stop();
+        updater.Dispose();
         banners.Close();
         tray.Dispose();
         alerts.Dispose();

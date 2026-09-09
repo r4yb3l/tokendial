@@ -91,7 +91,7 @@
   "install.step.ready": "Listo",
   "security.eyebrow": "Seguridad",
   "security.title": "Tus claves nunca salen de tu equipo",
-  "security.1": "Sin cuenta, sin telemetría, sin comprobación de actualizaciones, sin informes de fallos.",
+  "security.1": "Sin cuenta, sin telemetría, sin informes de fallos. La única petición que no va a un proveedor es una al día a GitHub Releases para saber si hay una versión más nueva, y se desactiva en Ajustes.",
   "security.2": "Las credenciales se leen donde las guarda su herramienta y nunca se almacenan, escriben ni renuevan.",
   "security.3": "Cada host es una constante en el código y en las fichas públicas; las redirecciones se rechazan.",
   "security.4": "Los registros llevan códigos de estado y mensajes propios de Tokendial, nunca cabeceras, cuerpos ni URL.",

@@ -21,9 +21,6 @@
     <InvariantGlobalization>false</InvariantGlobalization>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
-    <PublishSingleFile>true</PublishSingleFile>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -34,6 +31,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>

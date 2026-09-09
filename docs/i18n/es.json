@@ -70,6 +70,7 @@
     "tray.settings": "Ajustes…",
     "tray.testAlert": "Enviar una alerta de prueba",
     "tray.quit": "Salir de Tokendial",
+    "tray.restartToUpdate": "Reiniciar para actualizar a {version}",
     "tray.noProviders": "Tokendial · ningún proveedor conectado",
 
     "settings.title": "Ajustes de Tokendial",
@@ -162,6 +163,8 @@
     "settings.inactive": "Inactivo",
     "settings.usedBadge": "{pct}% usado",
     "settings.launchAtLoginHint": "Iniciar Tokendial en segundo plano al arrancar el sistema.",
+    "settings.checkForUpdates": "Buscar actualizaciones",
+    "settings.checkForUpdatesHint": "Una vez al día Tokendial consulta en GitHub Releases si hay una versión más nueva. No se envía nada tuyo; la descarga espera a que reinicies.",
     "settings.license": "Software libre bajo licencia MIT.",
     "settings.panelSub": "Visualización",
     "settings.panel.alwaysHint": "Permanece desplegado con todos los diales y su detalle.",

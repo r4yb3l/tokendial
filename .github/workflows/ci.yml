@@ -39,7 +39,7 @@ jobs:
         if: hashFiles('windows/Tokendial.slnx') != ''
         with:
           name: tokendial-windows
-          path: windows/dist/*.exe
+          path: windows/dist/
 
   macos:
     name: macOS

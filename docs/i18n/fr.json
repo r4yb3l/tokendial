@@ -70,6 +70,7 @@
     "tray.settings": "Réglages…",
     "tray.testAlert": "Envoyer une alerte de test",
     "tray.quit": "Quitter Tokendial",
+    "tray.restartToUpdate": "Redémarrer pour passer à {version}",
     "tray.noProviders": "Tokendial · aucun fournisseur connecté",
 
     "settings.title": "Réglages de Tokendial",
@@ -162,6 +163,8 @@
     "settings.inactive": "Inactif",
     "settings.usedBadge": "{pct} % utilisé",
     "settings.launchAtLoginHint": "Lancer Tokendial en arrière-plan au démarrage du système.",
+    "settings.checkForUpdates": "Rechercher les mises à jour",
+    "settings.checkForUpdatesHint": "Une fois par jour, Tokendial demande à GitHub Releases si une version plus récente existe. Rien vous concernant n'est envoyé ; le téléchargement attend que vous redémarriez.",
     "settings.license": "Logiciel libre sous licence MIT.",
     "settings.panelSub": "Affichage",
     "settings.panel.alwaysHint": "Reste déployé avec tous les cadrans et leur détail.",

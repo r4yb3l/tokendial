@@ -158,6 +158,7 @@ public sealed class SettingsWindow
         column.Children.Add(Chrome.SmallTitle(Strings.T("settings.startup")));
         var general = new StackPanel();
         general.Children.Add(Chrome.Check(Strings.T("settings.launchAtLogin"), settings.LaunchAtLogin, v => { settings.LaunchAtLogin = v; launchAtLogin(v); Save(); }, Strings.T("settings.launchAtLoginHint")));
+        general.Children.Add(Chrome.Check(Strings.T("settings.checkForUpdates"), settings.CheckForUpdates, v => { settings.CheckForUpdates = v; Save(); }, Strings.T("settings.checkForUpdatesHint")));
         general.Children.Add(Chrome.Rule(new Thickness(0, 12, 0, 12)));
         general.Children.Add(Text.Make(Strings.T("settings.language"), 12, Chrome.Slate300, FontWeights.Medium));
         var chips = new WrapPanel { Margin = new Thickness(0, 8, 0, -8) };

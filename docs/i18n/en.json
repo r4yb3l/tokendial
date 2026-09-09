@@ -70,6 +70,7 @@
     "tray.settings": "Settings…",
     "tray.testAlert": "Send a test alert",
     "tray.quit": "Quit Tokendial",
+    "tray.restartToUpdate": "Restart to update to {version}",
     "tray.noProviders": "Tokendial · no providers connected",
 
     "settings.title": "Tokendial settings",
@@ -162,6 +163,8 @@
     "settings.inactive": "Inactive",
     "settings.usedBadge": "{pct}% used",
     "settings.launchAtLoginHint": "Start Tokendial in the background when the system boots.",
+    "settings.checkForUpdates": "Check for updates",
+    "settings.checkForUpdatesHint": "Once a day Tokendial asks GitHub Releases whether a newer version exists. Nothing about you is sent; the download waits for you to restart.",
     "settings.license": "Free software under the MIT License.",
     "settings.panelSub": "Display",
     "settings.panel.alwaysHint": "Stays open with every dial and its detail.",

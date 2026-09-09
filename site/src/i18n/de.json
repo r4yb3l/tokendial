@@ -91,7 +91,7 @@
   "install.step.ready": "Bereit",
   "security.eyebrow": "Sicherheit",
   "security.title": "Deine Schlüssel verlassen deinen Rechner nie",
-  "security.1": "Kein Konto, keine Telemetrie, keine Update-Prüfung, keine Absturzberichte.",
+  "security.1": "Kein Konto, keine Telemetrie, keine Absturzberichte. Die einzige Anfrage, die nicht an einen Anbieter geht, ist eine pro Tag an GitHub Releases, ob es eine neuere Version gibt; in den Einstellungen lässt sie sich abschalten.",
   "security.2": "Anmeldedaten werden dort gelesen, wo ihr Werkzeug sie aufbewahrt, und nie gespeichert, geschrieben oder erneuert.",
   "security.3": "Jeder Host ist eine Konstante im Code und in den öffentlichen Spezifikationen; Weiterleitungen werden abgelehnt.",
   "security.4": "Protokolle enthalten Statuscodes und Tokendials eigene Meldungen, nie Header, Inhalte oder URLs.",

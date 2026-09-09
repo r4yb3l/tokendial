@@ -70,6 +70,7 @@
     "tray.settings": "Einstellungen…",
     "tray.testAlert": "Testbenachrichtigung senden",
     "tray.quit": "Tokendial beenden",
+    "tray.restartToUpdate": "Neu starten und auf {version} aktualisieren",
     "tray.noProviders": "Tokendial · kein Anbieter verbunden",
 
     "settings.title": "Tokendial-Einstellungen",
@@ -162,6 +163,8 @@
     "settings.inactive": "Inaktiv",
     "settings.usedBadge": "{pct} % verbraucht",
     "settings.launchAtLoginHint": "Tokendial beim Systemstart im Hintergrund starten.",
+    "settings.checkForUpdates": "Nach Updates suchen",
+    "settings.checkForUpdatesHint": "Einmal am Tag fragt Tokendial bei GitHub Releases nach einer neueren Version. Nichts über dich wird gesendet; der Download wartet auf deinen Neustart.",
     "settings.license": "Freie Software unter MIT-Lizenz.",
     "settings.panelSub": "Anzeige",
     "settings.panel.alwaysHint": "Bleibt mit allen Anzeigen und Details ausgeklappt.",

@@ -45,6 +45,8 @@ public sealed class Settings
     /// <summary>Provider ids this install has seen. A provider added by an update joins connected only when its tool is signed in.</summary>
     public HashSet<string> Known { get; set; } = new(StringComparer.Ordinal);
     public bool LaunchAtLogin { get; set; }
+    /// <summary>One request a day to GitHub Releases for a newer version; the download waits for the user to restart.</summary>
+    public bool CheckForUpdates { get; set; } = true;
     public bool FirstRunDone { get; set; }
     public List<int> Thresholds { get; set; } = [50, 80, 95];
     public bool AlertThresholds { get; set; } = true;

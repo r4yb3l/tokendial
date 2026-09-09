@@ -25,14 +25,22 @@ public static class LaunchAtLogin
         catch (Exception error) { Log.Ui.Error($"launch at login: {error.Message}"); }
     }
 
-    public static bool IsSet()
+    public static bool IsSet() => Stored() is not null;
+
+    /// <summary>Makes the Run key match the setting. Written again after every update, because the path it holds must be the exe now running.</summary>
+    public static void Sync(bool on)
+    {
+        if (on ? Stored() != $"\"{Environment.ProcessPath}\"" : Stored() is not null) Set(on);
+    }
+
+    private static string? Stored()
     {
         try
         {
             using var run = Registry.CurrentUser.OpenSubKey(Key);
-            return run?.GetValue(Name) is string;
+            return run?.GetValue(Name) as string;
         }
-        catch (Exception) { return false; }
+        catch (Exception) { return null; }
     }
 }
 

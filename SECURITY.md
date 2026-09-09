@@ -13,7 +13,10 @@ usage endpoint. That is the whole threat surface, and these are the rules the co
 - **Log a secret.** Logs carry HTTP status codes and Tokendial's own messages, never headers,
   bodies or URLs with credentials.
 - **Send anything anywhere but the provider's own host.** Every endpoint host is a constant in the
-  code and in `docs/providers/*.json`. There is no telemetry, no update check, no crash reporting.
+  code and in `docs/providers/*.json`. There is no telemetry and no crash reporting. The one
+  exception is the update check: once a day an installed copy asks GitHub Releases whether a newer
+  version exists, carrying nothing about you, and Settings can switch it off. The download waits
+  for you to choose "Restart to update" in the tray.
 - **Follow a redirect.** Redirects are disabled on every client; a 3xx is treated as a bad
   response. A credential therefore cannot be forwarded to a host the spec did not name.
 - **Trust an unexpected certificate.** System validation applies everywhere except the Antigravity
