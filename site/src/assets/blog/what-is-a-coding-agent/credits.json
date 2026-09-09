@@ -1,0 +1,16 @@
+[
+  {
+    "file": "agent-loop-en.svg / agent-loop-es.svg",
+    "title": "A coding agent is a model using tools in a loop",
+    "author": "Tokendial",
+    "license": "MIT (repository licence)",
+    "builtFrom": "https://www.anthropic.com/research/building-effective-agents"
+  },
+  {
+    "file": "agent-turn-en.svg / agent-turn-es.svg",
+    "title": "Where the tokens go in one agent turn",
+    "author": "Tokendial",
+    "license": "MIT (repository licence)",
+    "builtFrom": "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  }
+]

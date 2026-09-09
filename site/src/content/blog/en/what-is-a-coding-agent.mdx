@@ -1,0 +1,70 @@
+---
+title: "What a coding agent is, and how it differs from a chat"
+description: "Claude Code, Codex and Cursor's agent mode are not chatbots that happen to know code. They are loops: a model that calls tools, reads what came back and decides the next step. That loop is why they get so much done, and why one prompt can cost forty thousand tokens."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/what-is-a-coding-agent/agent-loop-en.svg
+coverAlt: "Diagram of the agent loop: the model decides a step, calls a tool, reads the result and checks whether it is done"
+sources:
+  - title: "Anthropic: Building effective agents"
+    href: "https://www.anthropic.com/research/building-effective-agents"
+  - title: "Claude Code documentation: Overview"
+    href: "https://code.claude.com/docs/en/overview"
+  - title: "Anthropic: Context windows"
+    href: "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  - title: "Wikipedia: Large language model, section Tool use"
+    href: "https://en.wikipedia.org/wiki/Large_language_model#Tool_use"
+  - title: "Wikipedia: Intelligent agent"
+    href: "https://en.wikipedia.org/wiki/Intelligent_agent"
+  - title: "Wikipedia: Vibe coding"
+    href: "https://en.wikipedia.org/wiki/Vibe_coding"
+---
+import Figure from '../../../components/Figure.astro';
+import loop from '../../../assets/blog/what-is-a-coding-agent/agent-loop-en.svg';
+import turn from '../../../assets/blog/what-is-a-coding-agent/agent-turn-en.svg';
+
+In February 2025 Andrej Karpathy gave a name to something a lot of people were already doing: describing what you want in plain language, letting a model write the code, and steering by results rather than by reading every line. He called it vibe coding, and by the end of the year Collins had made it Word of the Year. The tools that made it possible are not chat windows. They are **agents**, and the difference between the two decides how you should work with them and how fast they burn through your plan.
+
+## A chat answers; an agent acts
+
+A chat assistant takes your message, produces text, and stops. If the text is code, you copy it somewhere, run it, and come back with the error. You are the loop.
+
+An agent closes that loop itself. Anthropic's engineering team put it in one sentence in their December 2024 guide to building agents: agents "are typically just LLMs using tools based on environmental feedback in a loop". The model reads your request, decides on a step, calls a tool, reads what the tool returned, and decides again. It keeps going until the task is done, it gets stuck, or it hits a stopping condition, and it may pause to ask you something along the way.
+
+<Figure src={loop} alt="Flow diagram: you give a task; the model decides the next step; it calls a tool against the environment (files, shell, tests, git, MCP servers); it reads the result; it checks whether it is done, blocked or should continue, and either loops or returns to you" caption="The loop that every coding agent runs. The tool result is what Anthropic calls ground truth: the agent learns whether its last step worked from the environment, not from its own belief." ours="Anthropic's guide Building effective agents" locale="en" plate />
+
+The same guide draws a line worth keeping. A **workflow** is a system where the steps are fixed in code and the model fills in each one. An **agent** is a system where the model itself decides which steps to take and in what order. Claude Code, Codex and Cursor's agent mode are agents in that sense: when you type "the checkout test is failing, fix it", nobody wrote down the sequence *read the test, read the handler, edit line 40, re-run*. The model composed it, and it will compose a different sequence next time.
+
+## The tools are the whole difference
+
+How does a text predictor call a tool at all? The mechanics are simpler than they sound. The program around the model, the *host*, tells the model in its prompt which tools exist, each with a name, a description and the shape of its arguments. When the model wants one, it writes a specially formatted request instead of prose. The host sees it, runs the real function, and pastes the output back into the conversation as the next message. The model reads it and continues. From the model's point of view the tool call is text out and text in; the host does the doing.
+
+For a coding agent the toolbox is small and powerful. Claude Code's documentation describes it as a tool that "reads your codebase, edits files, runs commands, and integrates with your development tools". In practice that is: read a file, search the project, edit a file, run a shell command, and, through MCP, reach whatever else you connect, from a browser to a database. Everything the agent achieves is a composition of those few verbs.
+
+That is also why Anthropic's guide spends an appendix on tool design and lists "carefully craft your agent-computer interface" as one of its three principles. An agent is only as good as the tools it can see and how clearly they are described.
+
+## Why it costs so much more than a chat
+
+Here is the part that matters for anyone on a metered plan. A chat turn is one request: your message plus the history, one answer. An agent turn is **many** requests. Each step in the loop is a full call to the model, and each call carries everything the loop has accumulated: the system prompt, the tool definitions, the conversation, every file read so far, every command output.
+
+<Figure src={turn} alt="A horizontal bar split into segments: system prompt 4,000 tokens, tool definitions 6,000, conversation so far 14,000, files read 9,000, command output 5,000, your new message 60, the answer 1,200; total 39,260" caption="One turn in a mid-length session. You typed sixty tokens; the request carried almost forty thousand. The proportions are illustrative, the pattern is not." ours="Anthropic's context window documentation" locale="en" plate />
+
+Follow the arithmetic from the loop. Say fixing that test takes the agent six steps: read the test, read the handler, edit, run the tests, read the failure, edit again, run again. That is seven model calls. If the window is at 40,000 tokens, those seven calls read roughly 280,000 input tokens between them, plus whatever the tool results added along the way. You typed one sentence. This is the single biggest reason a plan that feels generous in chat empties in an afternoon of agent work, and it is why Anthropic's guide warns that "the autonomous nature of agents means higher costs, and the potential for compounding errors".
+
+Two things make it worse and are under your control:
+
+- **Big tool results.** A test runner that prints 3,000 lines, a log file, a `git diff` of the whole branch: each lands in the window and is re-read at every subsequent step. Ask for summaries and failing lines only.
+- **Long loops.** An agent that is stuck will retry, and each retry costs a full pass over the window. When you see it circling, stop it and give it the missing fact instead of letting it search for it.
+
+## What the agent cannot do
+
+An agent inherits everything from the model underneath: the knowledge cutoff, the tendency to produce plausible-looking code that is wrong, and no memory beyond the window unless the host provides one. It also has no judgement about what you meant beyond what you wrote, which is why the guide recommends "prioritising transparency by explicitly showing the agent's planning steps" and pausing at checkpoints for human feedback.
+
+In daily use that turns into a short list:
+
+- **Read the plan before the code.** Most agents will state what they are about to do. That paragraph is cheap to correct; the implementation is not.
+- **Keep the permission prompts.** When the agent asks before running a command or editing outside the project, it is offering you the checkpoint the guide describes. Turning approvals off trades that for speed.
+- **Give it ground truth, not hope.** Tests, type checks and linters are what the loop feeds on. An agent in a project with no tests has no way to know it is wrong.
+- **Watch the meter, not the clock.** Agent turns are variable: one prompt can be a single call or forty. The number that tells you how the afternoon is going is your plan's usage, and the moment to look is before the long task, not after.
+
+The agent is the reason vibe coding works at all. It is also a loop that spends your plan on your behalf, one full re-read at a time. Knowing that is most of what you need to use one well.

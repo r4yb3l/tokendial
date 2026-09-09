@@ -1,0 +1,70 @@
+---
+title: "Qué es un agente de código y en qué se diferencia de un chat"
+description: "Claude Code, Codex y el modo agente de Cursor no son chatbots que saben programar. Son bucles: un modelo que llama a herramientas, lee lo que vuelve y decide el siguiente paso. Ese bucle es por lo que hacen tanto, y por lo que un prompt puede costar cuarenta mil tokens."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/what-is-a-coding-agent/agent-loop-es.svg
+coverAlt: "Diagrama del bucle del agente: el modelo decide un paso, llama a una herramienta, lee el resultado y comprueba si terminó"
+sources:
+  - title: "Anthropic: Building effective agents"
+    href: "https://www.anthropic.com/research/building-effective-agents"
+  - title: "Documentación de Claude Code: Overview"
+    href: "https://code.claude.com/docs/en/overview"
+  - title: "Anthropic: Context windows"
+    href: "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  - title: "Wikipedia: Large language model, sección Tool use"
+    href: "https://en.wikipedia.org/wiki/Large_language_model#Tool_use"
+  - title: "Wikipedia: Intelligent agent"
+    href: "https://en.wikipedia.org/wiki/Intelligent_agent"
+  - title: "Wikipedia: Vibe coding"
+    href: "https://en.wikipedia.org/wiki/Vibe_coding"
+---
+import Figure from '../../../components/Figure.astro';
+import loop from '../../../assets/blog/what-is-a-coding-agent/agent-loop-es.svg';
+import turn from '../../../assets/blog/what-is-a-coding-agent/agent-turn-es.svg';
+
+En febrero de 2025 Andrej Karpathy le puso nombre a algo que mucha gente ya hacía: describir lo que quieres en lenguaje normal, dejar que un modelo escriba el código y dirigir por los resultados en vez de leer cada línea. Lo llamó vibe coding, y a final de año Collins lo nombró palabra del año. Las herramientas que lo hicieron posible no son ventanas de chat. Son **agentes**, y la diferencia entre las dos cosas decide cómo deberías trabajar con ellas y a qué velocidad se comen tu plan.
+
+## Un chat responde; un agente actúa
+
+Un asistente de chat toma tu mensaje, produce texto y se para. Si el texto es código, lo copias en algún sitio, lo ejecutas y vuelves con el error. El bucle eres tú.
+
+Un agente cierra ese bucle solo. El equipo de ingeniería de Anthropic lo resumió en una frase en su guía de diciembre de 2024 sobre construir agentes: los agentes "suelen ser simplemente LLM que usan herramientas según la retroalimentación del entorno, en bucle". El modelo lee tu petición, decide un paso, llama a una herramienta, lee lo que la herramienta devolvió y decide otra vez. Sigue hasta que la tarea termina, se atasca o llega a una condición de parada, y puede detenerse a preguntarte algo por el camino.
+
+<Figure src={loop} alt="Diagrama de flujo: tú das una tarea; el modelo decide el siguiente paso; llama a una herramienta contra el entorno (archivos, terminal, pruebas, git, servidores MCP); lee el resultado; comprueba si terminó, se atascó o debe seguir, y o repite o vuelve a ti" caption="El bucle que ejecuta todo agente de código. El resultado de la herramienta es lo que Anthropic llama la realidad del entorno: el agente sabe si su último paso funcionó por el entorno, no por su propia convicción." ours="la guía Building effective agents de Anthropic" locale="es" plate />
+
+La misma guía traza una línea que conviene guardar. Un **flujo de trabajo** es un sistema donde los pasos están fijados en código y el modelo rellena cada uno. Un **agente** es un sistema donde el propio modelo decide qué pasos dar y en qué orden. Claude Code, Codex y el modo agente de Cursor son agentes en ese sentido: cuando escribes "la prueba del checkout falla, arréglala", nadie escribió la secuencia *lee la prueba, lee el handler, edita la línea 40, vuelve a correr*. El modelo la compuso, y la próxima vez compondrá otra distinta.
+
+## Las herramientas son toda la diferencia
+
+¿Cómo llama a una herramienta un predictor de texto? La mecánica es más simple de lo que suena. El programa que rodea al modelo, el *host*, le dice en su prompt qué herramientas existen, cada una con un nombre, una descripción y la forma de sus argumentos. Cuando el modelo quiere una, escribe una petición con un formato especial en vez de prosa. El host la ve, ejecuta la función real y pega la salida en la conversación como siguiente mensaje. El modelo la lee y continúa. Desde el punto de vista del modelo, la llamada es texto que sale y texto que entra; el que hace es el host.
+
+Para un agente de código la caja de herramientas es pequeña y potente. La documentación de Claude Code lo describe como una herramienta que "lee tu base de código, edita archivos, ejecuta comandos y se integra con tus herramientas de desarrollo". En la práctica: leer un archivo, buscar en el proyecto, editar un archivo, correr un comando de terminal y, por MCP, llegar a lo que conectes, de un navegador a una base de datos. Todo lo que el agente consigue es una composición de esos pocos verbos.
+
+Por eso la guía de Anthropic dedica un apéndice al diseño de herramientas y pone "cuida la interfaz agente-ordenador" entre sus tres principios. Un agente es tan bueno como las herramientas que ve y la claridad con que están descritas.
+
+## Por qué cuesta tanto más que un chat
+
+Aquí viene lo que importa a cualquiera con un plan medido. Un turno de chat es una petición: tu mensaje más el historial, una respuesta. Un turno de agente son **muchas** peticiones. Cada paso del bucle es una llamada completa al modelo, y cada llamada lleva todo lo que el bucle ha acumulado: el prompt de sistema, las definiciones de herramientas, la conversación, cada archivo leído hasta ahora, cada salida de comando.
+
+<Figure src={turn} alt="Una barra horizontal dividida en segmentos: prompt de sistema 4.000 tokens, definiciones de herramientas 6.000, conversación 14.000, archivos leídos 9.000, salida de comandos 5.000, tu mensaje nuevo 60, la respuesta 1.200; total 39.260" caption="Un turno en una sesión media. Tú escribiste sesenta tokens; la petición llevó casi cuarenta mil. Las proporciones son ilustrativas; el patrón, no." ours="la documentación de Anthropic sobre la ventana de contexto" locale="es" plate />
+
+Sigue la aritmética del bucle. Supón que arreglar esa prueba le lleva al agente seis pasos: leer la prueba, leer el handler, editar, correr las pruebas, leer el fallo, editar otra vez, correr otra vez. Son siete llamadas al modelo. Si la ventana está en 40.000 tokens, esas siete llamadas leen entre todas unos 280.000 tokens de entrada, más lo que los resultados de herramientas fueran añadiendo. Tú escribiste una frase. Esta es la mayor razón de que un plan que parece generoso en el chat se vacíe en una tarde de agente, y por eso la guía de Anthropic avisa de que "la naturaleza autónoma de los agentes implica costes más altos y la posibilidad de errores que se acumulan".
+
+Dos cosas lo empeoran y están en tu mano:
+
+- **Resultados grandes.** Un runner de pruebas que imprime 3.000 líneas, un log, un `git diff` de toda la rama: cada uno cae en la ventana y se relee en cada paso posterior. Pide resúmenes y solo las líneas que fallan.
+- **Bucles largos.** Un agente atascado reintenta, y cada reintento cuesta una pasada completa por la ventana. Cuando lo veas dar vueltas, párale y dale el dato que le falta en vez de dejar que lo busque.
+
+## Lo que el agente no puede hacer
+
+Un agente hereda todo del modelo de debajo: la fecha de corte del conocimiento, la tendencia a producir código con pinta de correcto que no lo es, y ninguna memoria más allá de la ventana salvo que el host se la dé. Tampoco tiene criterio sobre lo que querías decir más allá de lo que escribiste, y por eso la guía recomienda "priorizar la transparencia mostrando explícitamente los pasos de planificación del agente" y parar en puntos de control para pedir opinión humana.
+
+En el uso diario eso se convierte en una lista corta:
+
+- **Lee el plan antes que el código.** Casi todos los agentes dicen lo que van a hacer. Ese párrafo es barato de corregir; la implementación no.
+- **Deja puestas las confirmaciones.** Cuando el agente pregunta antes de correr un comando o de editar fuera del proyecto, te está ofreciendo el punto de control que describe la guía. Quitar las aprobaciones cambia eso por velocidad.
+- **Dale realidad, no esperanza.** Las pruebas, el comprobador de tipos y los linters son de lo que se alimenta el bucle. Un agente en un proyecto sin pruebas no tiene manera de saber que se equivoca.
+- **Mira el medidor, no el reloj.** Los turnos de agente son variables: un prompt puede ser una llamada o cuarenta. El número que te dice cómo va la tarde es el uso de tu plan, y el momento de mirarlo es antes de la tarea larga, no después.
+
+El agente es la razón de que el vibe coding funcione. También es un bucle que gasta tu plan en tu nombre, una relectura completa cada vez. Saber eso es casi todo lo que necesitas para usar uno bien.
