@@ -90,7 +90,7 @@
     "settings.thresholds": "Seuils de consommation",
     "settings.thresholdsHint": "Une fois par seuil et par fenêtre.",
     "settings.thresholdsField": "Seuils (%)",
-    "settings.thresholdsFieldHint": "Séparés par des virgules, sur la fenêtre principale de chaque fournisseur.",
+    "settings.thresholdsFieldHint": "Sur la fenêtre principale de chaque fournisseur.",
     "settings.resetSoon": "Réinitialisation imminente et retour de disponibilité",
     "settings.resetSoonHint": "Avant la réinitialisation d'une fenêtre bien entamée, et quand une limite est levée.",
     "settings.leadTime": "Préavis (minutes)",

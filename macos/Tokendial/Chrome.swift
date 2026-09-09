@@ -428,9 +428,11 @@ struct ChromeRadioCard: View {
     }
 }
 
-/// A small selectable chip, for the language, theme and position pickers.
+/// A small selectable chip, for the language, theme and position pickers. A square one reads as a
+/// checkbox, for the pickers where more than one may be on at a time.
 struct ChromeChip: View {
     let label: String
+    var round = true
     let selected: Bool
     let action: () -> Void
     @State private var hover = false
@@ -438,7 +440,7 @@ struct ChromeChip: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                ChromeIndicator(round: true, on: selected, size: 12, glyph: 4)
+                ChromeIndicator(round: round, on: selected, size: 12, glyph: round ? 4 : 7)
                 Text(label).font(Chrome.font(11, .medium)).foregroundStyle(selected || hover ? Chrome.slate200 : Chrome.slate400)
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
@@ -500,36 +502,6 @@ struct ChromeWideButton: View {
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
-    }
-}
-
-/// A right-aligned monospaced field in a rounded well; the border turns green while it has focus, and the
-/// value is handed over on Enter or when focus leaves, never on every keystroke.
-struct ChromeField: View {
-    @State private var text: String
-    private let width: CGFloat
-    private let commit: (String) -> Void
-    @FocusState private var focused: Bool
-
-    init(_ value: String, width: CGFloat = 120, commit: @escaping (String) -> Void) {
-        _text = State(initialValue: value)
-        self.width = width
-        self.commit = commit
-    }
-
-    var body: some View {
-        TextField("", text: $text)
-            .textFieldStyle(.plain)
-            .font(Chrome.mono(12))
-            .foregroundStyle(Chrome.slate200)
-            .multilineTextAlignment(.trailing)
-            .focused($focused)
-            .onSubmit { commit(text) }
-            .onChange(of: focused) { _, now in if !now { commit(text) } }
-            .padding(.horizontal, 8).padding(.vertical, 4)
-            .frame(width: width)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Chrome.windowBackground))
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(focused ? Chrome.brand500 : Chrome.surface700, lineWidth: 1))
     }
 }
 

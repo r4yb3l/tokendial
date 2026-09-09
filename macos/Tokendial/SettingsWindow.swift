@@ -388,29 +388,33 @@ private struct AlertsSection: View {
 
             AlertCard(label: Strings.t("settings.thresholds"), hint: Strings.t("settings.thresholdsHint"), isOn: model.binding(\.alertThresholds)) {
                 ChromeRule().padding(.top, 10)
-                ChromeRow(label: Strings.t("settings.thresholdsField"), hint: Strings.t("settings.thresholdsFieldHint")) {
-                    ChromeField(model.settings.thresholds.map(String.init).joined(separator: ", "), width: 128) { text in
-                        let parsed = text.split(whereSeparator: { ",; ".contains($0) }).compactMap { Int($0) }.filter { $0 > 0 && $0 <= 100 }
-                        let unique = Array(Set(parsed)).sorted()
-                        if !unique.isEmpty { model.set(\.thresholds, unique) }
+                ChromeRow(label: Strings.t("settings.thresholdsField"), hint: Strings.t("settings.thresholdsFieldHint")) { EmptyView() }
+                ChromeWrap(spacing: 8) {
+                    ForEach(offered(AlertsSection.thresholds, including: model.settings.thresholds), id: \.self) { pct in
+                        ChromeChip(label: "\(pct)%", round: false, selected: model.settings.thresholds.contains(pct)) { toggle(pct) }
                     }
                 }
+                .padding(.top, 8)
             }
             AlertCard(label: Strings.t("settings.resetSoon"), hint: Strings.t("settings.resetSoonHint"), isOn: model.binding(\.alertResetSoon)) {
                 ChromeRule().padding(.top, 10)
-                ChromeRow(label: Strings.t("settings.leadTime")) {
-                    ChromeField(String(model.settings.resetLeadMinutes), width: 80) { text in
-                        if let n = Int(text), (1...120).contains(n) { model.set(\.resetLeadMinutes, n) }
+                ChromeRow(label: Strings.t("settings.leadTime")) { EmptyView() }
+                ChromeWrap(spacing: 8) {
+                    ForEach(offered(AlertsSection.leadMinutes, including: [model.settings.resetLeadMinutes]), id: \.self) { minutes in
+                        ChromeChip(label: "\(minutes)", selected: model.settings.resetLeadMinutes == minutes) { model.set(\.resetLeadMinutes, minutes) }
                     }
                 }
+                .padding(.top, 8)
             }
             AlertCard(label: Strings.t("settings.waiting"), hint: Strings.t("settings.waitingHint"), isOn: model.binding(\.alertWaiting)) {
                 ChromeRule().padding(.top, 10)
-                ChromeRow(label: Strings.t("settings.afterWaiting")) {
-                    ChromeField(String(model.settings.waitingDebounceSeconds), width: 80) { text in
-                        if let n = Int(text), (5...600).contains(n) { model.set(\.waitingDebounceSeconds, n) }
+                ChromeRow(label: Strings.t("settings.afterWaiting")) { EmptyView() }
+                ChromeWrap(spacing: 8) {
+                    ForEach(offered(AlertsSection.waitingSeconds, including: [model.settings.waitingDebounceSeconds]), id: \.self) { seconds in
+                        ChromeChip(label: "\(seconds)", selected: model.settings.waitingDebounceSeconds == seconds) { model.set(\.waitingDebounceSeconds, seconds) }
                     }
                 }
+                .padding(.top, 8)
             }
             AlertCard(label: Strings.t("settings.limit"), hint: Strings.t("settings.limitHint"), isOn: model.binding(\.alertLimit)) { EmptyView() }
 
@@ -422,6 +426,30 @@ private struct AlertsSection: View {
             ChromeWideButton(icon: "bell", label: Strings.t("settings.testAlert")) { model.testAlert() }
                 .padding(.top, 10)
         }
+    }
+
+    /// The numbers these three settings can take. They used to be typed in, which let a slip of the
+    /// keyboard silence every alert; the alert engine only ever wanted a handful of values anyway.
+    private static let thresholds = [50, 60, 70, 80, 90, 95]
+    private static let leadMinutes = [5, 10, 15, 30, 60]
+    private static let waitingSeconds = [10, 20, 30, 60]
+
+    /// A value saved before this window offered a fixed set keeps its own chip, so nothing is dropped
+    /// behind the user's back; picking any other one retires it.
+    private func offered(_ choices: [Int], including current: [Int]) -> [Int] {
+        Array(Set(choices).union(current)).sorted()
+    }
+
+    /// The last threshold cannot be cleared: with none left the alert would be on and silent.
+    private func toggle(_ pct: Int) {
+        var next = Set(model.settings.thresholds)
+        if next.contains(pct) {
+            guard next.count > 1 else { return }
+            next.remove(pct)
+        } else {
+            next.insert(pct)
+        }
+        model.set(\.thresholds, next.sorted())
     }
 
     private var deliveries: [ChromeChoice<AlertDelivery>] {

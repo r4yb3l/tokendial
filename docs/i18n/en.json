@@ -90,7 +90,7 @@
     "settings.thresholds": "Usage thresholds",
     "settings.thresholdsHint": "Once per threshold per window.",
     "settings.thresholdsField": "Thresholds (%)",
-    "settings.thresholdsFieldHint": "Comma-separated, for the headline window of each provider.",
+    "settings.thresholdsFieldHint": "For the headline window of each provider.",
     "settings.resetSoon": "Reset soon and available again",
     "settings.resetSoonHint": "Before a window you have leaned on resets, and once a limit lifts.",
     "settings.leadTime": "Lead time (minutes)",

@@ -90,7 +90,7 @@
     "settings.thresholds": "Umbrales de consumo",
     "settings.thresholdsHint": "Una vez por umbral y ventana.",
     "settings.thresholdsField": "Umbrales (%)",
-    "settings.thresholdsFieldHint": "Separados por comas, sobre la ventana principal de cada proveedor.",
+    "settings.thresholdsFieldHint": "Sobre la ventana principal de cada proveedor.",
     "settings.resetSoon": "Reinicio inminente y disponible de nuevo",
     "settings.resetSoonHint": "Antes de que se reinicie una ventana que has apurado, y cuando un límite se levanta.",
     "settings.leadTime": "Antelación (minutos)",

@@ -90,7 +90,7 @@
     "settings.thresholds": "حدود الاستهلاك",
     "settings.thresholdsHint": "مرة واحدة لكل حد ولكل نافذة.",
     "settings.thresholdsField": "الحدود (%)",
-    "settings.thresholdsFieldHint": "مفصولة بفواصل، على النافذة الرئيسية لكل مزوّد.",
+    "settings.thresholdsFieldHint": "على النافذة الرئيسية لكل مزوّد.",
     "settings.resetSoon": "إعادة ضبط قريبة ومتاح مجددًا",
     "settings.resetSoonHint": "قبل إعادة ضبط نافذة أثقلتَ عليها، وعند ارتفاع حد.",
     "settings.leadTime": "المهلة (دقائق)",

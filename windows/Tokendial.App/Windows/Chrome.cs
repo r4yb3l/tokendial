@@ -405,10 +405,14 @@ public static class Chrome
     /// <summary>A small selectable chip, for the language picker.</summary>
     public static RadioButton Chip(string group, string label, bool value, Action changed)
     {
-        var button = new RadioButton { GroupName = group, IsChecked = value, Content = label, FontSize = 11, Foreground = Slate400, Margin = new Thickness(0, 0, 8, 8), Template = ChipTemplate() };
+        var button = new RadioButton { GroupName = group, IsChecked = value, Content = label, FontSize = 11, Foreground = Slate400, Margin = new Thickness(0, 0, 8, 8), Template = ChipTemplate(round: true) };
         button.Checked += (_, _) => changed();
         return button;
     }
+
+    /// <summary>A chip that toggles on its own, for the pickers where more than one may be on at a time. The caller wires Click, so restoring the box after a refused change cannot re-enter the handler.</summary>
+    public static CheckBox CheckChip(string label, bool value) =>
+        new() { IsChecked = value, Content = label, FontSize = 11, Foreground = Slate400, Margin = new Thickness(0, 0, 8, 8), Template = ChipTemplate(round: false) };
 
     private static StackPanel Caption(string label, string? hint, Brush colour, double hintSize = 11)
     {
@@ -462,30 +466,6 @@ public static class Chrome
         };
         button.Click += (_, _) => click();
         return button;
-    }
-
-    /// <summary>A right-aligned monospaced field in a rounded well; the border turns green while it has focus.</summary>
-    public static Border Field(string value, Action<string> changed, double width = 120)
-    {
-        var box = new TextBox
-        {
-            Text = value,
-            Width = width,
-            Padding = new Thickness(8, 3, 8, 3),
-            Background = Brushes.Transparent,
-            Foreground = Slate200,
-            BorderThickness = new Thickness(0),
-            CaretBrush = Slate200,
-            FontFamily = Mono,
-            FontSize = 12,
-            TextAlignment = TextAlignment.Right,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
-        var well = new Border { Background = WindowBackground, BorderBrush = Surface700, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Child = box };
-        box.GotKeyboardFocus += (_, _) => well.BorderBrush = Brand500;
-        box.LostKeyboardFocus += (_, _) => { well.BorderBrush = Surface700; changed(box.Text); };
-        box.KeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) changed(box.Text); };
-        return well;
     }
 
     public static Grid Row(string label, UIElement control, string? hint = null)
@@ -657,7 +637,7 @@ public static class Chrome
         return template;
     }
 
-    private static ControlTemplate ChipTemplate()
+    private static ControlTemplate ChipTemplate(bool round)
     {
         var template = new ControlTemplate(typeof(ToggleButton));
         var chip = new FrameworkElementFactory(typeof(Border), "chip");
@@ -668,7 +648,7 @@ public static class Chrome
         chip.SetValue(Border.PaddingProperty, new Thickness(10, 6, 10, 6));
         var row = new FrameworkElementFactory(typeof(StackPanel));
         row.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
-        var (box, boxName, glyphName) = Indicator(round: true, size: 12, glyph: 4);
+        var (box, boxName, glyphName) = Indicator(round, size: 12, glyph: round ? 4 : 8);
         row.AppendChild(box);
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
         presenter.SetValue(FrameworkElement.MarginProperty, new Thickness(6, 0, 0, 0));

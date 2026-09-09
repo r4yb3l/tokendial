@@ -264,17 +264,16 @@ public sealed class SettingsWindow
 
         column.Children.Add(AlertCard(
             Chrome.Check(Strings.T("settings.thresholds"), settings.AlertThresholds, v => { settings.AlertThresholds = v; Save(); }, Strings.T("settings.thresholdsHint")),
-            Chrome.Row(Strings.T("settings.thresholdsField"), Chrome.Field(string.Join(", ", settings.Thresholds), text =>
-            {
-                var parsed = text.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries).Select(t => int.TryParse(t, out var n) ? n : -1).Where(n => n is > 0 and <= 100).Distinct().OrderBy(n => n).ToList();
-                if (parsed.Count > 0) { settings.Thresholds = parsed; Save(); }
-            }, 128))));
+            Picker("thresholds", Strings.T("settings.thresholdsField"), Strings.T("settings.thresholdsFieldHint"), Thresholds, settings.Thresholds,
+                pct => $"{pct}%", pct => settings.Thresholds.Contains(pct), ToggleThreshold, multiple: true)));
         column.Children.Add(AlertCard(
             Chrome.Check(Strings.T("settings.resetSoon"), settings.AlertResetSoon, v => { settings.AlertResetSoon = v; Save(); }, Strings.T("settings.resetSoonHint")),
-            Chrome.Row(Strings.T("settings.leadTime"), Chrome.Field(settings.ResetLeadMinutes.ToString(), text => { if (int.TryParse(text, out var n) && n is >= 1 and <= 120) { settings.ResetLeadMinutes = n; Save(); } }, 80))));
+            Picker("leadTime", Strings.T("settings.leadTime"), null, LeadMinutes, [settings.ResetLeadMinutes],
+                n => n.ToString(), n => settings.ResetLeadMinutes == n, n => { settings.ResetLeadMinutes = n; Save(); }, multiple: false)));
         column.Children.Add(AlertCard(
             Chrome.Check(Strings.T("settings.waiting"), settings.AlertWaiting, v => { settings.AlertWaiting = v; Save(); }, Strings.T("settings.waitingHint")),
-            Chrome.Row(Strings.T("settings.afterWaiting"), Chrome.Field(settings.WaitingDebounceSeconds.ToString(), text => { if (int.TryParse(text, out var n) && n is >= 5 and <= 600) { settings.WaitingDebounceSeconds = n; Save(); } }, 80))));
+            Picker("afterWaiting", Strings.T("settings.afterWaiting"), null, WaitingSeconds, [settings.WaitingDebounceSeconds],
+                n => n.ToString(), n => settings.WaitingDebounceSeconds == n, n => { settings.WaitingDebounceSeconds = n; Save(); }, multiple: false)));
         column.Children.Add(AlertCard(
             Chrome.Check(Strings.T("settings.limit"), settings.AlertLimit, v => { settings.AlertLimit = v; Save(); }, Strings.T("settings.limitHint")), null));
 
@@ -288,6 +287,55 @@ public sealed class SettingsWindow
         var test = Chrome.WideButton(BellIcon, Strings.T("settings.testAlert"), testAlert);
         test.Margin = new Thickness(0, 10, 0, 0);
         column.Children.Add(test);
+    }
+
+    /// <summary>The numbers these three settings can take. They used to be typed in, which let a slip of the keyboard silence every alert; the alert engine only ever wanted a handful of values anyway.</summary>
+    private static readonly int[] Thresholds = [50, 60, 70, 80, 90, 95];
+    private static readonly int[] LeadMinutes = [5, 10, 15, 30, 60];
+    private static readonly int[] WaitingSeconds = [10, 20, 30, 60];
+
+    /// <summary>A labelled row of chips, one per allowed value. A value saved before this window offered a fixed set keeps its own chip, so nothing is dropped behind the user's back.</summary>
+    private UIElement Picker(string group, string label, string? hint, int[] choices, IEnumerable<int> current, Func<int, string> text, Func<int, bool> chosen, Action<int> pick, bool multiple)
+    {
+        var stack = new StackPanel();
+        var caption = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
+        caption.Children.Add(Text.Make(label, 12, Chrome.Slate300));
+        if (hint is not null)
+        {
+            var line = Chrome.Body(hint);
+            line.FontSize = 11;
+            caption.Children.Add(line);
+        }
+        stack.Children.Add(caption);
+        var chips = new WrapPanel { Margin = new Thickness(0, 8, 0, -8) };
+        foreach (var value in choices.Union(current).Distinct().OrderBy(v => v))
+        {
+            var each = value;
+            if (multiple)
+            {
+                var box = Chrome.CheckChip(text(each), chosen(each));
+                box.Click += (_, _) => { pick(each); box.IsChecked = chosen(each); };
+                chips.Children.Add(box);
+            }
+            else chips.Children.Add(Chrome.Chip(group, text(each), chosen(each), () => { if (!building) pick(each); }));
+        }
+        stack.Children.Add(chips);
+        return stack;
+    }
+
+    /// <summary>The last threshold cannot be cleared: with none left the alert would be on and silent.</summary>
+    private void ToggleThreshold(int pct)
+    {
+        var next = settings.Thresholds.ToList();
+        if (next.Contains(pct))
+        {
+            if (next.Count == 1) return;
+            next.Remove(pct);
+        }
+        else next.Add(pct);
+        next.Sort();
+        settings.Thresholds = next;
+        Save();
     }
 
     /// <summary>One alert kind: its switch, and under a rule the number it takes.</summary>

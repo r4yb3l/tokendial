@@ -90,7 +90,7 @@
     "settings.thresholds": "Verbrauchsschwellen",
     "settings.thresholdsHint": "Einmal pro Schwelle und Fenster.",
     "settings.thresholdsField": "Schwellen (%)",
-    "settings.thresholdsFieldHint": "Kommagetrennt, für das Hauptfenster jedes Anbieters.",
+    "settings.thresholdsFieldHint": "Für das Hauptfenster jedes Anbieters.",
     "settings.resetSoon": "Baldige Zurücksetzung und wieder verfügbar",
     "settings.resetSoonHint": "Vor der Zurücksetzung eines stark genutzten Fensters und wenn ein Limit aufgehoben wird.",
     "settings.leadTime": "Vorlauf (Minuten)",
