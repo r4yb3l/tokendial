@@ -1,0 +1,67 @@
+---
+title: "Herramientas que recortan tu factura de tokens"
+description: "Siete cosas que puedes instalar o activar hoy, cada una con el número que ahorra: los comandos del propio agente, un hook que filtra la salida de las pruebas, Repomix, Context7, ccusage, modelos más baratos para los subagentes y el medidor en el borde de la pantalla."
+date: 2026-09-09
+section: tools
+sources:
+  - title: "Documentación de Claude Code: Manage costs effectively, Reduce token usage"
+    href: "https://code.claude.com/docs/en/costs#reduce-token-usage"
+  - title: "ccusage"
+    href: "https://github.com/ryoppippi/ccusage"
+  - title: "Repomix"
+    href: "https://github.com/yamadashy/repomix"
+  - title: "Context7"
+    href: "https://github.com/upstash/context7"
+  - title: "tiktoken, usado para las mediciones"
+    href: "https://github.com/openai/tiktoken"
+---
+
+El artículo de los seis hábitos iba de cómo hablas con un agente. Este va de lo que instalas para que el ahorro ocurra sin que pienses en ello. Todo lo de abajo es gratis, casi todo lleva cinco minutos, y cada punto trae un número: o uno que medimos en un proyecto real con el tokenizador de OpenAI, o uno que documenta el fabricante.
+
+## 1. Los comandos de contexto del propio agente
+
+Antes de instalar nada, aprende los tres comandos que tu agente ya tiene. En Claude Code son `/clear` para empezar de cero cuando cambia la tarea ("el contexto viejo gasta tokens en cada mensaje posterior", dice la documentación), `/compact` para resumir una conversación larga y seguir desde el resumen, y `/context` para ver qué ocupa la ventana ahora mismo. Codex tiene `/status`; casi todos los agentes tienen equivalentes.
+
+Dos refinamientos de la documentación de Anthropic valen el minuto que cuestan. `/compact` acepta instrucciones, `/compact Focus on code samples and API usage`, y una sección `# Compact instructions` en el `CLAUDE.md` de tu proyecto lo convierte en el comportamiento por defecto. Ahorro: todo el historial menos un resumen, en cada turno que sigue.
+
+## 2. Un hook que filtra la salida de las pruebas
+
+Medido en este proyecto: la salida detallada de una ejecución de `dotnet test` son 41.803 tokens; la silenciosa de la misma ejecución, 220. La documentación de costes de Anthropic da el remedio general. Un hook `PreToolUse` corre antes de cada comando de terminal, y el ejemplo documentado reescribe los comandos de pruebas para pasarlos por `grep -A 5 -E '(FAIL|ERROR|error:)' | head -100`, de modo que al modelo solo le llegan los fallos. La misma página describe el rendimiento en logs: "en vez de que Claude lea un log de 10.000 líneas para encontrar errores, un hook puede buscar ERROR y devolver solo las líneas que coinciden, reduciendo el contexto de decenas de miles de tokens a cientos."
+
+El hook es un script de shell de doce líneas y una entrada en `settings.json`; la documentación trae los dos listos para pegar. Adapta el patrón a tu runner de pruebas y a `git diff`, cuya salida completa en tres commits fueron 41.289 tokens frente a 391 con `--stat`.
+
+## 3. Repomix, para cuando el agente necesita la foto completa
+
+A veces el agente necesita de verdad ver toda la base de código: una pregunta de arquitectura, una migración, una revisión. Dejar que lea los archivos uno a uno es la manera cara. [Repomix](https://github.com/yamadashy/repomix) empaqueta un repositorio en un solo archivo pensado para la IA, respeta `.gitignore`, pasa Secretlint para que las credenciales se queden fuera e imprime un **recuento de tokens por archivo y del repositorio entero** para que sepas el precio antes de pagarlo. Su opción `--compress` usa Tree-sitter para conservar firmas y estructura y quitar los cuerpos de las funciones, lo que su README describe como reducir el recuento de tokens preservando la estructura.
+
+```bash
+npx repomix@latest --compress
+```
+
+Usa la CLI, no el servidor MCP: la CLI no cuesta nada después de correr, mientras que las seis definiciones de herramientas del servidor eran 4.308 tokens en cada turno cuando las medimos.
+
+## 4. Context7, para la documentación que el modelo no tiene
+
+Una API alucinada cuesta el código equivocado, la prueba que falla, la corrección y la repetición. [Context7](https://github.com/upstash/context7) trae a la conversación documentación actual de una librería mediante dos herramientas MCP, `resolve-library-id` y `query-docs`, cuyas definiciones medimos en 1.106 tokens, el servidor más barato de nuestro conjunto. Pide "usa context7" cuando trabajes con una librería que el modelo confunde, o añade la instrucción a tu archivo de proyecto, y el extracto de documentación sustituye a las suposiciones. Es el único servidor MCP de esta lista que conectaríamos en global.
+
+## 5. Un modelo más barato para el trabajo rutinario
+
+Todos los fabricantes cobran más por su modelo tope, y el consejo de Anthropic es directo: "Sonnet resuelve bien la mayoría de las tareas de código y cuesta menos que Opus. Reserva Opus para decisiones de arquitectura complejas o razonamiento en varios pasos." Cambia con `/model` a mitad de sesión, y para los subagentes que hacen trabajo mecánico, renombrar, formatear, correr comprobaciones, pon `model: haiku` en la configuración del subagente. En GitHub Copilot, la selección automática de modelo lleva un descuento documentado del 10 % en el coste de modelo; en Cursor el modelo que eliges decide a qué velocidad se vacía el pool.
+
+## 6. Inteligencia de código en vez de grep
+
+La documentación de Anthropic señala que un plugin de servidor de lenguaje "da a Claude navegación precisa de símbolos en vez de búsqueda de texto": una llamada de ir-a-definición sustituye a un grep más la lectura de varios archivos candidatos, y el servidor informa de errores de tipos tras cada edición para que el agente no tenga que correr el compilador para encontrarlos. Si tu lenguaje tiene un plugin de inteligencia de código para tu agente, se paga solo en el primer refactor.
+
+## 7. Ver el gasto: ccusage y el dial
+
+No puedes gestionar lo que no ves. [ccusage](https://github.com/ryoppippi/ccusage) lee los registros locales de uso de dieciocho agentes de código, entre ellos Claude Code, Codex, OpenCode, Copilot CLI, Gemini CLI, Antigravity y Grok Build, y los convierte en informes diarios, semanales, mensuales y por sesión de tokens y coste:
+
+```bash
+npx ccusage@latest
+```
+
+Te dice, a posteriori, adónde fueron los tokens y qué sesiones fueron las caras. Tokendial responde la otra pregunta, en tiempo real: cuánto queda de la ventana actual, en todos los proveedores a la vez, en el borde de la pantalla. Usa ccusage para encontrar el hábito que te cuesta y el dial para cazarlo antes de que se cierre la ventana.
+
+## En qué orden hacerlo
+
+Si haces una sola cosa, haz el hook: es el mayor ahorro individual de esta lista y funciona en silencio para siempre. Después las instrucciones de compactación en tu archivo de proyecto, después Context7 para las librerías con las que peleas, después el cambio de modelo para los subagentes. Repomix la próxima vez que necesites la foto completa. Y ten el medidor donde lo veas, porque todos estos números solo importan frente a una ventana que se acaba.

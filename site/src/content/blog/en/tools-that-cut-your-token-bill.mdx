@@ -1,0 +1,67 @@
+---
+title: "Tools that cut your token bill"
+description: "Seven things you can install or switch on today, each with the number it saves: the agent's own commands, a hook that filters test output, Repomix, Context7, ccusage, cheaper models for subagents, and the meter at the edge of the screen."
+date: 2026-09-09
+section: tools
+sources:
+  - title: "Claude Code docs: Manage costs effectively, Reduce token usage"
+    href: "https://code.claude.com/docs/en/costs#reduce-token-usage"
+  - title: "ccusage"
+    href: "https://github.com/ryoppippi/ccusage"
+  - title: "Repomix"
+    href: "https://github.com/yamadashy/repomix"
+  - title: "Context7"
+    href: "https://github.com/upstash/context7"
+  - title: "tiktoken, used for the measurements"
+    href: "https://github.com/openai/tiktoken"
+---
+
+The article on six habits was about how you talk to an agent. This one is about what you install so that the saving happens without you thinking about it. Every item below is free, most take five minutes, and each comes with a number: either one we measured on a real project with OpenAI's tokenizer or one the vendor documents.
+
+## 1. The agent's own context commands
+
+Before installing anything, learn the three commands your agent already has. In Claude Code they are `/clear` to start fresh when the task changes ("stale context wastes tokens on every subsequent message", the documentation says), `/compact` to summarise a long conversation and continue from the summary, and `/context` to see what is occupying the window right now. Codex has `/status`; most agents have equivalents.
+
+Two refinements from Anthropic's documentation are worth the minute they take. `/compact` accepts instructions, `/compact Focus on code samples and API usage`, and a `# Compact instructions` section in your project's `CLAUDE.md` makes that the default. Saving: the entire history minus a summary, on every turn that follows.
+
+## 2. A hook that filters test output
+
+Measured on this project: the verbose output of one `dotnet test` run is 41,803 tokens; the quiet output of the same run is 220. Anthropic's cost documentation gives the general remedy. A `PreToolUse` hook runs before every shell command, and the documented example rewrites test commands to pipe through `grep -A 5 -E '(FAIL|ERROR|error:)' | head -100`, so only failures reach the model. The same page describes the payoff on logs: "instead of Claude reading a 10,000-line log file to find errors, a hook can grep for ERROR and return only matching lines, reducing context from tens of thousands of tokens to hundreds."
+
+The hook is a twelve-line shell script and a `settings.json` entry; the documentation has both ready to paste. Adapt the pattern to your test runner and to `git diff`, whose full output on three commits was 41,289 tokens against 391 for `--stat`.
+
+## 3. Repomix, for when the agent needs the whole picture
+
+Sometimes the agent genuinely needs to see the entire codebase: an architecture question, a migration, a review. Letting it read files one by one is the expensive way. [Repomix](https://github.com/yamadashy/repomix) packs a repository into a single AI-friendly file, respects `.gitignore`, runs Secretlint so credentials stay out, and prints a **token count per file and for the whole repository** so you know the price before you pay it. Its `--compress` flag uses Tree-sitter to keep signatures and structure and drop function bodies, which its README describes as reducing token count while preserving structure.
+
+```bash
+npx repomix@latest --compress
+```
+
+Use the CLI, not the MCP server: the CLI costs nothing after it runs, while the server's six tool definitions were 4,308 tokens on every turn when we measured them.
+
+## 4. Context7, for documentation the model does not have
+
+A hallucinated API costs the wrong code, the failing test, the correction and the re-run. [Context7](https://github.com/upstash/context7) fetches current documentation for a library into the conversation through two MCP tools, `resolve-library-id` and `query-docs`, whose definitions we measured at 1,106 tokens, the cheapest server in our set. Ask "use context7" when working with a library the model gets wrong, or add the instruction to your project file, and the doc excerpt replaces the guessing. It is the one MCP server on this list we would connect globally.
+
+## 5. A cheaper model for the routine work
+
+Every vendor prices its top model higher, and Anthropic's own advice is direct: "Sonnet handles most coding tasks well and costs less than Opus. Reserve Opus for complex architectural decisions or multi-step reasoning." Switch with `/model` mid-session, and for subagents that do mechanical work, renaming, formatting, running checks, set `model: haiku` in the subagent's configuration. On GitHub Copilot, auto model selection carries a documented 10 % discount on model costs; on Cursor the model you pick decides how fast the pool drains.
+
+## 6. Code intelligence instead of grep
+
+Anthropic's documentation notes that a language server plugin "gives Claude precise symbol navigation instead of text-based search": one go-to-definition call replaces a grep plus reading several candidate files, and the server reports type errors after each edit so the agent does not have to run the compiler to find them. If your language has a code intelligence plugin for your agent, it pays for itself on the first refactor.
+
+## 7. See the spend: ccusage and the dial
+
+You cannot manage what you cannot see. [ccusage](https://github.com/ryoppippi/ccusage) reads the local usage logs of eighteen coding agents, Claude Code, Codex, OpenCode, Copilot CLI, Gemini CLI, Antigravity and Grok Build among them, and turns them into daily, weekly, monthly and per-session reports of tokens and cost:
+
+```bash
+npx ccusage@latest
+```
+
+It tells you, after the fact, where the tokens went and which sessions were the expensive ones. Tokendial answers the other question, in real time: how much of the current window is left, on every provider at once, at the edge of the screen. Use ccusage to find the habit that costs you and the dial to catch it before the window closes.
+
+## The order to do it in
+
+If you do one thing, do the hook: it is the biggest single saving on this list and it works silently forever. Then the compaction instructions in your project file, then Context7 for the libraries you fight with, then the model switch for subagents. Repomix when you next need the whole picture. And keep the meter where you can see it, because every one of these numbers only matters against a window that ends.
