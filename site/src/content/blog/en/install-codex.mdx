@@ -1,52 +1,65 @@
 ---
-title: "How to install Codex and put it on the dial"
-description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+title: "Install Codex and put it on the dial"
+description: "OpenAI's coding agent comes with every ChatGPT plan. The official installers for Windows and macOS, the ChatGPT sign-in, and the file Tokendial reads to show your five-hour and weekly windows."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: codex
+sources:
+  - title: "OpenAI developers: Codex CLI"
+    href: "https://developers.openai.com/codex/cli"
+  - title: "OpenAI Help: Using Codex with your ChatGPT plan"
+    href: "https://help.openai.com/en/articles/11369540-codex-in-chatgpt-usage-limits"
+  - title: "Tokendial provider spec: codex.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/codex.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Codex is OpenAI's coding agent. Signed in with your ChatGPT account it shares that account's limits: a five-hour window and a weekly one.
-
-Tokendial reads the session Codex stores and asks OpenAI for the two windows, exactly as Codex's own status line does.
+Codex is OpenAI's coding agent. It runs as a CLI, an IDE extension, a mode of the ChatGPT desktop app and a web service, and all of them sign in with your ChatGPT account. OpenAI's help centre says Codex "is included across ChatGPT plans, including Free and Go", with usage limits that vary by plan and are counted in a five-hour window and a weekly one, shared with the other agentic features of your plan.
 
 ## Install on Windows
 
-Open PowerShell and run the command OpenAI publishes:
+OpenAI's documentation gives the Windows install as a PowerShell one-liner:
 
 ```powershell
 irm https://chatgpt.com/codex/install.ps1 | iex
 ```
 
+The documented form wraps it in `powershell -ExecutionPolicy ByPass -c "…"` so it can be run from any shell; inside PowerShell the line above is the same thing. There is also `npm install -g @openai/codex` if you already use Node.
+
 ## Install on macOS
 
-In Terminal, run the command OpenAI publishes:
+The standalone installer:
 
 ```bash
 curl -fsSL https://chatgpt.com/codex/install.sh | sh
 ```
 
+Or `brew install --cask codex` with Homebrew, or the npm package. The same command updates an existing install.
+
 ## Sign in
 
-Once installed, sign in with the tool itself:
+Open a project folder and run:
 
 ```bash
-codex login
+codex
 ```
 
-Codex opens the browser to sign in with your ChatGPT account.
+The first time, Codex offers **Sign in with ChatGPT** and opens the browser. `codex login` does the same step on its own, which is what Tokendial's assistant runs after installing. Once you are in, `/status` inside Codex shows your windows and their resets.
 
 ## What Tokendial reads
 
-After the sign-in, Codex keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+Codex stores the ChatGPT session it obtained in one file on both systems:
 
-- Windows: `~/.codex/auth.json`
-- macOS: `~/.codex/auth.json`
+- Windows and macOS: `~/.codex/auth.json`
 
-The dial shows the **5-hour** window. Hover it to see the other windows and when each one resets.
+Tokendial reads it read-only and never refreshes or writes it. The identity token inside carries your email and plan type, which is what the account line under the dial shows. Codex reports a primary and a secondary window; the dial shows the tighter one and the card lists both with their reset times.
+
+A second ChatGPT account is a second `CODEX_HOME`. Run Codex with `CODEX_HOME=~/.codex-work` once and that profile appears as its own dial, "Codex (work)", with its own windows.
 
 ## Or let Tokendial do it
 
-If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+<Figure src={rows} alt="Three provider rows in Tokendial's settings, each with an Install button and the steps Install, Sign in, Ready" caption="A provider whose tool is missing shows the three steps and an Install button. Interface shown in Spanish." ours="a screenshot of Tokendial 0.1.0 on Windows" locale="en" />
 
-Official documentation: [https://developers.openai.com/codex/cli](https://developers.openai.com/codex/cli).
+In Tokendial's settings the Codex row shows **Install → Sign in → Ready** while the CLI is missing. Press **Install**, review the command, press **Run**: it executes in a visible terminal, `codex login` follows in the same window, and the dial connects when the credential lands. Nothing runs until you press the button.

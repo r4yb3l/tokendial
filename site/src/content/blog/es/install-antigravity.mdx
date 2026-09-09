@@ -1,52 +1,56 @@
 ---
-title: "Cómo instalar Antigravity y ponerlo en el dial"
-description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+title: "Instala Antigravity y ponlo en el dial"
+description: "El IDE de Google centrado en agentes y su CLI inician sesión con una cuenta de Google dentro de la app. WinGet o Homebrew, el inicio de sesión dentro de la app y la entrada del almacén de credenciales que Tokendial lee para mostrar tu cuota por modelo y cuándo se refresca."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: antigravity
+sources:
+  - title: "Documentación de Google Antigravity: Getting started"
+    href: "https://antigravity.google/docs/getting-started"
+  - title: "Documentación de Google Antigravity: Plans"
+    href: "https://antigravity.google/docs/plans/"
+  - title: "Documentación de Google Antigravity: Model quotas (/usage)"
+    href: "https://antigravity.google/docs/cli/commands/usage/"
+  - title: "Ficha de proveedor de Tokendial: antigravity.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/antigravity.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Antigravity es el IDE de Google centrado en agentes. Inicias sesión con una cuenta de Google dentro de la app, y la cuota viene en cubos semanales por grupo de modelos.
-
-Tokendial lee la credencial que Antigravity guarda en el almacén de credenciales del sistema y consulta los mismos puntos de cuota que el IDE.
+Antigravity es el entorno de desarrollo de Google centrado en agentes: un IDE de escritorio, extensiones para VS Code, JetBrains, Zed y Xcode, y una CLI, todos con inicio de sesión de cuenta de Google. Desde el 18 de junio de 2026 es también adonde Google manda a los usuarios individuales de Gemini CLI. La cuota llega como una base por plan: en Google AI Pro y Ultra "se refresca cada cinco horas" junto a un límite semanal, en las cuentas gratuitas se refresca por semana, y la documentación reconoce que los límites "están correlacionados con la cantidad de trabajo que hace el agente".
 
 ## Instalar en Windows
 
-El camino más rápido es el Administrador de paquetes de Windows, que descarga el instalador oficial:
+La página de descargas de Google en [antigravity.google/download](https://antigravity.google/download) tiene instaladores para x64 y ARM64 en Windows 10 (64 bits) o posterior. El gestor de paquetes de Windows baja el mismo instalador:
 
 ```powershell
-winget install Google.Antigravity --accept-source-agreements --accept-package-agreements
+winget install Google.Antigravity
 ```
-
-`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
-
-También puedes descargar el instalador desde [la página oficial](https://antigravity.google/download).
 
 ## Instalar en macOS
 
-Con Homebrew instalado:
+La página de descargas tiene compilaciones para Apple Silicon e Intel en macOS 12 (Monterey) o posterior, o usa el cask de Homebrew:
 
 ```bash
 brew install --cask antigravity
 ```
 
-También puedes descargar el instalador desde [la página oficial](https://antigravity.google/download).
-
 ## Iniciar sesión
 
-Abre Antigravity e inicia sesión con tu cuenta dentro de la app. No hace falta nada más.
+Abre Antigravity e inicia sesión con tu cuenta de Google dentro de la app. No hace falta nada más; la CLI, si la instalas, comparte esa sesión. Dentro de la CLI, `/usage` (alias `/quota`) abre el panel con la cuota que te queda por modelo.
 
 ## Qué lee Tokendial
 
-Tras iniciar sesión, Antigravity guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+Antigravity guarda su token en el almacén de credenciales del sistema, y Tokendial lo lee ahí, en solo lectura:
 
-- Windows: Credential Manager entry `gemini:antigravity`
-- macOS: Keychain item `gemini`
+- Windows: la entrada del Administrador de credenciales `gemini:antigravity`
+- macOS: el elemento del llavero `gemini`
 
-El dial muestra la **cuota semanal**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+Con él Tokendial pregunta a los mismos endpoints de cuota que consulta el IDE y lee el servidor de lenguaje del propio IDE para la actividad. El dial muestra la cuota semanal del grupo de modelos más apurado; la tarjeta lista cada grupo con su reinicio. Nada se refresca, se escribe ni se copia.
 
-## O deja que lo haga Tokendial
+## O deja que Tokendial lo haga
 
-Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+<Figure src={rows} alt="Tres filas de proveedor en los ajustes de Tokendial, cada una con un botón Instalar y los pasos Instalar, Iniciar sesión, Listo" caption="La fila de Antigravity mientras falta la app." ours="una captura de Tokendial 0.1.0 en Windows" locale="es" />
 
-Documentación oficial: [https://antigravity.google/docs/getting-started](https://antigravity.google/docs/getting-started).
+Antigravity es una app, así que el asistente instala y luego te cede el paso. En los ajustes de Tokendial la fila muestra **Instalar → Iniciar sesión → Listo**; pulsa **Instalar**, revisa el comando de WinGet o Homebrew, pulsa **Ejecutar** y el instalador corre en una terminal visible. Después abre Antigravity e inicia sesión dentro de la app; el dial se conecta en cuanto existe la credencial. Nada se ejecuta hasta que pulsas el botón.

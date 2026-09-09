@@ -1,14 +1,26 @@
 ---
-title: "Cómo instalar Claude Code y ponerlo en el dial"
-description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+title: "Instala Claude Code y ponlo en el dial"
+description: "El agente de terminal de Anthropic en tres pasos: el instalador oficial para Windows y macOS, el inicio de sesión en el navegador y el archivo de credenciales que Tokendial lee para mostrar tus ventanas de sesión y semanal."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: claude
+sources:
+  - title: "Documentación de Claude Code: Set up Claude Code"
+    href: "https://code.claude.com/docs/en/setup"
+  - title: "Documentación de Claude Code: Overview"
+    href: "https://code.claude.com/docs/en/overview"
+  - title: "Ayuda de Anthropic: Using Claude Code with your Pro or Max plan"
+    href: "https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan"
+  - title: "Ficha de proveedor de Tokendial: claude.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/claude.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Claude Code es el agente de programación de Anthropic para la terminal. Funciona con los planes Claude Pro, Max y Team, y sus límites vienen en ventanas: una de sesión de cinco horas y varias semanales, algunas por modelo.
+Claude Code es el agente de código de Anthropic para la terminal, con extensiones para VS Code y JetBrains y una app de escritorio. Viene con los planes Claude Pro, Max, Team y Enterprise, y sus límites son los que describe [Cómo leer tus límites de Claude Code](/es/blog/read-your-claude-code-limits): una ventana de sesión deslizante de cinco horas y una semanal, compartidas con el chat de Claude de la misma cuenta, más ventanas por modelo en algunos planes.
 
-Tokendial lee el token que Claude Code guarda al iniciar sesión y consulta el mismo punto de acceso que usa el comando `/usage` de Claude Code.
+La documentación de Anthropic recomienda el instalador nativo. Homebrew y WinGet también están documentados; el nativo es el que se actualiza solo en segundo plano.
 
 ## Instalar en Windows
 
@@ -18,35 +30,41 @@ Abre PowerShell y ejecuta el comando que publica Anthropic:
 irm https://claude.ai/install.ps1 | iex
 ```
 
+Si ves *"The token '&&' is not a valid statement separator"*, estás en PowerShell ejecutando un comando de CMD, o al revés. Anthropic recomienda además Git para Windows para que Claude Code pueda usar su herramienta Bash; sin él, el agente usa PowerShell para los comandos.
+
 ## Instalar en macOS
 
-En Terminal, ejecuta el comando que publica Anthropic:
+En Terminal:
 
 ```bash
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 
+O con Homebrew, que no se autoactualiza: `brew install --cask claude-code`.
+
 ## Iniciar sesión
 
-Una vez instalado, inicia sesión con la propia herramienta:
+Ejecuta la herramienta una vez:
 
 ```bash
 claude
 ```
 
-Claude Code se abre en la terminal y te lleva al navegador para iniciar sesión. Vuelve cuando diga que ya has entrado.
+Claude Code te manda al navegador a iniciar sesión con tu cuenta de Claude y vuelve con la sesión abierta. Si tienes una `ANTHROPIC_API_KEY` en el entorno, Claude Code la usará en lugar de tu suscripción y te cobrará a precio de API; quítala si quieres tu plan.
 
 ## Qué lee Tokendial
 
-Tras iniciar sesión, Claude Code guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+Tras el inicio de sesión, Claude Code guarda un token en tu equipo y Tokendial lo lee ahí, en solo lectura, sin refrescarlo, escribirlo ni copiarlo:
 
 - Windows: `~/.claude/.credentials.json`
-- macOS: Keychain item `Claude Code-credentials`
+- macOS: el elemento del llavero `Claude Code-credentials`
 
-El dial muestra la ventana de **sesión actual**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+Con ese token Tokendial pregunta al mismo endpoint de uso que consulta `/usage` dentro de Claude Code. El dial muestra la ventana de **sesión actual**; pasa el cursor para ver la semanal, las ventanas por modelo si las hay y la hora de cada reinicio.
 
-## O deja que lo haga Tokendial
+Una segunda cuenta es un segundo directorio de configuración. Si ejecutas Claude Code con `CLAUDE_CONFIG_DIR=~/.claude-work`, ese perfil aparece en su propio dial como "Claude Code (work)".
 
-Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+## O deja que Tokendial lo haga
 
-Documentación oficial: [https://code.claude.com/docs/en/setup](https://code.claude.com/docs/en/setup).
+<Figure src={rows} alt="Tres filas de proveedor en los ajustes de Tokendial, cada una con un botón Instalar y los pasos Instalar, Iniciar sesión, Listo" caption="Los proveedores cuya herramienta falta muestran los tres pasos y un botón Instalar." ours="una captura de Tokendial 0.1.0 en Windows" locale="es" />
+
+Abre los ajustes de Tokendial. Un proveedor cuya herramienta no está instalada muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando de instalación, pulsas **Ejecutar**, corre en una ventana de terminal visible y el inicio de sesión sigue en la misma terminal. El dial se conecta en cuanto aparece la credencial. Nada se ejecuta hasta que pulsas el botón.

@@ -1,52 +1,56 @@
 ---
-title: "How to install Cursor and put it on the dial"
-description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+title: "Install Cursor and put it on the dial"
+description: "Cursor is a desktop editor, so there is no CLI to sign in: install the app, sign in inside it, and Tokendial reads the editor's own session to show the two usage pools of your plan."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: cursor
+sources:
+  - title: "Cursor docs: Quickstart and installation"
+    href: "https://cursor.com/docs/get-started/installation"
+  - title: "Cursor docs: Models and pricing"
+    href: "https://cursor.com/docs/account/pricing"
+  - title: "Tokendial provider spec: cursor.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/cursor.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Cursor is a desktop editor, so there is no CLI to sign in with: you install the app and sign in inside it. Its usage comes as included usage for your plan, plus on-demand usage when you enable it.
-
-Tokendial reads the session the editor keeps in its local database and asks cursor.com for the same summary the editor shows.
+Cursor is an AI editor rather than a terminal tool: a VS Code-derived desktop app with an agent built in. Its documentation gives one path, "download Cursor, open the app and sign in", with native installers for macOS 12 and later and Windows 10 and later. Pro, Pro Plus and Ultra include two usage pools, one for Cursor's own models and one for third-party models at API price, both of which reset with your monthly billing cycle.
 
 ## Install on Windows
 
-The quickest path is the Windows Package Manager, which downloads the official installer:
+The download page at [cursor.com/downloads](https://cursor.com/downloads) has the `.exe`. If you prefer the package manager, the community WinGet manifest installs the same build:
 
 ```powershell
-winget install Anysphere.Cursor --accept-source-agreements --accept-package-agreements
+winget install Anysphere.Cursor
 ```
 
-`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
-
-You can also download the installer from [the official page](https://cursor.com/downloads).
+`winget` ships with Windows 11; on Windows 10 it comes with "App Installer" from the Microsoft Store.
 
 ## Install on macOS
 
-With Homebrew installed:
+The `.dmg` from the same download page, or the Homebrew cask:
 
 ```bash
 brew install --cask cursor
 ```
 
-You can also download the installer from [the official page](https://cursor.com/downloads).
-
 ## Sign in
 
-Open Cursor and sign in to your account inside the app. Nothing else is needed.
+Open Cursor and sign in from the welcome screen with your Cursor account. There is no command to run. Pick a folder and the agent is ready under Ctrl I (Cmd I on macOS).
 
 ## What Tokendial reads
 
-After the sign-in, Cursor keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+Cursor keeps the editor's session in its global state database, and Tokendial reuses that session against cursor.com, read-only:
 
 - Windows: `%APPDATA%/Cursor/User/globalStorage/state.vscdb`
 - macOS: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`
 
-The dial shows **included usage**. Hover it to see the other windows and when each one resets.
+The database is in write-ahead mode while the editor runs, so Tokendial opens it in a way that sees the current token rather than a checkpointed one. The card shows **Included usage** as the headline, plus API usage and on-demand spend, each with the reset of your billing cycle. Nothing is written back and the token is never refreshed or copied.
 
 ## Or let Tokendial do it
 
-If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+<Figure src={rows} alt="Three provider rows in Tokendial's settings, each with an Install button and the steps Install, Sign in, Ready" caption="Cursor's row while the app is missing. Interface shown in Spanish." ours="a screenshot of Tokendial 0.1.0 on Windows" locale="en" />
 
-Official documentation: [https://cursor.com/docs/get-started/installation](https://cursor.com/docs/get-started/installation).
+Because Cursor is an app, the assistant differs slightly from the CLI tools. In Tokendial's settings the Cursor row shows **Install → Sign in → Ready**; press **Install**, review the WinGet or Homebrew command, press **Run**, and the installer runs in a visible terminal. Then open Cursor and sign in inside the app: the dial connects as soon as the editor has a session. Nothing runs until you press the button.

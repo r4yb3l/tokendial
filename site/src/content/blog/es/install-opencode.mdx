@@ -1,54 +1,66 @@
 ---
-title: "Cómo instalar OpenCode y ponerlo en el dial"
-description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+title: "Instala OpenCode y ponlo en el dial"
+description: "El agente de terminal de código abierto y su plan Go de 10 $: el script de instalación o WinGet, conectar el proveedor Go con /connect u opencode auth login, y el archivo de credenciales que Tokendial lee para mostrar las tres ventanas de Go."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: opencode
+sources:
+  - title: "Documentación de OpenCode: Intro e instalación"
+    href: "https://opencode.ai/docs/"
+  - title: "Documentación de OpenCode: CLI reference"
+    href: "https://opencode.ai/docs/cli/"
+  - title: "Documentación de OpenCode: OpenCode Go"
+    href: "https://opencode.ai/docs/go/"
+  - title: "Ficha de proveedor de Tokendial: opencode.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/opencode.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-OpenCode es un agente de programación de código abierto que funciona con muchos proveedores. Tokendial sigue el plan OpenCode Go, que tiene una ventana mensual.
-
-Tokendial lee la clave del plan Go que OpenCode guarda al conectarlo y pide a opencode.ai el consumo del mes.
+OpenCode es un agente de código abierto para la terminal que funciona con más de 75 proveedores de modelos. Tokendial mide uno de ellos: **OpenCode Go**, la suscripción de 10 $ al mes a una lista seleccionada de modelos abiertos, cuya documentación expresa sus límites en dinero, 12 $ de uso por cinco horas, 30 $ por semana y 60 $ al mes. Las claves de otros proveedores que añadas a OpenCode nunca se leen.
 
 ## Instalar en Windows
 
-Abre PowerShell y ejecuta el comando que publica OpenCode:
+La documentación de OpenCode recomienda WSL en Windows para la mejor experiencia, y lista Chocolatey, Scoop y npm para instalaciones nativas. El manifiesto comunitario de WinGet lleva la misma versión:
 
 ```powershell
-winget install SST.opencode --accept-source-agreements --accept-package-agreements
+winget install SST.opencode
 ```
 
-`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
+`npm install -g opencode-ai`, `choco install opencode` y `scoop install opencode` son las alternativas documentadas.
 
 ## Instalar en macOS
 
-En Terminal, ejecuta el comando que publica OpenCode:
+El script de instalación:
 
 ```bash
 curl -fsSL https://opencode.ai/install | bash
 ```
 
+O el tap de Homebrew del proyecto, que la documentación recomienda frente a la fórmula central por actualizarse antes: `brew install anomalyco/tap/opencode`.
+
 ## Iniciar sesión
 
-Una vez instalado, inicia sesión con la propia herramienta:
+Suscríbete a Go en opencode.ai, copia tu clave de API y conecta el proveedor. Dentro de la TUI:
 
-```bash
-opencode auth login
+```
+/connect
 ```
 
-OpenCode pregunta qué proveedor conectar: elige OpenCode y sigue el inicio de sesión que ofrece.
+Elige **OpenCode Go** y pega la clave. El mismo paso desde la shell es `opencode auth login`, que es lo que el asistente de Tokendial ejecuta tras instalar. Ejecuta `/models` para ver los modelos que te da Go.
 
 ## Qué lee Tokendial
 
-Tras iniciar sesión, OpenCode guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+OpenCode guarda las credenciales de proveedor en un archivo:
 
-- Windows: `~/.local/share/opencode/auth.json`
 - macOS: `~/.local/share/opencode/auth.json`
+- Windows: la misma ruta bajo tu perfil de usuario; OpenCode puede usar también `%APPDATA%/opencode/auth.json`, y Tokendial mira ahí también
 
-El dial muestra la **ventana mensual**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+Solo se usa la entrada `opencode-go`. Cualquier otra entrada de ese archivo es la clave de otro fabricante y nunca se reclama. Con la clave de Go, Tokendial pregunta al endpoint de uso de Go y muestra el **límite de 5 horas** en el dial, con los límites semanal y mensual en la tarjeta.
 
-## O deja que lo haga Tokendial
+## O deja que Tokendial lo haga
 
-Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+<Figure src={rows} alt="Tres filas de proveedor en los ajustes de Tokendial, cada una con un botón Instalar y los pasos Instalar, Iniciar sesión, Listo" caption="Una fila de proveedor mientras falta su CLI." ours="una captura de Tokendial 0.1.0 en Windows" locale="es" />
 
-Documentación oficial: [https://opencode.ai/docs/](https://opencode.ai/docs/).
+En los ajustes de Tokendial la fila de OpenCode muestra **Instalar → Iniciar sesión → Listo**. Pulsa **Instalar**, revisa el comando de WinGet o el script, pulsa **Ejecutar**: el instalador corre en una terminal visible, `opencode auth login` sigue en la misma ventana y el dial se conecta cuando la entrada de Go aparece en el archivo. Nada se ejecuta hasta que pulsas el botón.

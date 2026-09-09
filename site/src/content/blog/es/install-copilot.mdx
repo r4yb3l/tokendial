@@ -1,28 +1,44 @@
 ---
-title: "Cómo instalar GitHub Copilot y ponerlo en el dial"
-description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+title: "Instala GitHub Copilot CLI y ponlo en el dial"
+description: "El agente de terminal de Copilot funciona con todos los planes de Copilot. WinGet, Homebrew o el script de instalación, el inicio de sesión con /login y el archivo de token que Tokendial lee para mostrar lo que publica el endpoint de uso de GitHub para tu cuenta."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: copilot
+sources:
+  - title: "GitHub Docs: Installing GitHub Copilot CLI"
+    href: "https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli"
+  - title: "GitHub Docs: Plans for GitHub Copilot"
+    href: "https://docs.github.com/en/copilot/concepts/billing/individual-plans"
+  - title: "GitHub Docs: Usage-based billing for individuals"
+    href: "https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-individuals"
+  - title: "Ficha de proveedor de Tokendial: copilot.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/copilot.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-GitHub Copilot mide las peticiones premium al mes y, en el plan Free, también el chat y los completados. El Copilot CLI independiente es la forma más rápida de iniciar sesión desde una terminal.
-
-Tokendial lee el token de GitHub que Copilot guarda y consulta el punto de acceso que lee la barra de estado del editor.
+GitHub Copilot CLI es el agente de terminal de la familia Copilot, y la documentación de GitHub dice que "está disponible con todos los planes de Copilot", los gratuitos incluidos. Desde junio de 2026 los planes de pago miden el uso en créditos de IA de GitHub que se rellenan el día 1 de cada mes, como explica [Cómo te miden los planes](/es/blog/how-plans-meter-you); si recibes Copilot a través de una organización, su administrador tiene que dejar activada la política de Copilot CLI.
 
 ## Instalar en Windows
 
-Abre PowerShell y ejecuta el comando que publica GitHub:
+GitHub documenta WinGet como la vía en Windows, con PowerShell 6 o posterior como requisito:
 
 ```powershell
-winget install GitHub.Copilot --accept-source-agreements --accept-package-agreements
+winget install GitHub.Copilot
 ```
 
-`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
+El asistente de Tokendial añade los dos indicadores `--accept-…-agreements` para que el comando no se pare a preguntar. `npm install -g @github/copilot` (Node 22 o posterior) funciona en todas las plataformas.
 
 ## Instalar en macOS
 
-En Terminal, ejecuta el comando que publica GitHub:
+Homebrew:
+
+```bash
+brew install --cask copilot-cli
+```
+
+O el script de instalación de GitHub, que también cubre Linux:
 
 ```bash
 curl -fsSL https://gh.io/copilot-install | bash
@@ -30,25 +46,25 @@ curl -fsSL https://gh.io/copilot-install | bash
 
 ## Iniciar sesión
 
-Una vez instalado, inicia sesión con la propia herramienta:
+Arranca la CLI:
 
 ```bash
 copilot
 ```
 
-Cuando Copilot se abra en la terminal, escribe `/login` y sigue los pasos del navegador.
+Si no has iniciado sesión en GitHub, la documentación dice que "se te pedirá usar el comando `/login`"; síguelo y termina en el navegador. Un token de acceso personal de grano fino con el permiso *Copilot Requests*, exportado como `COPILOT_GITHUB_TOKEN`, es la alternativa documentada para máquinas sin navegador.
 
 ## Qué lee Tokendial
 
-Tras iniciar sesión, GitHub Copilot guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+Las herramientas de Copilot guardan su token OAuth de GitHub en un archivo con una entrada por app que inició sesión:
 
 - Windows: `%LOCALAPPDATA%/github-copilot/apps.json`
 - macOS: `~/.config/github-copilot/apps.json`
 
-El dial muestra las **peticiones premium**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+Tokendial lo lee en solo lectura, recurre al `hosts.json` antiguo y, como último recurso, al token de la propia CLI de GitHub, y pregunta al endpoint de uso que lee la barra de estado del editor. Un 403 de ese endpoint significa que la cuenta no tiene asiento de Copilot, y la fila lo dice. La tarjeta lista las ventanas que GitHub publica para tu plan, cada una con su reinicio.
 
-## O deja que lo haga Tokendial
+## O deja que Tokendial lo haga
 
-Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+<Figure src={rows} alt="Tres filas de proveedor en los ajustes de Tokendial, cada una con un botón Instalar y los pasos Instalar, Iniciar sesión, Listo" caption="La fila de GitHub Copilot mientras falta la CLI." ours="una captura de Tokendial 0.1.0 en Windows" locale="es" />
 
-Documentación oficial: [https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli).
+En los ajustes de Tokendial la fila de Copilot muestra **Instalar → Iniciar sesión → Listo**. Pulsa **Instalar**, revisa el comando de WinGet o el script, pulsa **Ejecutar**: corre en una terminal visible, la CLI se abre para `/login` en la misma ventana y el dial se conecta cuando aparece el archivo de token. Nada se ejecuta hasta que pulsas el botón.

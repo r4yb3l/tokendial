@@ -1,0 +1,50 @@
+---
+title: "Install Gemini CLI and put it on the dial"
+description: "Since June 2026 Google's Gemini CLI is for Workspace and Google Cloud accounts only; individuals are sent to Antigravity. If yours qualifies: npm or Homebrew, the Login with Google flow, and the OAuth file Tokendial reads to show your daily quota per model."
+date: 2026-09-09
+section: install
+provider: gemini
+sources:
+  - title: "Gemini CLI docs: Installation"
+    href: "https://geminicli.com/docs/get-started/installation/"
+  - title: "Gemini CLI docs: Authentication"
+    href: "https://geminicli.com/docs/get-started/authentication/"
+  - title: "Gemini CLI docs: Quotas and pricing"
+    href: "https://geminicli.com/docs/resources/quota-and-pricing/"
+  - title: "Tokendial provider spec: gemini.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/gemini.json"
+---
+
+Gemini CLI is Google's open-source terminal agent. Read the banner on its documentation first: "Unpaid tier and Google One users: Gemini CLI was replaced by Antigravity CLI on June 18th, 2026." Since then the CLI's metered sign-in is for **Gemini Code Assist Standard and Enterprise** accounts, that is Google Workspace and Google Cloud organisations, with 1,500 and 2,000 model requests per user per day respectively. If you use Gemini personally or on Google AI Pro or Ultra, install [Antigravity](/blog/install-antigravity) instead; Tokendial reads that separately.
+
+## Install on Windows and macOS
+
+Gemini CLI is a Node package, so the same commands work on both systems. With Node.js 20 or later:
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Or run it without installing: `npx @google/gemini-cli`. On macOS, `brew install gemini-cli` is documented as well.
+
+## Sign in
+
+Run the CLI once and choose **Login with Google**:
+
+```bash
+gemini
+```
+
+The browser opens for your Workspace account. Organisation accounts usually also need the Google Cloud project that carries the Code Assist licence; set it as `GOOGLE_CLOUD_PROJECT` in your environment if the CLI asks for it. Signing in with a Gemini API key or Vertex AI works for the CLI but publishes no quota, so those modes cannot be metered.
+
+## What Tokendial reads
+
+After the Google sign-in, the CLI stores an OAuth credential:
+
+- Windows and macOS: `~/.gemini/oauth_creds.json`, or under `GEMINI_CLI_HOME` when that variable is set
+
+Tokendial reads it read-only, checks in `~/.gemini/settings.json` that the sign-in type is Google (an API key means "nothing metered" on the row), and asks Google's Code Assist quota endpoint. Because Google rotates the token roughly hourly and Tokendial never refreshes it, the row shows "sign in" until the CLI is used again and rewrites the file. The card lists one window per model, Gemini 2.5 Pro, Flash and so on, each with its reset.
+
+## No Install button for this one
+
+Tokendial's settings show **Install → Sign in → Ready** for tools whose installers it can run for you. Gemini CLI needs Node.js first, which is outside what the assistant installs, so its row shows the sign-in guidance instead: install with npm as above, run `gemini`, and the dial connects when the credential file appears.

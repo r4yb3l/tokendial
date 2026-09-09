@@ -1,54 +1,66 @@
 ---
-title: "How to install OpenCode and put it on the dial"
-description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+title: "Install OpenCode and put it on the dial"
+description: "The open-source terminal agent and its $10 Go plan: the install script or WinGet, connecting the Go provider with /connect or opencode auth login, and the credential file Tokendial reads to show the three Go windows."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: opencode
+sources:
+  - title: "OpenCode docs: Intro and installation"
+    href: "https://opencode.ai/docs/"
+  - title: "OpenCode docs: CLI reference"
+    href: "https://opencode.ai/docs/cli/"
+  - title: "OpenCode docs: OpenCode Go"
+    href: "https://opencode.ai/docs/go/"
+  - title: "Tokendial provider spec: opencode.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/opencode.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-OpenCode is an open-source coding agent that can run on many providers. Tokendial follows the OpenCode Go plan, which has a monthly window.
-
-Tokendial reads the Go plan key OpenCode stores after you connect it and asks opencode.ai for the month's usage.
+OpenCode is an open-source coding agent for the terminal that works with more than 75 model providers. Tokendial meters one of them: **OpenCode Go**, the $10-a-month subscription to a curated list of open models, whose documentation states its limits in money, $12 of usage per five hours, $30 per week and $60 per month. Keys for other providers you add to OpenCode are never read.
 
 ## Install on Windows
 
-Open PowerShell and run the command OpenCode publishes:
+OpenCode's documentation recommends WSL on Windows for the best experience, and lists Chocolatey, Scoop and npm for native installs. The WinGet community manifest carries the same release:
 
 ```powershell
-winget install SST.opencode --accept-source-agreements --accept-package-agreements
+winget install SST.opencode
 ```
 
-`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
+`npm install -g opencode-ai`, `choco install opencode` and `scoop install opencode` are the documented alternatives.
 
 ## Install on macOS
 
-In Terminal, run the command OpenCode publishes:
+The install script:
 
 ```bash
 curl -fsSL https://opencode.ai/install | bash
 ```
 
+Or the project's Homebrew tap, which the documentation recommends over the core formula for faster updates: `brew install anomalyco/tap/opencode`.
+
 ## Sign in
 
-Once installed, sign in with the tool itself:
+Subscribe to Go at opencode.ai, copy your API key, then connect the provider. Inside the TUI:
 
-```bash
-opencode auth login
+```
+/connect
 ```
 
-OpenCode asks which provider to connect: choose OpenCode and follow the sign-in it offers.
+Select **OpenCode Go** and paste the key. The same step from the shell is `opencode auth login`, which is what Tokendial's assistant runs after installing. Run `/models` to see the models Go gives you.
 
 ## What Tokendial reads
 
-After the sign-in, OpenCode keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+OpenCode stores provider credentials in one file:
 
-- Windows: `~/.local/share/opencode/auth.json`
 - macOS: `~/.local/share/opencode/auth.json`
+- Windows: the same path under your user profile; OpenCode may also use `%APPDATA%/opencode/auth.json`, and Tokendial checks there too
 
-The dial shows the **monthly window**. Hover it to see the other windows and when each one resets.
+Only the `opencode-go` entry is used. Every other entry in that file is another vendor's key and is never claimed. With the Go key Tokendial asks the Go usage endpoint and shows the **5-hour limit** on the dial, with the weekly and monthly limits on the card.
 
 ## Or let Tokendial do it
 
-If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+<Figure src={rows} alt="Three provider rows in Tokendial's settings, each with an Install button and the steps Install, Sign in, Ready" caption="A provider row while its CLI is missing. Interface shown in Spanish." ours="a screenshot of Tokendial 0.1.0 on Windows" locale="en" />
 
-Official documentation: [https://opencode.ai/docs/](https://opencode.ai/docs/).
+In Tokendial's settings the OpenCode row shows **Install → Sign in → Ready**. Press **Install**, review the WinGet or script command, press **Run**: the installer runs in a visible terminal, `opencode auth login` follows in the same window, and the dial connects when the Go entry appears in the file. Nothing runs until you press the button.

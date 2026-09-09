@@ -1,52 +1,56 @@
 ---
-title: "Cómo instalar Cursor y ponerlo en el dial"
-description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+title: "Instala Cursor y ponlo en el dial"
+description: "Cursor es un editor de escritorio, así que no hay CLI con la que iniciar sesión: instala la app, inicia sesión dentro y Tokendial lee la sesión del propio editor para mostrar los dos pools de consumo de tu plan."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: cursor
+sources:
+  - title: "Documentación de Cursor: Quickstart e instalación"
+    href: "https://cursor.com/docs/get-started/installation"
+  - title: "Documentación de Cursor: Modelos y precios"
+    href: "https://cursor.com/docs/account/pricing"
+  - title: "Ficha de proveedor de Tokendial: cursor.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/cursor.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Cursor es un editor de escritorio, así que no hay CLI con el que iniciar sesión: instalas la app e inicias sesión dentro. Su consumo viene como uso incluido en tu plan, más uso bajo demanda si lo activas.
-
-Tokendial lee la sesión que el editor guarda en su base de datos local y pide a cursor.com el mismo resumen que muestra el editor.
+Cursor es un editor con IA más que una herramienta de terminal: una app de escritorio derivada de VS Code con un agente integrado. Su documentación da un solo camino, "descarga Cursor, abre la app e inicia sesión", con instaladores nativos para macOS 12 o posterior y Windows 10 o posterior. Pro, Pro Plus y Ultra incluyen dos pools de consumo, uno para los modelos propios de Cursor y otro para modelos de terceros a precio de API, y los dos se reinician con tu ciclo de facturación mensual.
 
 ## Instalar en Windows
 
-El camino más rápido es el Administrador de paquetes de Windows, que descarga el instalador oficial:
+La página de descargas en [cursor.com/downloads](https://cursor.com/downloads) tiene el `.exe`. Si prefieres el gestor de paquetes, el manifiesto comunitario de WinGet instala la misma versión:
 
 ```powershell
-winget install Anysphere.Cursor --accept-source-agreements --accept-package-agreements
+winget install Anysphere.Cursor
 ```
 
-`winget` viene con Windows 11. Si falta, instala primero «Instalador de aplicación» desde Microsoft Store.
-
-También puedes descargar el instalador desde [la página oficial](https://cursor.com/downloads).
+`winget` viene con Windows 11; en Windows 10 llega con "Instalador de aplicaciones" desde la Microsoft Store.
 
 ## Instalar en macOS
 
-Con Homebrew instalado:
+El `.dmg` de la misma página de descargas, o el cask de Homebrew:
 
 ```bash
 brew install --cask cursor
 ```
 
-También puedes descargar el instalador desde [la página oficial](https://cursor.com/downloads).
-
 ## Iniciar sesión
 
-Abre Cursor e inicia sesión con tu cuenta dentro de la app. No hace falta nada más.
+Abre Cursor e inicia sesión desde la pantalla de bienvenida con tu cuenta de Cursor. No hay ningún comando que ejecutar. Elige una carpeta y el agente está listo con Ctrl I (Cmd I en macOS).
 
 ## Qué lee Tokendial
 
-Tras iniciar sesión, Cursor guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+Cursor guarda la sesión del editor en su base de datos de estado global, y Tokendial reutiliza esa sesión contra cursor.com, en solo lectura:
 
 - Windows: `%APPDATA%/Cursor/User/globalStorage/state.vscdb`
 - macOS: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`
 
-El dial muestra el **uso incluido**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+La base de datos está en modo *write-ahead* mientras el editor corre, así que Tokendial la abre de manera que ve el token actual y no uno de un punto de control anterior. La tarjeta muestra el **consumo incluido** como titular, más el consumo de API y el gasto bajo demanda, cada uno con el reinicio de tu ciclo de facturación. No se escribe nada de vuelta y el token nunca se refresca ni se copia.
 
-## O deja que lo haga Tokendial
+## O deja que Tokendial lo haga
 
-Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+<Figure src={rows} alt="Tres filas de proveedor en los ajustes de Tokendial, cada una con un botón Instalar y los pasos Instalar, Iniciar sesión, Listo" caption="La fila de Cursor mientras falta la app." ours="una captura de Tokendial 0.1.0 en Windows" locale="es" />
 
-Documentación oficial: [https://cursor.com/docs/get-started/installation](https://cursor.com/docs/get-started/installation).
+Como Cursor es una app, el asistente cambia un poco respecto a las herramientas de terminal. En los ajustes de Tokendial la fila de Cursor muestra **Instalar → Iniciar sesión → Listo**; pulsa **Instalar**, revisa el comando de WinGet o Homebrew, pulsa **Ejecutar** y el instalador corre en una terminal visible. Después abre Cursor e inicia sesión dentro de la app: el dial se conecta en cuanto el editor tiene sesión. Nada se ejecuta hasta que pulsas el botón.

@@ -1,18 +1,24 @@
 ---
-title: "Cómo instalar Grok y ponerlo en el dial"
-description: "El comando oficial de instalación para Windows y macOS, el inicio de sesión, y qué lee Tokendial una vez dentro."
+title: "Instala Grok Build y ponlo en el dial"
+description: "El agente de terminal de xAI se instala con un script en Windows o macOS e inicia sesión con grok login. Qué guarda la CLI después, qué entradas se fía Tokendial y qué muestra el dial para Grok Build."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: grok
+sources:
+  - title: "Documentación de xAI: Grok CLI reference"
+    href: "https://docs.x.ai/build/cli/reference"
+  - title: "Ficha de proveedor de Tokendial: grok.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/grok.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Grok Build es el CLI de programación de xAI. Inicia sesión con tu cuenta de xAI y mide el consumo por ventana.
-
-Tokendial lee el token que el CLI guarda tras `grok login` y pide a xAI el consumo actual.
+Grok Build es el agente de código de xAI para la terminal. Su documentación de referencia es corta: "ejecutar `grok` sin argumentos arranca la TUI interactiva", los subcomandos cubren inicio de sesión, configuración y modelos, y el uso se mide por producto en tu cuenta de xAI. El dial muestra la ventana de créditos de Grok Build tal como la publica xAI.
 
 ## Instalar en Windows
 
-Abre PowerShell y ejecuta el comando que publica xAI:
+xAI sirve un instalador de PowerShell:
 
 ```powershell
 irm https://x.ai/cli/install.ps1 | iex
@@ -20,7 +26,7 @@ irm https://x.ai/cli/install.ps1 | iex
 
 ## Instalar en macOS
 
-En Terminal, ejecuta el comando que publica xAI:
+Y un instalador de shell para macOS y Linux:
 
 ```bash
 curl -fsSL https://x.ai/cli/install.sh | bash
@@ -28,25 +34,22 @@ curl -fsSL https://x.ai/cli/install.sh | bash
 
 ## Iniciar sesión
 
-Una vez instalado, inicia sesión con la propia herramienta:
-
 ```bash
 grok login
 ```
 
-Grok abre el navegador para iniciar sesión con tu cuenta de xAI.
+Se abre el navegador para tu cuenta de xAI. En una máquina sin navegador, `grok login --device-auth` usa el inicio de sesión por código de dispositivo; `grok logout` borra las credenciales guardadas.
 
 ## Qué lee Tokendial
 
-Tras iniciar sesión, Grok guarda una credencial en tu equipo. Tokendial la lee ahí, en solo lectura, y nunca la escribe, renueva ni copia:
+La CLI guarda sus credenciales en un archivo, igual en los dos sistemas:
 
-- Windows: `~/.grok/auth.json`
-- macOS: `~/.grok/auth.json`
+- Windows y macOS: `~/.grok/auth.json`
 
-El dial muestra la **ventana actual**. Pasa el cursor para ver las demás ventanas y cuándo se reinicia cada una.
+El archivo tiene una entrada por CLI que inició sesión, identificada por emisor y cliente. Tokendial solo se fía de las entradas emitidas por `https://auth.x.ai`; lo que apunte a otro emisor es un despliegue a medida y se deja en paz. El token se lee en solo lectura y nunca se refresca, escribe ni copia, y con él Tokendial pregunta a xAI el uso actual del producto Grok Build.
 
-## O deja que lo haga Tokendial
+## O deja que Tokendial lo haga
 
-Si prefieres no tocar una terminal, abre los ajustes de Tokendial: un proveedor cuya herramienta falta muestra **Instalar → Iniciar sesión → Listo**. Tokendial enseña este mismo comando, pulsas **Ejecutar**, se ejecuta en una terminal visible y el dial se conecta en cuanto aparece la sesión.
+<Figure src={rows} alt="Tres filas de proveedor en los ajustes de Tokendial, cada una con un botón Instalar y los pasos Instalar, Iniciar sesión, Listo" caption="Una fila de proveedor mientras falta su CLI." ours="una captura de Tokendial 0.1.0 en Windows" locale="es" />
 
-Documentación oficial: [https://docs.x.ai/build/cli/reference](https://docs.x.ai/build/cli/reference).
+En los ajustes de Tokendial la fila de Grok muestra **Instalar → Iniciar sesión → Listo** mientras falte la CLI. Pulsa **Instalar**, revisa el comando, pulsa **Ejecutar**: el instalador corre en una terminal visible, `grok login` sigue en la misma ventana y el dial se conecta cuando llega la credencial. Nada se ejecuta hasta que pulsas el botón.

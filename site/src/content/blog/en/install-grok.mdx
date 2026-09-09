@@ -1,18 +1,24 @@
 ---
-title: "How to install Grok and put it on the dial"
-description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+title: "Install Grok Build and put it on the dial"
+description: "xAI's terminal agent installs with one script on Windows or macOS and signs in with grok login. What the CLI stores afterwards, which entries Tokendial trusts, and what the dial shows for Grok Build."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: grok
+sources:
+  - title: "xAI docs: Grok CLI reference"
+    href: "https://docs.x.ai/build/cli/reference"
+  - title: "Tokendial provider spec: grok.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/grok.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Grok Build is xAI's coding CLI. It signs in with your xAI account and meters usage per window.
-
-Tokendial reads the token the CLI stores after `grok login` and asks xAI for the current usage.
+Grok Build is xAI's coding agent for the terminal. Its reference documentation is short: "running `grok` with no arguments starts the interactive TUI", subcommands cover sign-in, configuration and models, and usage is metered per product on your xAI account. The dial shows the Grok Build credits window as xAI publishes it.
 
 ## Install on Windows
 
-Open PowerShell and run the command xAI publishes:
+xAI serves a PowerShell installer:
 
 ```powershell
 irm https://x.ai/cli/install.ps1 | iex
@@ -20,7 +26,7 @@ irm https://x.ai/cli/install.ps1 | iex
 
 ## Install on macOS
 
-In Terminal, run the command xAI publishes:
+And a shell installer for macOS and Linux:
 
 ```bash
 curl -fsSL https://x.ai/cli/install.sh | bash
@@ -28,25 +34,22 @@ curl -fsSL https://x.ai/cli/install.sh | bash
 
 ## Sign in
 
-Once installed, sign in with the tool itself:
-
 ```bash
 grok login
 ```
 
-Grok opens the browser to sign in with your xAI account.
+The browser opens for your xAI account. On a machine without a browser, `grok login --device-auth` uses device-code sign-in; `grok logout` clears the cached credentials.
 
 ## What Tokendial reads
 
-After the sign-in, Grok keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+The CLI stores its credentials in one file on both systems:
 
-- Windows: `~/.grok/auth.json`
-- macOS: `~/.grok/auth.json`
+- Windows and macOS: `~/.grok/auth.json`
 
-The dial shows the **current window**. Hover it to see the other windows and when each one resets.
+The file holds one entry per signed-in CLI, keyed by issuer and client. Tokendial trusts only entries issued by `https://auth.x.ai`; anything pointing at another issuer is a custom deployment and is left alone. The token is read read-only and never refreshed, written or copied, and with it Tokendial asks xAI for the current usage of the Grok Build product.
 
 ## Or let Tokendial do it
 
-If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+<Figure src={rows} alt="Three provider rows in Tokendial's settings, each with an Install button and the steps Install, Sign in, Ready" caption="A provider row while its CLI is missing. Interface shown in Spanish." ours="a screenshot of Tokendial 0.1.0 on Windows" locale="en" />
 
-Official documentation: [https://docs.x.ai/build/cli/reference](https://docs.x.ai/build/cli/reference).
+In Tokendial's settings the Grok row shows **Install → Sign in → Ready** while the CLI is missing. Press **Install**, review the command, press **Run**: the installer runs in a visible terminal, `grok login` follows in the same window, and the dial connects when the credential lands. Nothing runs until you press the button.

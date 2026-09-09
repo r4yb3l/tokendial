@@ -1,52 +1,56 @@
 ---
-title: "How to install Antigravity and put it on the dial"
-description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+title: "Install Antigravity and put it on the dial"
+description: "Google's agent-first IDE and its CLI sign in with a Google account inside the app. WinGet or Homebrew, the in-app sign-in, and the credential store entry Tokendial reads to show your per-model quota and when it refreshes."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: antigravity
+sources:
+  - title: "Google Antigravity docs: Getting started"
+    href: "https://antigravity.google/docs/getting-started"
+  - title: "Google Antigravity docs: Plans"
+    href: "https://antigravity.google/docs/plans/"
+  - title: "Google Antigravity docs: Model quotas (/usage)"
+    href: "https://antigravity.google/docs/cli/commands/usage/"
+  - title: "Tokendial provider spec: antigravity.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/antigravity.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-Antigravity is Google's agent-first IDE. You sign in with a Google account inside the app, and quota comes as weekly buckets per model group.
-
-Tokendial reads the credential Antigravity keeps in the system credential store and asks the same quota endpoints the IDE asks.
+Antigravity is Google's agent-first development environment: a desktop IDE, extensions for VS Code, JetBrains, Zed and Xcode, and a CLI, all signed in with a Google account. Since 18 June 2026 it is also where Google sends individual Gemini CLI users. Quota comes as a baseline per plan: on Google AI Pro and Ultra it is "refreshed every five hours" alongside a weekly limit, on free accounts it refreshes weekly, and the documentation is candid that the limits "are correlated with the amount of work done by the agent".
 
 ## Install on Windows
 
-The quickest path is the Windows Package Manager, which downloads the official installer:
+Google's download page at [antigravity.google/download](https://antigravity.google/download) has installers for x64 and ARM64 on Windows 10 (64-bit) and later. The Windows Package Manager fetches the same installer:
 
 ```powershell
-winget install Google.Antigravity --accept-source-agreements --accept-package-agreements
+winget install Google.Antigravity
 ```
-
-`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
-
-You can also download the installer from [the official page](https://antigravity.google/download).
 
 ## Install on macOS
 
-With Homebrew installed:
+The download page has Apple Silicon and Intel builds for macOS 12 (Monterey) and later, or use the Homebrew cask:
 
 ```bash
 brew install --cask antigravity
 ```
 
-You can also download the installer from [the official page](https://antigravity.google/download).
-
 ## Sign in
 
-Open Antigravity and sign in to your account inside the app. Nothing else is needed.
+Open Antigravity and sign in with your Google account inside the app. Nothing else is needed; the CLI, if you install it, shares the sign-in. Inside the CLI, `/usage` (alias `/quota`) opens the panel with your remaining quota per model.
 
 ## What Tokendial reads
 
-After the sign-in, Antigravity keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+Antigravity keeps its token in the system credential store, and Tokendial reads it there, read-only:
 
-- Windows: Credential Manager entry `gemini:antigravity`
-- macOS: Keychain item `gemini`
+- Windows: the Credential Manager entry `gemini:antigravity`
+- macOS: the Keychain item `gemini`
 
-The dial shows the **weekly quota**. Hover it to see the other windows and when each one resets.
+With it Tokendial asks the same quota endpoints the IDE asks and reads the IDE's own language server for activity. The dial shows the weekly quota of the tightest model group; the card lists every group with its reset. Nothing is refreshed, written or copied.
 
 ## Or let Tokendial do it
 
-If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+<Figure src={rows} alt="Three provider rows in Tokendial's settings, each with an Install button and the steps Install, Sign in, Ready" caption="Antigravity's row while the app is missing. Interface shown in Spanish." ours="a screenshot of Tokendial 0.1.0 on Windows" locale="en" />
 
-Official documentation: [https://antigravity.google/docs/getting-started](https://antigravity.google/docs/getting-started).
+Antigravity is an app, so the assistant installs and then hands over to you. In Tokendial's settings the row shows **Install → Sign in → Ready**; press **Install**, review the WinGet or Homebrew command, press **Run**, and the installer runs in a visible terminal. Then open Antigravity and sign in inside the app; the dial connects as soon as the credential exists. Nothing runs until you press the button.

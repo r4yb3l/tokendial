@@ -1,28 +1,44 @@
 ---
-title: "How to install GitHub Copilot and put it on the dial"
-description: "The official install command for Windows and macOS, the sign-in, and what Tokendial reads once you are in."
+title: "Install GitHub Copilot CLI and put it on the dial"
+description: "Copilot's terminal agent works with every Copilot plan. WinGet, Homebrew or the install script, the /login sign-in, and the token file Tokendial reads to show what GitHub's usage endpoint publishes for your account."
 date: 2026-09-08
+updated: 2026-09-09
 section: install
 provider: copilot
+sources:
+  - title: "GitHub Docs: Installing GitHub Copilot CLI"
+    href: "https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli"
+  - title: "GitHub Docs: Plans for GitHub Copilot"
+    href: "https://docs.github.com/en/copilot/concepts/billing/individual-plans"
+  - title: "GitHub Docs: Usage-based billing for individuals"
+    href: "https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-individuals"
+  - title: "Tokendial provider spec: copilot.json"
+    href: "https://github.com/r4yb3l/tokendial/blob/main/docs/providers/copilot.json"
 ---
+import Figure from '../../../components/Figure.astro';
+import rows from '../../../assets/blog/install/settings-rows.png';
 
-GitHub Copilot meters premium requests per month, and on the Free plan also chat and completions. The standalone Copilot CLI is the quickest way to sign in from a terminal.
-
-Tokendial reads the GitHub token Copilot stores and asks the endpoint the editor's status bar reads.
+GitHub Copilot CLI is the terminal agent of the Copilot family, and GitHub's documentation says it "is available with all Copilot plans", the free ones included. Since June 2026 paid plans meter usage in GitHub AI Credits that refill on the first of each month, as [How the plans meter you](/blog/how-plans-meter-you) explains; if you get Copilot through an organisation, its administrator has to leave the Copilot CLI policy enabled.
 
 ## Install on Windows
 
-Open PowerShell and run the command GitHub publishes:
+GitHub documents WinGet as the Windows route, with PowerShell 6 or later as a prerequisite:
 
 ```powershell
-winget install GitHub.Copilot --accept-source-agreements --accept-package-agreements
+winget install GitHub.Copilot
 ```
 
-`winget` ships with Windows 11. If it is missing, install "App Installer" from the Microsoft Store first.
+Tokendial's assistant adds the two `--accept-…-agreements` flags so the command does not stop to ask. `npm install -g @github/copilot` (Node 22 or later) works on every platform.
 
 ## Install on macOS
 
-In Terminal, run the command GitHub publishes:
+Homebrew:
+
+```bash
+brew install --cask copilot-cli
+```
+
+Or GitHub's install script, which also covers Linux:
 
 ```bash
 curl -fsSL https://gh.io/copilot-install | bash
@@ -30,25 +46,25 @@ curl -fsSL https://gh.io/copilot-install | bash
 
 ## Sign in
 
-Once installed, sign in with the tool itself:
+Start the CLI:
 
 ```bash
 copilot
 ```
 
-When Copilot opens in the terminal, type `/login` and follow the browser steps.
+If you are not signed in to GitHub, the documentation says you will be "prompted to use the `/login` slash command"; follow it and finish in the browser. A fine-grained personal access token with the *Copilot Requests* permission, exported as `COPILOT_GITHUB_TOKEN`, is the documented alternative for machines without a browser.
 
 ## What Tokendial reads
 
-After the sign-in, GitHub Copilot keeps a credential on your computer. Tokendial reads it there, read-only, and never writes, refreshes or copies it:
+The Copilot tools keep their GitHub OAuth token in one file per signed-in app:
 
 - Windows: `%LOCALAPPDATA%/github-copilot/apps.json`
 - macOS: `~/.config/github-copilot/apps.json`
 
-The dial shows **premium requests**. Hover it to see the other windows and when each one resets.
+Tokendial reads it read-only, falls back to the older `hosts.json` and, as a last resort, to the GitHub CLI's own token, and asks the usage endpoint the editor status bar reads. A 403 from that endpoint means the account has no Copilot seat, and the row says so. The card lists the windows GitHub publishes for your plan, each with its reset.
 
 ## Or let Tokendial do it
 
-If you would rather not touch a terminal, open Tokendial's settings: a provider whose tool is missing shows **Install → Sign in → Ready**. Tokendial shows this same command, you press **Run**, it runs in a visible terminal, and the dial connects the moment the sign-in lands.
+<Figure src={rows} alt="Three provider rows in Tokendial's settings, each with an Install button and the steps Install, Sign in, Ready" caption="GitHub Copilot's row while the CLI is missing. Interface shown in Spanish." ours="a screenshot of Tokendial 0.1.0 on Windows" locale="en" />
 
-Official documentation: [https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli).
+In Tokendial's settings the Copilot row shows **Install → Sign in → Ready**. Press **Install**, review the WinGet or script command, press **Run**: it runs in a visible terminal, the CLI opens for `/login` in the same window, and the dial connects when the token file appears. Nothing runs until you press the button.
