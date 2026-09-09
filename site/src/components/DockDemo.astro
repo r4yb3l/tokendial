@@ -47,7 +47,7 @@ function trapezoid(width: number, height: number, radius: number): string {
   <div class="absolute start-1/2 top-0 -translate-x-1/2" style={`width:${compactWidth}px;height:34px`}>
     <svg class="absolute inset-0" width={compactWidth} height="34" viewBox={`0 0 ${compactWidth} 34`} aria-hidden="true">
       <path d={trapezoid(compactWidth, 34, 17)} fill="rgb(16 17 20 / 0.72)" />
-      <path d={trapezoid(compactWidth, 34, 17).replace(/^M 0 0 H \S+ /, `M ${compactWidth} 0 `)} fill="none" stroke="rgb(255 255 255 / 0.08)" />
+      <path d={trapezoid(compactWidth, 34, 17).replace(/^M 0 0 H \S+ /, `M ${compactWidth} 0 `).replace(/Z$/, 'L 0 0')} fill="none" stroke="rgb(255 255 255 / 0.08)" />
     </svg>
     <div class="absolute inset-x-[14px] inset-y-0 flex items-center justify-center gap-[10px]">
       {tiles.map((tile) => (
@@ -77,7 +77,7 @@ function trapezoid(width: number, height: number, radius: number): string {
   <div class="reveal absolute start-1/2 top-[34%] -translate-x-1/2" style={`width:${expandedWidth}px;height:132px`}>
     <svg class="absolute inset-0" width={expandedWidth} height="132" viewBox={`0 0 ${expandedWidth} 132`} aria-hidden="true">
       <path d={trapezoid(expandedWidth, 132, 20)} fill="rgb(16 17 20 / 0.92)" />
-      <path d={trapezoid(expandedWidth, 132, 20).replace(/^M 0 0 H \S+ /, `M ${expandedWidth} 0 `)} fill="none" stroke="rgb(255 255 255 / 0.08)" />
+      <path d={trapezoid(expandedWidth, 132, 20).replace(/^M 0 0 H \S+ /, `M ${expandedWidth} 0 `).replace(/Z$/, 'L 0 0')} fill="none" stroke="rgb(255 255 255 / 0.08)" />
     </svg>
     <div class="absolute inset-x-[34px] top-[10px] flex">
       {tiles.map((tile) => (
