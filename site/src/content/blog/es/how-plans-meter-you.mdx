@@ -1,0 +1,104 @@
+---
+title: "Cómo te miden los planes: sesiones, semanas y reinicios"
+description: "Nueve asistentes de código, tres clases de ventana. Qué cuenta cada fabricante de verdad, cuándo se rellena y por qué el límite que te para casi nunca es el que estabas mirando."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/how-plans-meter-you/windows-es.svg
+coverAlt: "Línea de tiempo de una ventana deslizante de cinco horas, una ventana semanal y un mes de calendario"
+sources:
+  - title: "Documentación de Claude Code: Manage costs effectively"
+    href: "https://code.claude.com/docs/en/costs"
+  - title: "Documentación de Claude Code: Errors, You've hit your session limit"
+    href: "https://code.claude.com/docs/en/errors#youve-hit-your-session-limit"
+  - title: "Ayuda de Anthropic: Using Claude Code with your Pro or Max plan"
+    href: "https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan"
+  - title: "Ayuda de OpenAI: Using Codex with your ChatGPT plan"
+    href: "https://help.openai.com/en/articles/11369540-codex-in-chatgpt-usage-limits"
+  - title: "GitHub Docs: Usage-based billing for individuals (GitHub AI Credits)"
+    href: "https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-individuals"
+  - title: "GitHub Docs: Plans for GitHub Copilot"
+    href: "https://docs.github.com/en/copilot/concepts/billing/individual-plans"
+  - title: "GitHub Docs: Copilot requests (facturación heredada por premium requests)"
+    href: "https://docs.github.com/en/copilot/concepts/billing/copilot-requests"
+  - title: "Documentación de Cursor: Modelos y precios"
+    href: "https://cursor.com/docs/account/pricing"
+  - title: "Documentación de Google Antigravity: Plans"
+    href: "https://antigravity.google/docs/plans/"
+  - title: "Documentación de Gemini CLI: Quotas and pricing"
+    href: "https://geminicli.com/docs/resources/quota-and-pricing/"
+  - title: "Documentación de Z.ai: GLM Coding Plan overview"
+    href: "https://docs.z.ai/devpack/overview"
+  - title: "Documentación de OpenCode: OpenCode Go"
+    href: "https://opencode.ai/docs/go/"
+---
+import Figure from '../../../components/Figure.astro';
+import windows from '../../../assets/blog/how-plans-meter-you/windows-es.svg';
+
+Todos los asistentes de código venden lo mismo, una suscripción mensual, y la miden de manera distinta. Unos cuentan tokens contra una ventana de cinco horas, otros contra una semana, otros se rellenan el día 1 del mes, y varios hacen dos o tres de esas cosas a la vez. Si alguna vez te has dado contra un muro con la barra de uso medio vacía, chocaste con la ventana que no estabas mirando. Este artículo expone, fabricante por fabricante y desde sus propias páginas de planes a septiembre de 2026, qué se cuenta y cuándo vuelve.
+
+## Tres formas de ventana
+
+<Figure src={windows} alt="Tres líneas de tiempo: una ventana deslizante de cinco horas que se abre con el primer mensaje y se reinicia cinco horas después, una barra semanal que se rellena a una hora fija cada semana, y una nota sobre los planes por mes de calendario" caption="Las tres formas de las que está hecho todo plan. Casi todos los fabricantes combinan dos, y la combinación es lo que pilla a la gente." ours="las páginas de planes de los fabricantes listadas en Fuentes" locale="es" plate />
+
+- **Ventana deslizante.** Se abre con tu primer mensaje y se cierra un tiempo fijo después, hagas lo que hagas entre medias. Cinco horas es el número del sector. Cuando termina, el siguiente mensaje abre una nueva.
+- **Ventana semanal.** Una asignación mayor que se reinicia a una hora fija cada semana, a veces contada desde el día en que te suscribiste. Las ventanas deslizantes viven dentro de ella: puedes tener la sesión llena y la semana vacía.
+- **Mes de calendario.** Una asignación que se rellena en una fecha, el día 1 o tu fecha de facturación, y que nunca se acumula.
+
+## Fabricante por fabricante
+
+| Asistente | Qué se cuenta | Ventanas | Notas |
+|---|---|---|---|
+| Claude Code | Uso en todos los modelos, más familias de modelo | Sesión deslizante de 5 h, semanal | Compartido con el chat de Claude y Cowork en el mismo plan |
+| Codex | Asignación compartida de ChatGPT | Ventanas de 5 horas y semanal | Incluido en todos los planes de ChatGPT; los límites varían por plan |
+| GitHub Copilot | Créditos de IA de GitHub (1 crédito = 0,01 $ de uso de modelo) | Mes de calendario, se reinicia el día 1 a las 00:00 UTC | Los completados siguen sin límite en los planes de pago |
+| Cursor | Dos pools: modelos de Cursor y otros modelos a precio de API | Tu ciclo de facturación mensual | Uso bajo demanda al mismo precio cuando se agota el pool |
+| Antigravity | Cuota por modelo, correlacionada con el trabajo del agente | Se refresca cada 5 h en AI Pro/Ultra, más semanal | Cuentas gratuitas: solo semanal |
+| Gemini CLI | Peticiones al modelo por día | Diaria | Desde el 18 de junio de 2026 solo para cuentas Code Assist Standard/Enterprise |
+| GLM Coding Plan | Créditos calculados de los tokens con multiplicadores por modelo | Créditos de 5 horas y semanales | 50 % de descuento fuera del horario laboral de Singapur |
+| OpenCode Go | Valor en dólares del uso | 5 h (12 $), semana (30 $), mes (60 $) | El número de peticiones depende del modelo que elijas |
+| Grok Build | Créditos por producto | Por la ventana que publica xAI | Se lee del endpoint de uso de la propia CLI |
+
+Los detalles detrás de la tabla importan, así que aquí van.
+
+### Claude Code: dos ventanas que se llenan a la vez
+
+Los planes de suscripción de Anthropic incluyen lo que la documentación de Claude Code llama "una asignación de uso deslizante". Cuando se agota recibes uno de cuatro mensajes: límite de sesión, límite semanal, límite de Opus o límite de Sonnet, cada uno con su hora de reinicio. Los límites de sesión y semanal son compartidos por todos los modelos, así que cambiar de modelo no ayuda; los de Opus y Sonnet se aplican a una familia, así que cambiar a otra familia sí. La documentación añade la frase que explica a casi todos los usuarios sorprendidos: "el uso cuenta contra las asignaciones de sesión y semanal al mismo tiempo. Una sola ráfaga de actividad intensa puede agotar la asignación semanal antes de que se reinicie la ventana de sesión."
+
+En los planes Team y Enterprise la asignación es por asiento y "se reinicia en una ventana deslizante de cinco horas y una ventana semanal", compartida con el chat de Claude y Cowork. En Pro y Max, el centro de ayuda de Anthropic dice que los mismos límites cubren Claude y Claude Code juntos, así que una charla larga en el navegador gasta la misma ventana que una sesión larga de agente en la terminal. `/usage` en Claude Code muestra cada ventana y su reinicio.
+
+### Codex: cinco horas y una semana, compartidas con ChatGPT
+
+Codex viene con todos los planes de ChatGPT, Free y Go incluidos, y "los límites de uso varían por plan". El artículo de ayuda de OpenAI habla de "tus ventanas de uso de Codex de 5 horas y semanal", y señala que la asignación se comparte con ChatGPT Work, ChatGPT para Excel y los Workspace Agents donde tu plan los tenga. Lo rápido que se vacía "depende del modelo, de dónde corre la tarea, de su complejidad, del contexto, del razonamiento, de la velocidad y de las herramientas", que es la manera de un fabricante de decir lo que decía el artículo sobre agentes: una tarea larga de agente son muchas llamadas al modelo. `/status` en la CLI te dice dónde estás.
+
+### GitHub Copilot: créditos, no peticiones
+
+Copilot cambió su medidor el 1 de junio de 2026. Los planes de pago incluyen ahora una asignación mensual de **créditos de IA de GitHub**, donde un crédito es un centavo de dólar de uso de modelo, tarifado por el modelo y los tokens que procesó. Pro, a 10 $, incluye 1.000 créditos base más 500 "flex"; Pro+, a 39 $, 7.000 en total; Max, a 100 $, 20.000. La asignación "se reinicia al total mensual a las 00:00:00 UTC del primer día de cada mes de calendario", sea cual sea tu fecha de facturación, y los créditos no usados se pierden. Los completados en línea siguen sin límite en los planes de pago. Algunos suscriptores anuales se quedaron en el sistema anterior de premium requests, 300 o 1.500 al mes, que GitHub ahora etiqueta como heredado.
+
+### Cursor: dos pools en tu ciclo de facturación
+
+Cursor da a Pro, Pro Plus y Ultra "dos pools de consumo independientes, cada uno se reinicia con tu ciclo de facturación mensual": uno grande para los modelos propios de Cursor y otro para modelos de terceros, cobrado al precio de API del modelo. Como esos precios difieren en un factor de diez o más entre modelos, tu elección de modelo decide a qué velocidad se vacía el pool. Agotado el pool, puedes activar el uso bajo demanda al mismo precio o subir de nivel.
+
+### Antigravity: una cuota que sigue el trabajo del agente
+
+Antigravity, de Google, documenta una cuota base por plan. En Google AI Ultra "se refresca cada cinco horas" con los límites semanales más altos; en AI Pro se refresca cada cinco horas "hasta alcanzar el límite semanal"; las cuentas gratuitas tienen solo cuota semanal. La página reconoce que los límites "están correlacionados con la cantidad de trabajo que hace el agente", así que las tareas sencillas compran más prompts que las enrevesadas. El panel `/usage` de la CLI lista la cuota por modelo.
+
+### Gemini CLI: peticiones diarias, y ya solo para organizaciones
+
+Gemini CLI cuenta peticiones al modelo por usuario y día: 1.500 en Code Assist Standard, 2.000 en Enterprise y Workspace AI Ultra. El 18 de junio de 2026 Google pasó a las cuentas individuales y de Google One a Antigravity CLI, así que este medidor se aplica ya solo a cuentas de Workspace y Google Cloud.
+
+### GLM Coding Plan: créditos con multiplicadores
+
+Los planes de Z.ai llevan un presupuesto de créditos de cinco horas y otro semanal: Lite 2.000 y 10.000, Pro 12.000 y 60.000, Max 28.000 y 140.000. Los créditos se calculan de los tokens con un multiplicador por modelo y por clase de token (entrada, entrada cacheada, salida), el presupuesto de cinco horas se rellena cinco horas después del consumo, el semanal cada siete días desde la suscripción, y usarlo fuera de la tarde laboral de Singapur cuesta la mitad.
+
+### OpenCode Go: límites en dólares
+
+El plan Go de OpenCode, de 10 $, expresa sus límites en dinero: 12 $ de uso por cinco horas, 30 $ por semana, 60 $ al mes. Como los modelos detrás tienen precios muy distintos, los mismos 12 $ compran unas 170 peticiones en Grok 4.6 y 30.000 en MiMo-V2.5 según la estimación del propio fabricante.
+
+## Qué significa todo esto al teclado
+
+- **Sabe cuál es la ventana corta.** En Claude, Codex, GLM, Go y Antigravity la ventana de cinco horas es la que interrumpe una tarde; la semanal es la que convierte un jueves en lento. En Copilot y Cursor solo hay el mes, así que el riesgo es una última semana seca.
+- **La hora de reinicio vale más que el porcentaje.** Una ventana al 80 % que se reinicia en veinte minutos no es un problema. Una semanal al 80 % un martes, sí.
+- **El modelo es una palanca en todas partes.** Todos los fabricantes de arriba cobran más por su modelo tope, o explícitamente (Cursor, Copilot, GLM, Go) o por el tamaño de la cuota (los límites por modelo de Claude, la cuota por modelo de Antigravity).
+- **El medidor del fabricante es la verdad.** Cada herramienta tiene un comando o un panel que muestra sus ventanas y reinicios. Tokendial lee esos mismos endpoints y pone la ventana principal de cada proveedor en un dial, para que veas las tres formas una al lado de otra sin abrir cuatro terminales, pero los números son del fabricante.
+
+Los planes cambian a menudo. Cada cifra de aquí sale de la página enlazada tal como se leía el 8 de septiembre de 2026; si tu panel dice otra cosa, gana el panel.

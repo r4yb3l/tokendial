@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="430" viewBox="0 0 820 430" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+<text x="20" y="30" font-size="15" font-weight="600" fill="#0f172a">Three kinds of window: rolling, weekly and calendar</text>
+<text x="20" y="60" font-size="12.5" font-weight="600" fill="#334155">Rolling five-hour window (Claude, Codex, GLM, OpenCode Go, Antigravity on AI Pro/Ultra)</text>
+<line x1="60" y1="140" x2="790" y2="140" stroke="#94a3b8"/>
+<line x1="60.0" y1="136" x2="60.0" y2="144" stroke="#94a3b8"/>
+<text x="60.0" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">9:00</text>
+<line x1="112.14285714285714" y1="136" x2="112.14285714285714" y2="144" stroke="#94a3b8"/>
+<line x1="164.28571428571428" y1="136" x2="164.28571428571428" y2="144" stroke="#94a3b8"/>
+<text x="164.28571428571428" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">11:00</text>
+<line x1="216.42857142857144" y1="136" x2="216.42857142857144" y2="144" stroke="#94a3b8"/>
+<line x1="268.57142857142856" y1="136" x2="268.57142857142856" y2="144" stroke="#94a3b8"/>
+<text x="268.57142857142856" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">13:00</text>
+<line x1="320.7142857142857" y1="136" x2="320.7142857142857" y2="144" stroke="#94a3b8"/>
+<line x1="372.8571428571429" y1="136" x2="372.8571428571429" y2="144" stroke="#94a3b8"/>
+<text x="372.8571428571429" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">15:00</text>
+<line x1="425.0" y1="136" x2="425.0" y2="144" stroke="#94a3b8"/>
+<line x1="477.14285714285717" y1="136" x2="477.14285714285717" y2="144" stroke="#94a3b8"/>
+<text x="477.14285714285717" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">17:00</text>
+<line x1="529.2857142857143" y1="136" x2="529.2857142857143" y2="144" stroke="#94a3b8"/>
+<line x1="581.4285714285714" y1="136" x2="581.4285714285714" y2="144" stroke="#94a3b8"/>
+<text x="581.4285714285714" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">19:00</text>
+<line x1="633.5714285714286" y1="136" x2="633.5714285714286" y2="144" stroke="#94a3b8"/>
+<line x1="685.7142857142858" y1="136" x2="685.7142857142858" y2="144" stroke="#94a3b8"/>
+<text x="685.7142857142858" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">21:00</text>
+<line x1="737.8571428571429" y1="136" x2="737.8571428571429" y2="144" stroke="#94a3b8"/>
+<line x1="790.0" y1="136" x2="790.0" y2="144" stroke="#94a3b8"/>
+<text x="790.0" y="158" font-size="10.5" text-anchor="middle" fill="#64748b">23:00</text>
+<rect x="77.20714285714286" y="110" width="260.7142857142857" height="24" rx="6" fill="#dbeafe" stroke="#60a5fa"/>
+<text x="207.56428571428572" y="126" font-size="11.5" text-anchor="middle" fill="#0f172a">5 h from your first message</text>
+<rect x="398.92857142857144" y="110" width="260.7142857142858" height="24" rx="6" fill="#dcfce7" stroke="#4ade80"/>
+<text x="529.2857142857143" y="126" font-size="11.5" text-anchor="middle" fill="#0f172a">a new window opens with the next message</text>
+<circle cx="77.20714285714286" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="106.92857142857143" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="133.0" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="221.64285714285717" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="242.5" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="252.92857142857144" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="398.92857142857144" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="471.92857142857144" cy="100" r="4" fill="#3b82f6"/>
+<circle cx="560.5714285714286" cy="100" r="4" fill="#3b82f6"/>
+<text x="77.20714285714286" y="84" font-size="10.5" fill="#1d4ed8">9:20 first message</text>
+<text x="337.9214285714286" y="84" font-size="10.5" text-anchor="end" fill="#64748b">resets 14:20</text>
+<text x="398.92857142857144" y="84" font-size="10.5" fill="#15803d">15:30 next message</text>
+<text x="20" y="238" font-size="12.5" font-weight="600" fill="#334155">Weekly window (Claude, Codex, GLM, OpenCode Go, Antigravity)</text>
+<line x1="60" y1="290" x2="790" y2="290" stroke="#94a3b8"/>
+<line x1="60.0" y1="286" x2="60.0" y2="294" stroke="#94a3b8"/>
+<text x="112.14285714285714" y="308" font-size="10.5" text-anchor="middle" fill="#64748b">Mon</text>
+<line x1="164.28571428571428" y1="286" x2="164.28571428571428" y2="294" stroke="#94a3b8"/>
+<text x="216.42857142857142" y="308" font-size="10.5" text-anchor="middle" fill="#64748b">Tue</text>
+<line x1="268.57142857142856" y1="286" x2="268.57142857142856" y2="294" stroke="#94a3b8"/>
+<text x="320.7142857142857" y="308" font-size="10.5" text-anchor="middle" fill="#64748b">Wed</text>
+<line x1="372.8571428571429" y1="286" x2="372.8571428571429" y2="294" stroke="#94a3b8"/>
+<text x="425.00000000000006" y="308" font-size="10.5" text-anchor="middle" fill="#64748b">Thu</text>
+<line x1="477.14285714285717" y1="286" x2="477.14285714285717" y2="294" stroke="#94a3b8"/>
+<text x="529.2857142857143" y="308" font-size="10.5" text-anchor="middle" fill="#64748b">Fri</text>
+<line x1="581.4285714285714" y1="286" x2="581.4285714285714" y2="294" stroke="#94a3b8"/>
+<text x="633.5714285714286" y="308" font-size="10.5" text-anchor="middle" fill="#64748b">Sat</text>
+<line x1="685.7142857142858" y1="286" x2="685.7142857142858" y2="294" stroke="#94a3b8"/>
+<text x="737.8571428571429" y="308" font-size="10.5" text-anchor="middle" fill="#64748b">Sun</text>
+<line x1="790.0" y1="286" x2="790.0" y2="294" stroke="#94a3b8"/>
+<rect x="60" y="260" width="730" height="24" rx="6" fill="#fef3c7" stroke="#fbbf24"/>
+<rect x="60" y="260" width="525.6" height="24" rx="6" fill="#fde68a"/>
+<text x="322.8" y="276" font-size="11.5" text-anchor="middle" fill="#0f172a">72 % used by Friday</text>
+<line x1="60" y1="252" x2="60" y2="284" stroke="#b45309" stroke-width="1.5"/>
+<text x="64" y="248" font-size="10.5" fill="#b45309">resets at a fixed time each week</text>
+<text x="790" y="248" font-size="10.5" text-anchor="end" fill="#b45309">next reset</text>
+<text x="20" y="360" font-size="12.5" font-weight="600" fill="#334155">Calendar month (GitHub Copilot AI credits, Cursor, OpenCode Go monthly cap)</text>
+<text x="20" y="378" font-size="11.5" fill="#475569">Refills on the first of the month at 00:00 UTC (Copilot) or on your billing date (Cursor); nothing carries over.</text>
+<text x="20" y="404" font-size="11" fill="#64748b">Diagram: Tokendial, built from the vendors' own plan pages read on 8 September 2026 (see Sources). Times are an example day.</text>
+</svg>

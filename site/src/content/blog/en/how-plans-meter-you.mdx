@@ -1,0 +1,104 @@
+---
+title: "How the plans meter you: sessions, weeks and resets"
+description: "Nine coding assistants, three kinds of window. What each vendor actually counts, when it refills, and why the limit that stops you is rarely the one you were watching."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/how-plans-meter-you/windows-en.svg
+coverAlt: "Timeline of a rolling five-hour window, a weekly window and a calendar month"
+sources:
+  - title: "Claude Code docs: Manage costs effectively"
+    href: "https://code.claude.com/docs/en/costs"
+  - title: "Claude Code docs: Errors, You've hit your session limit"
+    href: "https://code.claude.com/docs/en/errors#youve-hit-your-session-limit"
+  - title: "Anthropic Help: Using Claude Code with your Pro or Max plan"
+    href: "https://support.anthropic.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan"
+  - title: "OpenAI Help: Using Codex with your ChatGPT plan"
+    href: "https://help.openai.com/en/articles/11369540-codex-in-chatgpt-usage-limits"
+  - title: "GitHub Docs: Usage-based billing for individuals (GitHub AI Credits)"
+    href: "https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-individuals"
+  - title: "GitHub Docs: Plans for GitHub Copilot"
+    href: "https://docs.github.com/en/copilot/concepts/billing/individual-plans"
+  - title: "GitHub Docs: Copilot requests (legacy premium-request billing)"
+    href: "https://docs.github.com/en/copilot/concepts/billing/copilot-requests"
+  - title: "Cursor docs: Models and pricing"
+    href: "https://cursor.com/docs/account/pricing"
+  - title: "Google Antigravity docs: Plans"
+    href: "https://antigravity.google/docs/plans/"
+  - title: "Gemini CLI docs: Quotas and pricing"
+    href: "https://geminicli.com/docs/resources/quota-and-pricing/"
+  - title: "Z.ai docs: GLM Coding Plan overview"
+    href: "https://docs.z.ai/devpack/overview"
+  - title: "OpenCode docs: OpenCode Go"
+    href: "https://opencode.ai/docs/go/"
+---
+import Figure from '../../../components/Figure.astro';
+import windows from '../../../assets/blog/how-plans-meter-you/windows-en.svg';
+
+Every coding assistant sells the same thing, a monthly subscription, and meters it differently. Some count tokens against a five-hour window, some against a week, some refill on the first of the month, and several do two or three of those at once. If you have ever hit a wall with the usage bar looking half empty, you ran into the window you were not watching. This article lays out, vendor by vendor and from their own plan pages as of September 2026, what is counted and when it comes back.
+
+## Three shapes of window
+
+<Figure src={windows} alt="Three timelines: a rolling five-hour window that opens with the first message and resets five hours later, a weekly bar that refills at a fixed time each week, and a note on calendar-month plans" caption="The three shapes every plan is built from. Most vendors combine two of them, and the combination is what catches people out." ours="the vendors' plan pages listed under Sources" locale="en" plate />
+
+- **Rolling window.** Opens with your first message and closes a fixed time later, whatever you did in between. Five hours is the industry's number. When it ends, the next message opens a fresh one.
+- **Weekly window.** A larger allowance that resets at a fixed time each week, sometimes counted from the day you subscribed. Rolling windows live inside it: you can have a full session window and an empty week.
+- **Calendar month.** An allowance that refills on a date, either the first of the month or your billing date, and never carries over.
+
+## Vendor by vendor
+
+| Assistant | What is counted | Windows | Notes |
+|---|---|---|---|
+| Claude Code | Usage across all models, plus per-model families | Rolling 5 h session, weekly | Shared with Claude chat and Cowork on the same plan |
+| Codex | Shared ChatGPT allowance | 5-hour and weekly Codex windows | Included on every ChatGPT plan; limits vary by plan |
+| GitHub Copilot | GitHub AI Credits (1 credit = $0.01 of model usage) | Calendar month, resets the 1st at 00:00 UTC | Completions stay unlimited on paid plans |
+| Cursor | Two pools: Cursor models and other models at API price | Your monthly billing cycle | On-demand usage beyond the pool at the same rates |
+| Antigravity | Per-model quota, correlated with agent work | Refreshed every 5 h on AI Pro/Ultra, plus weekly | Free accounts: weekly only |
+| Gemini CLI | Model requests per day | Daily | Since 18 June 2026 only for Code Assist Standard/Enterprise accounts |
+| GLM Coding Plan | Credits computed from tokens with per-model multipliers | 5-hour and weekly credits | 50 % off outside Singapore business hours |
+| OpenCode Go | Dollar value of usage | 5 h ($12), weekly ($30), monthly ($60) | Request counts depend on the model you pick |
+| Grok Build | Credits per product | Per window published by xAI | Read from the CLI's own usage endpoint |
+
+The details behind the table matter, so here they are.
+
+### Claude Code: two windows that fill at the same time
+
+Anthropic's subscription plans include what the Claude Code documentation calls "a rolling usage allowance". When it runs out you get one of four messages: session limit, weekly limit, Opus limit or Sonnet limit, each with its reset time. The session and weekly limits are shared across all models, so switching models does not help; the Opus and Sonnet limits apply to one model family, so switching to another family does. The documentation adds the line that explains most surprised users: "usage counts against the session and weekly allowances at the same time. A single burst of heavy activity can exhaust the weekly allowance before the session window resets."
+
+On Team and Enterprise plans the allowance is per seat and "resets on a rolling five-hour window and a weekly window", shared with Claude chat and Cowork. On Pro and Max, Anthropic's help centre says the same limits cover Claude and Claude Code together, so a long chat in the browser costs the same window as a long agent session in the terminal. `/usage` in Claude Code shows every window and its reset.
+
+### Codex: five hours and a week, shared with ChatGPT
+
+Codex comes with every ChatGPT plan, Free and Go included, and "usage limits vary by plan". OpenAI's help article describes "your 5-hour and weekly Codex usage windows", and notes that the allowance is shared with ChatGPT Work, ChatGPT for Excel and Workspace Agents where those exist on your plan. How fast it drains "depends on the model, where the task runs, task complexity, context, reasoning, speed, and tools", which is a vendor's way of saying what the article on agents said: a long agent task is many model calls. `/status` in the CLI shows where you stand.
+
+### GitHub Copilot: credits, not requests
+
+Copilot changed its meter on 1 June 2026. Paid plans now include a monthly allowance of **GitHub AI Credits**, where one credit is one US cent of model usage, priced by the model and the tokens it processed. Pro at $10 includes 1,000 base credits plus a 500 "flex" allotment, Pro+ at $39 includes 7,000 in total, Max at $100 includes 20,000. The allowance "resets to the full monthly amount at 00:00:00 UTC on the first day of each calendar month", regardless of your billing date, and unused credits are forfeited. Inline completions remain unlimited on paid plans. Some annual subscribers stayed on the older premium-request system, 300 or 1,500 requests a month, which GitHub now labels legacy.
+
+### Cursor: two pools on your billing cycle
+
+Cursor gives Pro, Pro Plus and Ultra "two usage pools, each of which resets with your monthly billing cycle": a large one for Cursor's own models and a second one for third-party models, charged at the model's API price. Because those prices differ by a factor of ten or more between models, your model choice decides how quickly the pool empties. Past the pool you can enable on-demand usage at the same rates or move up a tier.
+
+### Antigravity: quota that tracks the agent's work
+
+Google's Antigravity documents a baseline quota per plan. On Google AI Ultra it is "refreshed every five hours" with the highest weekly limits; on AI Pro it is refreshed every five hours "until weekly limit reached"; free accounts get a weekly quota only. The page is candid that the limits "are correlated with the amount of work done by the agent", so straightforward tasks buy more prompts than sprawling ones. The `/usage` panel in the CLI lists the quota per model.
+
+### Gemini CLI: daily requests, and only for organisations now
+
+Gemini CLI counts model requests per user per day: 1,500 on Code Assist Standard, 2,000 on Enterprise and Workspace AI Ultra. On 18 June 2026 Google moved individual and Google One users to Antigravity CLI, so this meter now applies to Workspace and Google Cloud accounts only.
+
+### GLM Coding Plan: credits with multipliers
+
+Z.ai's plans carry both a five-hour and a weekly credit budget: Lite 2,000 and 10,000, Pro 12,000 and 60,000, Max 28,000 and 140,000. Credits are computed from tokens with a multiplier per model and per token kind (input, cached input, output), the five-hour budget refills five hours after consumption, the weekly one every seven days from subscription, and usage outside Singapore's weekday afternoon costs half.
+
+### OpenCode Go: limits in dollars
+
+OpenCode's $10 Go plan states its limits as money: $12 of usage per five hours, $30 per week, $60 per month. Since the models behind it have very different prices, the same $12 buys around 170 requests on Grok 4.6 and 30,000 on MiMo-V2.5 by the vendor's own estimate.
+
+## What all of this means at the keyboard
+
+- **Know which window is the short one.** On Claude, Codex, GLM, Go and Antigravity the five-hour window is what interrupts an afternoon; the weekly one is what turns a Thursday slow. On Copilot and Cursor there is only the month, so the risk is a dry final week.
+- **Reset time beats percentage.** A window at 80 % that resets in twenty minutes is not a problem. A weekly window at 80 % on a Tuesday is.
+- **Model choice is a lever everywhere.** Every vendor above charges more for its top model, either explicitly (Cursor, Copilot, GLM, Go) or through the size of the quota (Claude's per-model limits, Antigravity's per-model quota).
+- **The vendor's meter is the truth.** Each tool has a command or a panel that shows its windows and resets. Tokendial reads those same endpoints and puts every provider's headline window on one dial, so you can see the three shapes side by side without opening four terminals, but the numbers are the vendor's.
+
+Plans change often. Every figure here comes from the linked page as it read on 8 September 2026; if your dashboard disagrees, the dashboard wins.
