@@ -80,8 +80,10 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 ## 9 — Website (tokendial.app)
 - [x] Astro + Tailwind v4 static site in `site/`, six languages with RTL, dock drawn from the app tokens and marks, OG image, sitemap, security headers
 - [x] Copy aimed at vibecoders (why / how / providers / alerts / dock / install assistant / security)
-- [x] Blog for vibecoders in `site/src/content/blog` (en + es): three save-tokens articles and eight install guides generated from the provider specs; sections, RSS, related posts, landing block
-- [ ] Editorial calendar: eight to ten more articles before announcing the community; tools and news sections still empty
+- [x] Blog for vibecoders in `site/src/content/blog` (en + es): sections (basics, save tokens, tools, design, install, news), credited figures, per-post covers and Sources lists; RSS, related posts, landing block
+- [x] 2026-09-08/09 refinement: five basics articles (LLM, tokens and context window, MCP, coding agents, how plans meter you) with Commons/MIT-licensed figures or own diagrams; the three save-tokens articles rewritten with tiktoken measurements; nine install guides de-templated with vendor-checked commands (Gemini CLI added); tools (MCP servers measured locally, token-saving tools) and design (Claude as designer via Pencil/Figma MCP)
+- [ ] Blog follow-ups: news section still empty; GitHub source links in Sources 404 until the repo is public; the figure in the install guides is a Spanish-interface capture, retake in English when the app can be driven without touching the desktop
+- [ ] Provider specs to re-check against what the blog research found: Copilot moved to GitHub AI Credits on 2026-06-01 (spec still models premium requests); OpenCode Windows credential path unverified (`%APPDATA%/opencode/auth.json` fallback)
 - [ ] Cloudflare Pages project connected to the repo, `tokendial.app` domain attached (user)
 - [ ] Download links point at GitHub Releases; publish a first release and make the repo public before launch
 
