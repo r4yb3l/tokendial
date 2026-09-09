@@ -43,3 +43,13 @@ Related: the hover card looked translucent for a different reason worth remember
 `panel.animator().alphaValue = 1` and a concurrent animation group from `layout` interrupted it, freezing
 the window near 0.5. An implicit alpha animation that matters needs a completion handler that sets the
 final value.
+
+## An audit of string keys does not prove the strings are translated (2026-09-09)
+Told the translations were "bastante rotas", I audited every `Strings.t` call against the catalogue, got
+zero missing keys, and reported the i18n healthy. Both real faults were invisible to that audit: whole
+areas never called `Strings.t` at all (the alerts composed English by hand), and the menu bar item resolved
+its titles in its initialiser, which runs as a stored property of the app delegate — before
+`applicationDidFinishLaunching` loads the catalogue — so it showed `tray.show`, `tray.refresh` verbatim.
+Rule: audit from the user's side, not the code's. Run the app in a non-English language and read every
+surface, and check *when* each string is resolved, not only whether its key exists. A key that resolves
+before the catalogue loads is as broken as a missing one.
