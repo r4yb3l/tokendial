@@ -162,7 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshModel() {
-        let model = PanelModel.build(readings: store.readings, summaries: store.summaries, activities: hub.activities, inFlight: store.inFlight, muted: muted)
+        let model = PanelModel.build(readings: store.readings, summaries: store.summaries, activities: hub.activities, inFlight: store.inFlight, muted: muted, forecasts: store.forecasts)
         panel.update(model)
         let worst = model.tiles.filter { $0.hasReading }.compactMap { $0.fraction }.max()
         let lines = model.tiles.filter { $0.hasReading }.map { "\($0.name) \(Int(($0.fraction ?? 0) * 100).description)%" }

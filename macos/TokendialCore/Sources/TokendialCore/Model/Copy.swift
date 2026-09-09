@@ -38,6 +38,15 @@ public enum Copy {
         return Strings.t("copy.resetAt", ["time": time])
     }
 
+    /// Where the pace leads: the hour it empties, with the weekday in front when that is another day.
+    public static func forecast(_ forecast: Forecast, now: Date, zone: TimeZone = .current) -> String {
+        guard forecast.kind == .runsOut, let at = forecast.runsOutAt else { return Strings.t("copy.forecastLasts") }
+        let time = calendarDaysBetween(now, at, zone) >= 1
+            ? "\(formatter("EEE", zone).string(from: at)) \(shortTime(at, zone))"
+            : shortTime(at, zone)
+        return Strings.t("copy.forecastRunsOut", ["time": time])
+    }
+
     /// "just now" under 45 s, "6 min", "1 hr", "1 hr 5 min".
     public static func elapsed(_ since: Date, now: Date) -> String {
         let seconds = max(0, now.timeIntervalSince(since))

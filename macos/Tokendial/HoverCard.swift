@@ -35,6 +35,10 @@ enum HoverCard {
                 add(bar, to: body, top: 5)
             }
             add(Label.make(window.summary(tile.reading.fidelity), size: 11, color: Theme.textSecondary), to: body, top: 4)
+            if let forecast = tile.forecast, window.id == tile.headline?.id {
+                let ink = forecast.kind == .runsOut ? Theme.watch : Theme.textSecondary
+                add(wrap(Label.make(Copy.forecast(forecast, now: now), size: 11, color: ink)), to: body, top: 2)
+            }
         }
 
         if let block = tile.reading.block {

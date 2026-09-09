@@ -10,6 +10,7 @@ struct Tile {
     let account: ProviderAccount?
     let activity: Activity?
     let inFlight: Bool
+    let forecast: Forecast?
 
     var headline: UsageWindow? { reading.headline }
     var fraction: Double? { reading.headlineFraction }
@@ -54,9 +55,9 @@ struct PanelModel {
 
     static let empty = PanelModel(tiles: [], sessions: [], muted: 0)
 
-    static func build(readings: [ProviderReading], summaries: [ProviderSummary], activities: [String: Activity], inFlight: Set<String>, muted: Int) -> PanelModel {
+    static func build(readings: [ProviderReading], summaries: [ProviderSummary], activities: [String: Activity], inFlight: Set<String>, muted: Int, forecasts: [String: Forecast] = [:]) -> PanelModel {
         let tiles = readings.map { r in
-            Tile(id: r.providerId, name: r.displayName, mark: Tile.mark(for: r.providerId), reading: r, account: summaries.first { $0.id == r.providerId }?.account, activity: activities[r.providerId], inFlight: inFlight.contains(r.providerId))
+            Tile(id: r.providerId, name: r.displayName, mark: Tile.mark(for: r.providerId), reading: r, account: summaries.first { $0.id == r.providerId }?.account, activity: activities[r.providerId], inFlight: inFlight.contains(r.providerId), forecast: forecasts[r.providerId])
         }
         func rank(_ s: SessionState) -> Int { switch s { case .waiting: return 0; case .working: return 1; case .idle: return 2 } }
         let sessions = activities.values.flatMap { $0.ordered }.sorted { a, b in rank(a.state) != rank(b.state) ? rank(a.state) < rank(b.state) : a.since > b.since }

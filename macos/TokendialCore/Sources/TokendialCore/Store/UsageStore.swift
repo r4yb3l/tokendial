@@ -9,6 +9,7 @@ public final class UsageStore {
     private let cadence: Cadence
     private let now: () -> Date
     private let launcher: AppLauncher?
+    private let history = UsageHistory()
     private var remembered: [String: Remembered]
     private var accounts: [String: ProviderAccount] = [:]
     private var generation: [String: Int] = [:]
@@ -40,6 +41,22 @@ public final class UsageStore {
     }
 
     public var readings: [ProviderReading] { lock.lock(); defer { lock.unlock() }; return current }
+
+    /// Where each connected provider's headline window is heading, for the card; providers at rest or too
+    /// new to have a pace are absent.
+    public var forecasts: [String: Forecast] {
+        lock.lock()
+        defer { lock.unlock() }
+        let at = now()
+        var result: [String: Forecast] = [:]
+        for reading in current {
+            guard let headline = reading.headline, headline.usedFraction != nil else { continue }
+            if let forecast = Forecast.of(history.samples(reading.providerId, headline.id), now: at, resetsAt: headline.resetsAt) {
+                result[reading.providerId] = forecast
+            }
+        }
+        return result
+    }
     public var inFlight: Set<String> { lock.lock(); defer { lock.unlock() }; return inFlightSet }
     public var disconnected: Set<String> {
         get { lock.lock(); defer { lock.unlock() }; return disconnectedSet }
@@ -166,7 +183,10 @@ public final class UsageStore {
         for id in changedIds { generation[id, default: 0] += 1 }
         disconnectedSet = value
         current.removeAll { disconnectedSet.contains($0.providerId) }
-        for id in disconnectedSet where remembered.removeValue(forKey: id) != nil { archive.forget(id) }
+        for id in disconnectedSet {
+            history.forget(id)
+            if remembered.removeValue(forKey: id) != nil { archive.forget(id) }
+        }
         for id in changedIds where !disconnectedSet.contains(id) {
             if let provider = providers.first(where: { $0.id == id }), !current.contains(where: { $0.providerId == id }) { current.append(Self.placeholder(provider)) }
         }
@@ -189,6 +209,7 @@ public final class UsageStore {
                 let still = isCurrent(provider.id, gen)
                 if still {
                     remembered[provider.id] = Remembered(reading: fresh, takenAt: now())
+                    history.record(fresh, now: now())
                     archive.save(remembered)
                 }
                 return still
