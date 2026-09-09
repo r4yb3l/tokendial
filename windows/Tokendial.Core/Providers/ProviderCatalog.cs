@@ -3,6 +3,7 @@ using Tokendial.Core.Providers.Claude;
 using Tokendial.Core.Providers.Codex;
 using Tokendial.Core.Providers.Copilot;
 using Tokendial.Core.Providers.Cursor;
+using Tokendial.Core.Providers.Gemini;
 using Tokendial.Core.Providers.Glm;
 using Tokendial.Core.Providers.Grok;
 using Tokendial.Core.Providers.OpenCode;
@@ -11,10 +12,10 @@ using Tokendial.Core.Store;
 
 namespace Tokendial.Core.Providers;
 
-/// <summary>The seven providers and five monitors this build knows, in display order: one Claude provider per discovered profile.</summary>
+/// <summary>The nine providers and five monitors this build knows, in display order: one Claude provider per discovered profile.</summary>
 public static class ProviderCatalog
 {
-    public static readonly IReadOnlyList<string> Order = ["claude", "codex", "copilot", "cursor", "antigravity", "glm", "grok", "opencode"];
+    public static readonly IReadOnlyList<string> Order = ["claude", "codex", "copilot", "cursor", "antigravity", "gemini", "glm", "grok", "opencode"];
 
     public static IReadOnlyList<IUsageProvider> Providers(ReadingArchive archive)
     {
@@ -24,6 +25,7 @@ public static class ProviderCatalog
         list.Add(new CopilotProvider(archive: archive));
         list.Add(new CursorProvider());
         list.Add(new AntigravityProvider());
+        list.Add(new GeminiProvider(archive: archive));
         list.Add(new GlmProvider(archive: archive));
         list.Add(new GrokProvider());
         list.Add(new OpenCodeProvider(archive: archive));

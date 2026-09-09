@@ -43,7 +43,7 @@
   "how.3.title": "Il montre un cadran, pas un tableur",
   "how.3.body": "Vert, ambre, rouge. Survolez pour voir chaque fenêtre, son heure de remise à zéro et les sessions en cours. Le reste du temps, ignorez-le.",
   "providers.eyebrow": "Fournisseurs",
-  "providers.title": "Huit assistants, un cadran chacun",
+  "providers.title": "Neuf assistants, un cadran chacun",
   "providers.lead": "Chaque fournisseur s'active sur votre décision et se coupe à tout moment. Quand l'éditeur ne publie pas de plafond, le cadran affiche le simple décompte et le dit.",
   "providers.claude": "Claude Code",
   "providers.claude.detail": "Limites de session et hebdomadaires, par modèle",
@@ -129,5 +129,7 @@
   "community.eyebrow": "Sur le blog",
   "community.title": "Le vibecoding, compteur en vue",
   "community.lead": "Guides et habitudes pour qui construit avec des assistants IA. En anglais et en espagnol.",
-  "community.all": "Tous les articles"
+  "community.all": "Tous les articles",
+  "providers.gemini": "Gemini CLI",
+  "providers.gemini.detail": "Quota Code Assist Standard et Enterprise"
 }

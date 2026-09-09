@@ -38,6 +38,7 @@ public sealed record Tile(
         "copilot" => "CP",
         "cursor" => "CU",
         "antigravity" => "AG",
+        "gemini" => "GM",
         "glm" => "GL",
         "grok" => "GK",
         "opencode" => "OC",

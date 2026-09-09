@@ -43,7 +43,7 @@
   "how.3.title": "يعرض قرصًا، لا جدولًا",
   "how.3.body": "أخضر، كهرماني، أحمر. مرّر المؤشر لترى كل نافذة ووقت إعادة ضبطها والجلسات الجارية. وتجاهله بقية الوقت.",
   "providers.eyebrow": "المزوّدون",
-  "providers.title": "ثمانية مساعدين، قرص لكل منهم",
+  "providers.title": "تسعة مساعدين، قرص لكل منهم",
   "providers.lead": "كل مزوّد يُفعَّل بقرارك ويُوقَف متى شئت. حيث لا ينشر المزوّد حدًا أعلى، يعرض القرص العدد المجرد ويقول ذلك.",
   "providers.claude": "Claude Code",
   "providers.claude.detail": "حدود الجلسة والأسبوع، لكل نموذج",
@@ -129,5 +129,7 @@
   "community.eyebrow": "من المدونة",
   "community.title": "الـvibecoding والعدّاد أمام عينيك",
   "community.lead": "أدلة وعادات لمن يبني بمساعدي الذكاء الاصطناعي. بالإنجليزية والإسبانية.",
-  "community.all": "كل المقالات"
+  "community.all": "كل المقالات",
+  "providers.gemini": "Gemini CLI",
+  "providers.gemini.detail": "حصة Code Assist Standard وEnterprise"
 }

@@ -43,7 +43,7 @@
   "how.3.title": "Es zeigt eine Anzeige, keine Tabelle",
   "how.3.body": "Grün, gelb, rot. Beim Überfahren siehst du jedes Fenster, seine Rücksetzzeit und die laufenden Sitzungen. Den Rest der Zeit ignorierst du es.",
   "providers.eyebrow": "Anbieter",
-  "providers.title": "Acht Assistenten, je eine Anzeige",
+  "providers.title": "Neun Assistenten, je eine Anzeige",
   "providers.lead": "Jeder Anbieter wird nur auf deinen Wunsch aktiviert und lässt sich jederzeit abschalten. Veröffentlicht ein Anbieter keine Obergrenze, zeigt die Anzeige die bloße Zahl und sagt es.",
   "providers.claude": "Claude Code",
   "providers.claude.detail": "Sitzungs- und Wochenlimits, pro Modell",
@@ -129,5 +129,7 @@
   "community.eyebrow": "Aus dem Blog",
   "community.title": "Vibecoding mit Blick auf den Zähler",
   "community.lead": "Anleitungen und Gewohnheiten für alle, die mit KI-Assistenten bauen. Auf Englisch und Spanisch.",
-  "community.all": "Alle Artikel"
+  "community.all": "Alle Artikel",
+  "providers.gemini": "Gemini CLI",
+  "providers.gemini.detail": "Kontingent für Code Assist Standard und Enterprise"
 }

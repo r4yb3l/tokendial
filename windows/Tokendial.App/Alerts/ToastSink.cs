@@ -79,7 +79,7 @@ public sealed class ToastSink : IAlertSink
     private static string Humanize(string id) => id switch
     {
         _ when id.StartsWith("claude", StringComparison.Ordinal) => "Claude Code",
-        "codex" => "Codex", "copilot" => "GitHub Copilot", "cursor" => "Cursor", "antigravity" => "Antigravity", "glm" => "GLM", "grok" => "Grok", "opencode" => "OpenCode",
+        "codex" => "Codex", "copilot" => "GitHub Copilot", "cursor" => "Cursor", "antigravity" => "Antigravity", "gemini" => "Gemini CLI", "glm" => "GLM", "grok" => "Grok", "opencode" => "OpenCode",
         _ => id
     };
 }

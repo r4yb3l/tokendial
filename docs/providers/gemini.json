@@ -1,0 +1,54 @@
+{
+  "id": "gemini",
+  "displayName": "Gemini CLI",
+  "fidelity": "official",
+  "credential": {
+    "macos": {
+      "kind": "file",
+      "path": "~/.gemini/oauth_creds.json",
+      "fields": { "accessToken": "$.access_token" },
+      "expiry": "$.expiry_date as epochMillis",
+      "notes": "The directory follows GEMINI_CLI_HOME when set. ~/.gemini/settings.json → security.auth.selectedType must be oauth-personal: an API key or Vertex sign-in publishes no quota (nothingMetered). The active email comes from ~/.gemini/google_accounts.json ($.active). The access token lives about an hour and is never refreshed here; the CLI rewrites the file when it runs. With GEMINI_FORCE_ENCRYPTED_FILE_STORAGE the CLI keeps the token in the keychain instead and this provider reports needsAuth."
+    },
+    "windows": {
+      "kind": "file",
+      "path": "~/.gemini/oauth_creds.json",
+      "fields": { "accessToken": "$.access_token" },
+      "expiry": "$.expiry_date as epochMillis",
+      "notes": "Same rules as macOS; %USERPROFILE%\\.gemini unless GEMINI_CLI_HOME is set."
+    }
+  },
+  "endpoints": [
+    {
+      "name": "loadCodeAssist",
+      "method": "POST",
+      "url": "https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist",
+      "headers": { "Authorization": "Bearer {accessToken}", "Content-Type": "application/json" },
+      "body": "{\"metadata\":{\"ideType\":\"IDE_UNSPECIFIED\",\"platform\":\"PLATFORM_UNSPECIFIED\",\"pluginType\":\"GEMINI\"}}",
+      "timeoutSeconds": 15,
+      "notes": "Gate and project lookup. 401/403 → needsAuth; 429 → rateLimited(Retry-After); other non-200 → badResponse. The account is eligible when currentTier is present or allowedTiers is non-empty; otherwise nothingMetered with ineligibleTiers[0].reasonMessage (since 2026-06-18 personal, AI Pro and AI Ultra accounts get UNSUPPORTED_CLIENT and are pointed to Antigravity). Project: GOOGLE_CLOUD_PROJECT, then GOOGLE_CLOUD_PROJECT_ID, then $.cloudaicompanionProject (a string, or an object with id or projectId); none → nothingMetered. paidTier.name ?? currentTier.name is the plan."
+    },
+    {
+      "name": "retrieveUserQuota",
+      "method": "POST",
+      "url": "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota",
+      "headers": { "Authorization": "Bearer {accessToken}", "Content-Type": "application/json" },
+      "body": "{\"project\":\"{project}\"}",
+      "timeoutSeconds": 15,
+      "notes": "The same call Gemini CLI makes for its footer and /stats. Same status mapping as the gate."
+    }
+  ],
+  "response": {
+    "windows": [
+      { "id": "{modelId}", "label": "{modelId humanised: gemini-2.5-pro → Gemini 2.5 Pro}", "usedPath": "$.buckets[*].remainingFraction", "unit": "remainingFraction", "resetAtPath": "$.buckets[*].resetTime", "resetUnit": "iso8601", "notes": "One window per bucket that carries modelId and a remainingFraction within 0…1; buckets keyed only by tokenType are skipped. remainingAmount is informational. The headline is the bucket with the most used. No buckets → nothingMetered. Google does not return the limit; Standard is 1500 requests/day and Enterprise 2000, resetting at midnight Pacific." }
+    ]
+  },
+  "errors": { "401": "needsAuth", "403": "needsAuth", "429": "rateLimited" },
+  "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
+  "sessions": { "kind": "none", "notes": "Gemini CLI keeps no session registry; usage only." },
+  "status": {
+    "enabled": true,
+    "termsRisk": "medium",
+    "notice": "Since 2026-06-18 Google serves Gemini CLI only to Code Assist Standard and Enterprise accounts (Workspace / Google Cloud). Personal, AI Pro and AI Ultra accounts are pointed to Antigravity, which Tokendial reads separately."
+  }
+}

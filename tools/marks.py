@@ -110,6 +110,9 @@ emit("grok", attr(svg, "viewBox"), shapes_from(svg))
 svg = read("opencode.svg")
 png = re.search(r'href="data:image/png;base64,([^"]+)"', svg).group(1)
 open(os.path.join(OUT, "opencode.png"), "wb").write(base64.b64decode(png))
+svg = read("gemini.svg")
+emit("gemini", attr(svg, "viewBox"), shapes_from(svg))
+
 MARKS["opencode"] = {"raster": "opencode.png"}
 
 json.dump(MARKS, open(os.path.join(OUT, "marks.json"), "w", encoding="utf-8"), indent=1)

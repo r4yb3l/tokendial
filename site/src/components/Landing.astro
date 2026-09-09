@@ -14,10 +14,10 @@ interface Props {
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 
-const providers = ['claude', 'codex', 'copilot', 'cursor', 'antigravity', 'glm', 'grok', 'opencode'] as const;
+const providers = ['claude', 'codex', 'copilot', 'cursor', 'antigravity', 'gemini', 'glm', 'grok', 'opencode'] as const;
 const tints: Record<(typeof providers)[number], string> = {
   claude: '#d97757', codex: '#38bdf8', copilot: '#a78bfa', cursor: '#e2e8f0',
-  antigravity: '#60a5fa', glm: '#3b82f6', grok: '#f1f5f9', opencode: '#fbbf24'
+  antigravity: '#60a5fa', gemini: '#4e8df5', glm: '#3b82f6', grok: '#f1f5f9', opencode: '#fbbf24'
 };
 const why = list(locale, 'why');
 const steps = list(locale, 'how');

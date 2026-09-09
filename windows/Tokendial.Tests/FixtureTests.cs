@@ -4,6 +4,7 @@ using System.Text.Json;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
+using Tokendial.Core.Providers.Gemini;
 using Tokendial.Core.Providers.Claude;
 using Tokendial.Core.Providers.Codex;
 using Tokendial.Core.Providers.Copilot;
@@ -53,6 +54,8 @@ public class FixtureTests
             ("opencode", _) => OpenCodeUsage.Parse(response),
             ("antigravity", "bridge-quota.json") => new Parsed(Bridge.ParseQuota(response), "gemini-weekly"),
             ("antigravity", "google-quota.json") => new Parsed(AntigravityProvider.ParseGoogleQuota(response), null),
+            ("gemini", "unsupported-client.json") => GeminiUsage.ParseGate(response),
+            ("gemini", _) => GeminiUsage.Parse(response),
             _ => throw new InvalidOperationException($"no parser for {provider}/{file}")
         };
 

@@ -1,0 +1,16 @@
+{
+  "note": "loadCodeAssist for a personal account after 2026-06-18: no current or allowed tier, only the reason Google gives.",
+  "response": {
+    "ineligibleTiers": [
+      {
+        "reasonCode": "UNSUPPORTED_CLIENT",
+        "reasonMessage": "This client is no longer supported.",
+        "tierId": "free-tier",
+        "tierName": "Gemini Code Assist for individuals"
+      }
+    ]
+  },
+  "expected": {
+    "error": "nothingMetered"
+  }
+}

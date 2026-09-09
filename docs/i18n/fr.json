@@ -61,6 +61,7 @@
     "signin.opencode": "Connectez le plan Go dans OpenCode (`opencode auth login`) ; le cadran lit la clé qu'il enregistre.",
     "signin.glm": "La consommation repose sur une clé GLM Coding Plan de Z.ai détenue par un outil : le settings.json de Claude Code, ZCode ou OpenCode.",
     "signin.copilot": "Connectez-vous à GitHub Copilot dans votre éditeur ou la CLI Copilot ; le cadran lit le jeton qu'il enregistre.",
+    "signin.gemini": "Lancez `gemini` une fois et choisissez Login with Google ; le cadran lit le jeton mis en cache. Google ne sert Gemini CLI qu'aux comptes Code Assist Standard et Enterprise.",
 
     "tray.show": "Afficher le panneau",
     "tray.refresh": "Actualiser maintenant",

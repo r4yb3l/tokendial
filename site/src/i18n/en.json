@@ -43,7 +43,7 @@
   "how.3.title": "It shows a dial, not a spreadsheet",
   "how.3.body": "Green, amber, red. Hover for every window, its reset time and the sessions running. Ignore it the rest of the time.",
   "providers.eyebrow": "Providers",
-  "providers.title": "Eight assistants, one dial each",
+  "providers.title": "Nine assistants, one dial each",
   "providers.lead": "Every provider is opt-in and can be switched off at any time. Where a vendor publishes no ceiling, the dial shows the bare count and says so.",
   "providers.claude": "Claude Code",
   "providers.claude.detail": "Session and weekly limits, per model",
@@ -129,5 +129,7 @@
   "community.eyebrow": "From the blog",
   "community.title": "Vibecoding, with the meter visible",
   "community.lead": "Guides and habits for people who build with AI assistants.",
-  "community.all": "All articles"
+  "community.all": "All articles",
+  "providers.gemini": "Gemini CLI",
+  "providers.gemini.detail": "Code Assist Standard and Enterprise quota"
 }

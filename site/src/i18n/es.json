@@ -43,7 +43,7 @@
   "how.3.title": "Muestra un dial, no una hoja de cálculo",
   "how.3.body": "Verde, ámbar, rojo. Pasa el cursor para ver cada ventana, su hora de reinicio y las sesiones en marcha. El resto del tiempo, ignóralo.",
   "providers.eyebrow": "Proveedores",
-  "providers.title": "Ocho asistentes, un dial cada uno",
+  "providers.title": "Nueve asistentes, un dial cada uno",
   "providers.lead": "Cada proveedor se activa por decisión tuya y se apaga cuando quieras. Donde el fabricante no publica techo, el dial muestra el recuento sin más y lo dice.",
   "providers.claude": "Claude Code",
   "providers.claude.detail": "Límites de sesión y semanales, por modelo",
@@ -129,5 +129,7 @@
   "community.eyebrow": "Del blog",
   "community.title": "Vibecoding con el contador a la vista",
   "community.lead": "Guías y hábitos para quien construye con asistentes de IA.",
-  "community.all": "Todos los artículos"
+  "community.all": "Todos los artículos",
+  "providers.gemini": "Gemini CLI",
+  "providers.gemini.detail": "Cuota de Code Assist Standard y Enterprise"
 }

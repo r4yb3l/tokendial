@@ -61,6 +61,7 @@
     "signin.opencode": "Verbinde den Go-Plan in OpenCode (`opencode auth login`); die Anzeige liest den gespeicherten Schlüssel.",
     "signin.glm": "Der Verbrauch beruht auf einem GLM-Coding-Plan-Schlüssel von Z.ai, den ein Werkzeug hält: die settings.json von Claude Code, ZCode oder OpenCode.",
     "signin.copilot": "Melde dich in deinem Editor oder der Copilot-CLI bei GitHub Copilot an; die Anzeige liest das gespeicherte Token.",
+    "signin.gemini": "Führe `gemini` einmal aus und wähle Login with Google; die Anzeige liest das gespeicherte Token. Google bedient mit Gemini CLI nur Code-Assist-Standard- und -Enterprise-Konten.",
 
     "tray.show": "Panel anzeigen",
     "tray.refresh": "Jetzt aktualisieren",

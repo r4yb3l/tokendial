@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using Tokendial.Core.Diagnostics;
 using Tokendial.Core.Model;
+using Tokendial.Core.Providers.Google;
 using Tokendial.Core.Store;
 
 namespace Tokendial.Core.Providers.Antigravity;
@@ -273,8 +274,6 @@ public static class AntigravityTranscripts
 /// <summary>Language server first, Google's quota endpoint second, a request count last. Id stays "antigravity".</summary>
 public sealed class AntigravityProvider : IUsageProvider, IDisposable
 {
-    private static readonly Uri Gate = new("https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist");
-    private static readonly Uri Quota = new("https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary");
     private readonly HttpClient google;
     private readonly HttpClient local;
     private readonly Func<AntigravityCredential> read;
@@ -334,15 +333,15 @@ public sealed class AntigravityProvider : IUsageProvider, IDisposable
 
     private async Task PassGate(AntigravityCredential credential, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, Gate) { Content = new StringContent("{\"metadata\":{\"pluginType\":\"GEMINI\"}}", Encoding.UTF8, "application/json") };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credential.AccessToken);
-        using var response = await google.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var status = (int)response.StatusCode;
-        Log.Usage.Debug($"antigravity: gate {status}");
-        if (status == 401) { held = null; throw UsageError.NeedsSignIn(); }
-        if (status == 403) throw UsageError.NeedsSignIn();
-        if (status == 429) throw UsageError.RateLimited(RetryAfterHeader.From(response, now()) ?? TimeSpan.Zero);
-        if (status != 200) throw UsageError.BadResponse(status);
+        var (status, _, response) = await CodeAssist.PostAsync(google, CodeAssist.Gate, credential.AccessToken, "{\"metadata\":{\"pluginType\":\"GEMINI\"}}", cancellationToken).ConfigureAwait(false);
+        using (response)
+        {
+            Log.Usage.Debug($"antigravity: gate {status}");
+            if (status == 401) { held = null; throw UsageError.NeedsSignIn(); }
+            if (status == 403) throw UsageError.NeedsSignIn();
+            if (status == 429) throw UsageError.RateLimited(RetryAfterHeader.From(response, now()) ?? TimeSpan.Zero);
+            if (status != 200) throw UsageError.BadResponse(status);
+        }
     }
 
     private async Task<IReadOnlyList<UsageWindow>> LocalQuota(CancellationToken cancellationToken)
@@ -364,30 +363,14 @@ public sealed class AntigravityProvider : IUsageProvider, IDisposable
 
     private async Task<IReadOnlyList<UsageWindow>> GoogleQuota(AntigravityCredential credential, CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, Quota) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credential.AccessToken);
-        using var response = await google.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        Log.Usage.Debug($"antigravity: quota {(int)response.StatusCode}");
-        return response.IsSuccessStatusCode ? ParseGoogleQuota(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)) : [];
+        var (status, body, response) = await CodeAssist.PostAsync(google, CodeAssist.QuotaSummary, credential.AccessToken, "{}", cancellationToken).ConfigureAwait(false);
+        response.Dispose();
+        Log.Usage.Debug($"antigravity: quota {status}");
+        return status == 200 ? ParseGoogleQuota(body) : [];
     }
 
-    /// <summary>Never validated against a licensed response, so paranoid about bounds.</summary>
-    public static IReadOnlyList<UsageWindow> ParseGoogleQuota(string body)
-    {
-        using var document = Json.Parse(body);
-        if (document is null) return [];
-        var root = document.RootElement;
-        var buckets = root.Arr("quotaGroups").SelectMany(g => g.Arr("buckets")).Concat(root.Arr("buckets"));
-        var windows = new List<UsageWindow>();
-        foreach (var bucket in buckets)
-        {
-            if (bucket.Num("limit") is not double limit || bucket.Num("used") is not double used || limit <= 0 || used < 0 || used > limit * 1.5) continue;
-            var name = bucket.Str("name");
-            var label = bucket.Str("displayName") ?? name ?? "Usage";
-            windows.Add(new UsageWindow(name ?? label, label, used / limit, ResetsAt: bucket.Date("resetTime")));
-        }
-        return windows;
-    }
+    /// <summary>The quota-summary shape, parsed by the shared Code Assist reader.</summary>
+    public static IReadOnlyList<UsageWindow> ParseGoogleQuota(string body) => CodeAssist.ParseQuotaSummary(body);
 
     public void Dispose()
     {

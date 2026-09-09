@@ -27,6 +27,7 @@ public static class Marks
         ["copilot"] = Color.FromRgb(0xA7, 0x8B, 0xFA),
         ["cursor"] = Color.FromRgb(0xE2, 0xE8, 0xF0),
         ["antigravity"] = Color.FromRgb(0x60, 0xA5, 0xFA),
+        ["gemini"] = Color.FromRgb(0x4E, 0x8D, 0xF5),
         ["glm"] = Color.FromRgb(0x3B, 0x82, 0xF6),
         ["grok"] = Color.FromRgb(0xF1, 0xF5, 0xF9),
         ["opencode"] = Color.FromRgb(0xFB, 0xBF, 0x24)

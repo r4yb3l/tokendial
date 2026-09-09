@@ -6,13 +6,15 @@ namespace Tokendial.Tests;
 
 public class InstallCatalogTests
 {
-    private static readonly string[] Assisted = ProviderCatalog.Order.Where(id => id != "glm").ToArray();
+    /// <summary>GLM is a key rather than a tool and Gemini CLI needs Node, which the recipes do not install.</summary>
+    private static readonly string[] Assisted = ProviderCatalog.Order.Where(id => id is not ("glm" or "gemini")).ToArray();
 
     [Fact]
-    public void EveryProviderButGlmHasARecipe()
+    public void EveryProviderWithATerminalInstallerHasARecipe()
     {
         Assert.Equal(Assisted.OrderBy(x => x), InstallCatalog.All.Keys.OrderBy(x => x));
         Assert.Null(InstallCatalog.For("glm"));
+        Assert.Null(InstallCatalog.For("gemini"));
     }
 
     [Fact]

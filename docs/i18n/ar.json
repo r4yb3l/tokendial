@@ -61,6 +61,7 @@
     "signin.opencode": "اربط خطة Go داخل OpenCode (`opencode auth login`)؛ يقرأ القرص المفتاح المخزَّن.",
     "signin.glm": "يعتمد الاستهلاك على مفتاح GLM Coding Plan من Z.ai تحتفظ به إحدى الأدوات: settings.json في Claude Code أو ZCode أو OpenCode.",
     "signin.copilot": "سجّل الدخول في GitHub Copilot من محرّرك أو من Copilot CLI؛ يقرأ القرص الرمز المخزَّن.",
+    "signin.gemini": "شغّل `gemini` مرة واختر Login with Google؛ يقرأ القرص الرمز المخزَّن. تخدم Google بـ Gemini CLI حسابات Code Assist Standard وEnterprise فقط.",
 
     "tray.show": "إظهار اللوحة",
     "tray.refresh": "تحديث الآن",
