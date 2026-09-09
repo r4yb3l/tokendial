@@ -58,8 +58,10 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 
 ## 7 — Distribution
 - [x] `dotnet publish` self-contained folder, wrapped by `vpk pack` into Setup.exe and a portable zip (was a single exe until 2026-09-08)
-- [ ] Code signing, first GitHub Release (verifies the updater end to end), tokendial.app page
-- [ ] macOS zip/dmg
+- **Decision (2026-09-09): hold the first public release until macOS has parity.** The repo stays private, no tag yet. Windows alone is ready (Velopack wired and pack-tested locally), but macOS has no packaging pipeline at all (no DMG build, no signing/notarization, no updater) and none of this session's or the previous one's features — Gemini CLI, forecast, Codex profiles, the update mechanism — have been ported to Swift; all of that was explicitly deferred "for when the Mac is on." Publishing Windows-only was considered and declined: both platforms launch together.
+- [ ] Once the Mac is on: port Gemini CLI, forecast, Codex profiles and an update mechanism to Swift; verify live parity with the Windows fixtures/tests
+- [ ] macOS packaging: DMG build, code signing, notarization, an update channel (Sparkle or similar)
+- [ ] Then: code signing, first GitHub Release for both platforms (verifies the Windows updater end to end), make the repo public, tokendial.app page
 
 ## 7b — Settings redesign (user's Tailwind mockup, 2026-09-08)
 - [x] Chrome design system: palette, title bar with logo/version/status pill, drawn checkbox/radio/card/chip/field/button, thin scrollbar
