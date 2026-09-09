@@ -3,6 +3,8 @@ import SwiftUI
 import TokendialCore
 
 /// docs/design/tokens.md as AppKit values. Every number in points; every colour comes from the palette in use.
+/// The surfaces are more opaque than the Windows ones on purpose: the dock paints a flat translucent colour
+/// with no backdrop blur behind it, and a Retina screen shows every pixel of the wallpaper through it.
 enum Theme {
     /// One look for the dock and the card: surfaces, text inks and the band colours.
     struct Palette {
@@ -21,12 +23,12 @@ enum Theme {
     }
 
     static let darkPalette = Palette(
-        surface: rgba(16, 17, 20, 0.50), surfaceEdge: white(1, 0.08), cardSurface: rgba(16, 17, 20, 0.92), track: white(1, 0.16),
+        surface: rgba(16, 17, 20, 0.86), surfaceEdge: white(1, 0.14), cardSurface: rgba(16, 17, 20, 0.97), track: white(1, 0.16),
         ample: rgb(0x34, 0xD3, 0x99), watch: rgb(0xFB, 0xBF, 0x24), critical: rgb(0xFB, 0x71, 0x85), working: rgb(0xF5, 0xF5, 0xF7),
         textPrimary: rgb(0xF5, 0xF5, 0xF7), textSecondary: rgb(0x9A, 0x9D, 0xA6), textDisabled: rgb(0x5C, 0x5F, 0x68), hairline: white(1, 0.11))
 
     static let lightPalette = Palette(
-        surface: rgba(248, 249, 251, 0.80), surfaceEdge: rgba(15, 23, 42, 0.10), cardSurface: rgba(252, 252, 253, 0.96), track: rgba(15, 23, 42, 0.12),
+        surface: rgba(248, 249, 251, 0.95), surfaceEdge: rgba(15, 23, 42, 0.16), cardSurface: rgba(252, 252, 253, 0.99), track: rgba(15, 23, 42, 0.12),
         ample: rgb(0x10, 0xB9, 0x81), watch: rgb(0xF5, 0x9E, 0x0B), critical: rgb(0xF4, 0x3F, 0x5E), working: rgb(0x1B, 0x1F, 0x27),
         textPrimary: rgb(0x1B, 0x1F, 0x27), textSecondary: rgb(0x5B, 0x62, 0x70), textDisabled: rgb(0xA3, 0xA9, 0xB4), hairline: rgba(15, 23, 42, 0.10))
 
@@ -61,6 +63,8 @@ enum Theme {
     static let expandedHeight: CGFloat = 132
     static let expandedPadding: CGFloat = 20
     static let cellWidth: CGFloat = 96
+    static let cellHeight: CGFloat = 96
+    static let cellGap: CGFloat = 14
     static let expandedDial: CGFloat = 56
     static let expandedStroke: CGFloat = 6
     static let activityDial: CGFloat = 40
@@ -87,8 +91,15 @@ enum Theme {
 
     static var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
-    static func compactWidth(_ n: Int) -> CGFloat { n == 0 ? 2 * compactPadding + 40 : 2 * compactPadding + CGFloat(n) * compactDial + CGFloat(n - 1) * compactSpacing }
-    static func expandedWidth(_ n: Int) -> CGFloat { max(2 * expandedPadding + CGFloat(max(n, 1)) * cellWidth, cardWidth + 2 * expandedPadding) }
+    /// The dock's size along the edge it hangs from, and its depth across it.
+    static func compactLength(_ n: Int) -> CGFloat { n == 0 ? 2 * compactPadding + 40 : 2 * compactPadding + CGFloat(n) * compactDial + CGFloat(n - 1) * compactSpacing }
+
+    static func expandedLength(_ n: Int, vertical: Bool) -> CGFloat {
+        vertical ? 10 + CGFloat(max(n, 1)) * (cellHeight + cellGap) + 62
+                 : max(2 * expandedPadding + CGFloat(max(n, 1)) * cellWidth, cardWidth + 2 * expandedPadding)
+    }
+
+    static func expandedAcross(vertical: Bool) -> CGFloat { vertical ? cellWidth + 2 * expandedPadding : expandedHeight }
 
     private static func rgb(_ r: Int, _ g: Int, _ b: Int) -> NSColor {
         NSColor(srgbRed: CGFloat(r) / 255, green: CGFloat(g) / 255, blue: CGFloat(b) / 255, alpha: 1)

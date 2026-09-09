@@ -22,6 +22,12 @@ points; both platforms use them verbatim.
 Bands: `ample` below 0.50, `watch` from 0.50, `critical` from 0.80 (a step earlier
 than the usual 0.70, because the 80 % alert and the colour change should coincide).
 
+The alphas above assume a blurred backdrop. macOS has none: the dock is a trapezoid
+path filled with one flat colour, and on a Retina screen the wallpaper reads straight
+through it. So macOS raises the surfaces instead of matching Windows — `surface` 0.86
+dark and 0.95 light, `cardSurface` 0.97 and 0.99, `surfaceEdge` 0.14 and 0.16. Keep the
+hues and every metric identical; the opacity is the one deliberate difference.
+
 ### Light look
 
 The table above is the dark look, the default when Windows apps are dark. A Theme setting

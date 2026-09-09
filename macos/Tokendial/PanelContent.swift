@@ -159,6 +159,8 @@ final class PanelContentView: NSView {
     private var compactMarks: [String: MarkView] = [:]
     private var cells: [String: CellView] = [:]
     private var order: [String] = []
+    private var vertical = false
+    private var cellRowHeight: NSLayoutConstraint?
     var onCellClick: ((String) -> Void)?
 
     override init(frame: NSRect) {
@@ -195,7 +197,6 @@ final class PanelContentView: NSView {
             expanded.bottomAnchor.constraint(equalTo: bottomAnchor),
             cellRow.topAnchor.constraint(equalTo: expanded.topAnchor, constant: 10),
             cellRow.centerXAnchor.constraint(equalTo: expanded.centerXAnchor),
-            cellRow.heightAnchor.constraint(equalToConstant: 96),
             sessionsLine.topAnchor.constraint(equalTo: cellRow.bottomAnchor, constant: 2),
             sessionsLine.leadingAnchor.constraint(equalTo: expanded.leadingAnchor, constant: Theme.expandedPadding),
             sessionsLine.trailingAnchor.constraint(equalTo: expanded.trailingAnchor, constant: -Theme.expandedPadding)
@@ -203,6 +204,18 @@ final class PanelContentView: NSView {
     }
 
     required init?(coder: NSCoder) { fatalError() }
+
+    /// A dock on a side stacks its cells instead of lining them up, with a gap so the bars do not touch.
+    func setVertical(_ value: Bool) {
+        guard value != vertical || cellRowHeight == nil else { return }
+        vertical = value
+        compactRow.orientation = value ? .vertical : .horizontal
+        cellRow.orientation = value ? .vertical : .horizontal
+        cellRow.spacing = value ? Theme.cellGap : 0
+        cellRowHeight?.isActive = false
+        cellRowHeight = value ? nil : cellRow.heightAnchor.constraint(equalToConstant: Theme.cellHeight)
+        cellRowHeight?.isActive = true
+    }
 
     var count: Int { order.count }
     var cellViews: [CellView] { order.compactMap { cells[$0] } }

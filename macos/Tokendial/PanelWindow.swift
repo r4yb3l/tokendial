@@ -32,9 +32,19 @@ struct PanelGeometry {
         return screenFrame.maxY - menuBar
     }
 
-    func frame(width: CGFloat, height: CGFloat) -> NSRect {
-        let clampedTop = min(top, screenFrame.maxY)
-        return NSRect(x: screenFrame.midX - width / 2, y: clampedTop - height, width: width, height: height)
+    /// The window for a dock of the given length along its edge and depth across it, centred on that edge.
+    /// The other three edges follow the visible frame, so the Dock never sits under the panel.
+    func frame(along: CGFloat, across: CGFloat, edge: DockEdge) -> NSRect {
+        switch edge {
+        case .top:
+            return NSRect(x: screenFrame.midX - along / 2, y: min(top, screenFrame.maxY) - across, width: along, height: across)
+        case .bottom:
+            return NSRect(x: screenFrame.midX - along / 2, y: visibleFrame.minY, width: along, height: across)
+        case .left:
+            return NSRect(x: visibleFrame.minX, y: screenFrame.midY - along / 2, width: across, height: along)
+        case .right:
+            return NSRect(x: visibleFrame.maxX - across, y: screenFrame.midY - along / 2, width: across, height: along)
+        }
     }
 }
 
@@ -99,6 +109,7 @@ final class PanelController: NSObject {
             content.bottomAnchor.constraint(equalTo: capsule.bottomAnchor)
         ])
         content.onCellClick = { [weak self] id in self?.onProviderClicked?(id) }
+        content.setVertical(false)
         layout(animated: false)
     }
 
@@ -119,6 +130,15 @@ final class PanelController: NSObject {
         if mode == .hidden { window.orderOut(nil); hideCard(); return }
         if !window.isVisible { window.orderFrontRegardless() }
         reconcile()
+    }
+
+    /// The edge the dock hangs from: the shape, the layout and the card all turn with it.
+    func setEdge(_ next: DockEdge) {
+        guard next != edge else { return }
+        edge = next
+        content.setVertical(next == .left || next == .right)
+        layout(animated: false)
+        if let id = cardFor { showCard(id) }
     }
 
     /// A notification was clicked or a second instance launched: expand for a moment even without the cursor.
@@ -190,11 +210,17 @@ final class PanelController: NSObject {
         guard let screen = NSScreen.screens.first else { return }
         let geometry = PanelGeometry(screen: screen)
         let n = model.tiles.count
-        let width = expanded ? Theme.expandedWidth(n) : Theme.compactWidth(n)
-        let height = expanded ? Theme.expandedHeight : Theme.compactHeight
-        let frame = geometry.frame(width: width, height: height + Theme.hotZone)
-        let capsuleFrame = NSRect(x: 0, y: Theme.hotZone, width: width, height: height)
-        reshape(along: width, across: height)
+        let vertical = edge == .left || edge == .right
+        let along = expanded ? Theme.expandedLength(n, vertical: vertical) : Theme.compactLength(n)
+        let across = expanded ? Theme.expandedAcross(vertical: vertical) : Theme.compactHeight
+        let frame = geometry.frame(along: along, across: across + Theme.hotZone, edge: edge)
+        let capsuleFrame = switch edge {
+        case .top: NSRect(x: 0, y: Theme.hotZone, width: along, height: across)
+        case .bottom: NSRect(x: 0, y: 0, width: along, height: across)
+        case .left: NSRect(x: 0, y: 0, width: across, height: along)
+        case .right: NSRect(x: Theme.hotZone, y: 0, width: across, height: along)
+        }
+        reshape(along: along, across: across)
         let duration = animated && !Theme.reduceMotion ? Spring.expand.settle * 0.6 : 0
         NSAnimationContext.runAnimationGroup { context in
             context.duration = duration
@@ -204,7 +230,7 @@ final class PanelController: NSObject {
             capsule.animator().frame = capsuleFrame
         }
         if let tracking { window.contentView?.removeTrackingArea(tracking) }
-        let area = NSTrackingArea(rect: NSRect(x: 0, y: 0, width: width, height: height + Theme.hotZone), options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways], owner: window.contentView, userInfo: nil)
+        let area = NSTrackingArea(rect: NSRect(origin: .zero, size: frame.size), options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways], owner: window.contentView, userInfo: nil)
         window.contentView?.addTrackingArea(area)
         tracking = area
     }
@@ -212,7 +238,8 @@ final class PanelController: NSObject {
     /// The trapezoid for the current size: filled, plus the hairline that leaves the base against the edge open.
     private func reshape(along: CGFloat, across: CGFloat) {
         let radius = expanded ? Theme.expandedRadius : Theme.compactRadius
-        let bounds = CGRect(x: 0, y: 0, width: along, height: across)
+        let vertical = edge == .left || edge == .right
+        let bounds = CGRect(x: 0, y: 0, width: vertical ? across : along, height: vertical ? along : across)
         for layer in [fillLayer, hairlineLayer] { layer.frame = bounds }
         fillLayer.path = DockShape.fill(along: along, across: across, slant: Theme.slant, radius: radius, edge: edge)
         hairlineLayer.path = DockShape.edge(along: along, across: across, slant: Theme.slant, radius: radius, edge: edge)
@@ -249,17 +276,32 @@ final class PanelController: NSObject {
         let size = view.fittingSize
         let cellOnScreen = cell.window!.convertToScreen(cell.convert(cell.bounds, to: nil))
         let screen = NSScreen.screens.first?.frame ?? window.frame
-        var x = cellOnScreen.midX - Theme.cardWidth / 2
+        var x: CGFloat
+        var y: CGFloat
+        switch edge {
+        case .top:
+            x = cellOnScreen.midX - Theme.cardWidth / 2
+            y = window.frame.minY + Theme.hotZone - 6 - size.height
+        case .bottom:
+            x = cellOnScreen.midX - Theme.cardWidth / 2
+            y = window.frame.maxY - Theme.hotZone + 6
+        case .left:
+            x = window.frame.maxX - Theme.hotZone + 6
+            y = cellOnScreen.midY - size.height / 2
+        case .right:
+            x = window.frame.minX + Theme.hotZone - 6 - Theme.cardWidth
+            y = cellOnScreen.midY - size.height / 2
+        }
         x = min(max(x, screen.minX + 8), screen.maxX - Theme.cardWidth - 8)
-        let y = window.frame.maxY - Theme.expandedHeight - 6 - size.height
+        y = min(max(y, screen.minY + 8), screen.maxY - size.height - 8)
         panel.setFrame(NSRect(x: x, y: y, width: Theme.cardWidth, height: size.height), display: true)
         if card == nil {
             panel.alphaValue = 0
             panel.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { context in
+            NSAnimationContext.runAnimationGroup({ context in
                 context.duration = Theme.reduceMotion ? 0 : 0.15
                 panel.animator().alphaValue = 1
-            }
+            }, completionHandler: { panel.alphaValue = 1 })
         }
         card = panel
         cardFor = id

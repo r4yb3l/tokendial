@@ -64,6 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.async { self.applyAppearance() }
         }
 
+        panel.setEdge(settings.edge)
         panel.setMode(settings.panel)
         refreshModel()
         clock = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in self?.refreshModel() }
@@ -221,6 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func applySettings() {
         if Strings.language != Strings.resolve(settings.language ?? Locale.preferredLanguages.first ?? "en") { relocalize() }
         applyAppearance()
+        panel.setEdge(settings.edge)
         panel.setMode(settings.panel)
         let current = settings
         alerts.reconfigure(current.alertConfig, wants: { current.wants($0) })

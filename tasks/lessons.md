@@ -30,3 +30,16 @@ Rule: when planning parity, diff the UI layer too, not just behaviour. Read the 
 files and the shared spec (`docs/design/tokens.md`) and list what the lagging platform does not have.
 A second reason to do design first: rows that live in a window being rebuilt (a new provider row, a new
 settings toggle) would otherwise be built twice.
+
+## Shared design tokens are not literally portable across platforms (2026-09-09)
+The macOS dock reused the Windows surface opacity from `docs/design/tokens.md` (0.50 dark, 0.80 light) and
+the user could barely see it: "la pantalla retina castiga la transparencia y casi no se ve nada contra el
+fondo". The cause is that the macOS dock paints one flat translucent colour into a CAShapeLayer with no
+backdrop blur behind it, while the Windows panel sits on an acrylic backdrop that does the separating work.
+Same alpha, very different result, and a Retina screen shows every pixel of the wallpaper through it.
+Rule: a token that describes a *material* (translucency, blur, elevation, shadow) has to be re-checked
+against a screenshot on each platform, not copied. Copy the metrics and the hues; verify the materials.
+Related: the hover card looked translucent for a different reason worth remembering — its fade-in used
+`panel.animator().alphaValue = 1` and a concurrent animation group from `layout` interrupted it, freezing
+the window near 0.5. An implicit alpha animation that matters needs a completion handler that sets the
+final value.
