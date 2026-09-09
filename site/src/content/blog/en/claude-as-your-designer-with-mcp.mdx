@@ -1,0 +1,73 @@
+---
+title: "Claude as your designer, through an MCP design server"
+description: "With Pencil or Figma's MCP server connected, a coding agent can draw the screen before it writes the code, look at what it drew, and fix it. How the loop works, what each step costs in context, and where to keep a hand on the wheel."
+date: 2026-09-09
+section: design
+cover: ../../../assets/blog/claude-as-your-designer-with-mcp/design-loop-en.svg
+coverAlt: "Sequence diagram of a design round trip between you, the coding agent, an MCP design server and the canvas"
+sources:
+  - title: "pen.dev documentation: AI integration"
+    href: "https://docs.pen.dev/getting-started/ai-integration"
+  - title: "pen.dev documentation: What is pen.dev?"
+    href: "https://docs.pen.dev/"
+  - title: "Figma developer docs: Figma MCP server, tools and prompts"
+    href: "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+  - title: "Figma Help: Guide to the Figma MCP server"
+    href: "https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Dev-Mode-MCP-Server"
+  - title: "Model Context Protocol: Architecture overview"
+    href: "https://modelcontextprotocol.io/docs/learn/architecture"
+---
+import Figure from '../../../components/Figure.astro';
+import loop from '../../../assets/blog/claude-as-your-designer-with-mcp/design-loop-en.svg';
+
+A coding agent that can only write code designs by accident: it picks a layout while typing the CSS and you find out what it chose in the browser. Give the same agent a design tool through MCP and the order flips. It sketches the screen on a canvas, takes a screenshot to check its own work, adjusts, and only then writes the code, and you get to say "narrower sidebar" while it is still a rectangle. Two servers make this practical in 2026: **pen.dev's Pencil**, a vector design tool that lives inside your IDE and is currently free, and **Figma's MCP server**, which reads and now writes native Figma files. This article walks through the loop with real tool names and real costs.
+
+## The round trip
+
+<Figure src={loop} alt="Sequence diagram: you ask for a settings screen; the agent calls get_guidelines and get_app_state on the design server and receives rules and the current document as text; it calls execute to create frames, text and buttons, which the server draws on the canvas; it calls get_screenshot and receives a PNG; it reports back to you; you ask for tighter spacing and a brand colour" caption="One iteration. Everything on the agent's side is a model call carrying the conversation so far; the screenshot comes back as image tokens." ours="the Pencil MCP server's tool list and Figma's MCP server guide" locale="en" plate />
+
+With Pencil open and its MCP server connected, the whole exchange happens in the terminal you already use. The server is local, which pen.dev's documentation stresses: "MCP server runs on your machine", "design files stay local", and "AI suggests, you approve". Its seven tools, as listed by the server itself when we asked:
+
+| Tool | What it does |
+|---|---|
+| `get_guidelines` | Loads task guides and visual styles for working with `.pen` files |
+| `get_app_state` | Returns the canvas state, the current selection and the document schema the other tools need |
+| `execute` | Runs a batch of design operations: create frames, text, components, apply styles |
+| `get_screenshot` | Renders a node or the whole document as an image; the server's own description says screenshots are expensive and to use them sparingly |
+| `export_nodes` | Exports nodes as PNG, JPEG, WEBP or PDF files |
+| `export_html` | Exports nodes as HTML with Tailwind or plain CSS, optionally as a full page |
+| `browser` | Loads a real web page and reproduces it, or one element of it, as editable layers |
+
+Figma's server covers the same loop with a larger vocabulary: `get_design_context`, `get_metadata` (a sparse outline of a selection), `get_variable_defs` and `get_screenshot` to read; `use_figma` for general create-and-edit, `generate_figma_design` to draw layers from a code interface, `create_new_file`, `upload_assets` and `generate_diagram` (Mermaid to FigJam) to write. The remote server works on every Figma plan; the desktop server needs a Dev or Full seat on a paid plan, and Figma says plainly that agent access "will eventually be a usage-based paid feature".
+
+## A worked example
+
+Tokendial's own settings window is the case we know best. The author drew a two-column layout as a Tailwind mockup, handed it to Claude Code, and the agent rebuilt it as a native Windows window: providers on the left, panel and alert settings on the right, dark and light looks, a design system of tokens extracted from the mockup. With a design server the same conversation runs the other way round:
+
+1. *"Sketch the settings screen in the open `.pen` file: two columns, providers left, alerts right, dark surface, our brand green for the primary action."* The agent calls `get_guidelines` and `get_app_state`, learns the document's schema and any style you have set, and drafts with `execute`.
+2. *"Show me."* One `get_screenshot`. You see rectangles and labels, not code. This is the cheap moment to say the sidebar is too wide or the hierarchy is wrong.
+3. *"Tighter spacing, and the Install buttons should read as secondary."* Another `execute`, another screenshot.
+4. *"Now build it."* The agent reads the final nodes back, or exports them with `export_html`, and writes the real components. The design and the implementation agree because one was read from the other.
+
+pen.dev's documentation lists the prompts it expects at each stage, from "Create a pricing table with 3 tiers" to "Generate React code for this component" and "Create Tailwind config from these variables", which is a fair map of what the tool is for.
+
+## What it costs, and where
+
+Everything the design server does passes through the model's context window, so it is worth knowing the shape of the bill.
+
+- **Tool definitions.** We measured Pencil's seven tools at 2,997 tokens of definitions. In a host that sends full definitions that is paid on every turn of the conversation; in Claude Code, which defers definitions, it is a few dozen tokens of names until a tool is used. Figma's larger tool set costs more; connect either only in the projects where you design.
+- **Document state.** `get_app_state` returns the canvas and schema as text. A big file is a big return, which is why Figma's guidance says to avoid selecting large, heavy frames and offers `get_metadata` as a sparse outline.
+- **Screenshots.** Images are metered as tokens and Pencil's own tool description warns they are expensive. One per iteration is a good rule; asking the agent to "look again" after every micro-change is how a design session eats a window.
+- **Exports.** `export_html` of a whole screen can be several thousand tokens of markup. Export the component you are about to build, not the page.
+
+The design loop is still cheaper than the alternative it replaces, which is writing the wrong CSS, looking at it in the browser and rewriting it, because the correction happens on rectangles rather than on code and tests.
+
+## Keeping a hand on the wheel
+
+The pattern that works is the one pen.dev states as policy: the agent proposes, you approve. Three habits make it stick.
+
+- **Give it a style before a screen.** Colours, type scale, spacing, in a style the server can load through `get_guidelines` or in your project's instruction file. Without one, every screen is designed from scratch and looks like it.
+- **Review at the screenshot, not at the code.** The whole point of the loop is that the expensive step, implementation, comes after you have agreed on the picture.
+- **Keep the approvals on.** `execute` writes to your design file and `use_figma` writes to your Figma document. The host's confirmation prompt is the difference between a suggestion and a surprise.
+
+If you already have a coding agent and a design file, the setup is a few lines of MCP configuration and a running app. The result is not that Claude becomes a designer. It is that the design conversation moves to the place where it is cheapest to have: before the code exists, at the edge of a window you can see.

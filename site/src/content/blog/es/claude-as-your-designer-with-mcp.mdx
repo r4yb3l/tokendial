@@ -1,0 +1,73 @@
+---
+title: "Claude como tu diseñador, a través de un servidor MCP de diseño"
+description: "Con Pencil o el servidor MCP de Figma conectado, un agente de código puede dibujar la pantalla antes de escribir el código, mirar lo que dibujó y corregirlo. Cómo funciona el bucle, qué cuesta cada paso en contexto y dónde mantener la mano en el volante."
+date: 2026-09-09
+section: design
+cover: ../../../assets/blog/claude-as-your-designer-with-mcp/design-loop-es.svg
+coverAlt: "Diagrama de secuencia de una vuelta de diseño entre tú, el agente de código, un servidor MCP de diseño y el lienzo"
+sources:
+  - title: "Documentación de pen.dev: AI integration"
+    href: "https://docs.pen.dev/getting-started/ai-integration"
+  - title: "Documentación de pen.dev: What is pen.dev?"
+    href: "https://docs.pen.dev/"
+  - title: "Documentación para desarrolladores de Figma: Figma MCP server, tools and prompts"
+    href: "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+  - title: "Ayuda de Figma: Guide to the Figma MCP server"
+    href: "https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Dev-Mode-MCP-Server"
+  - title: "Model Context Protocol: Architecture overview"
+    href: "https://modelcontextprotocol.io/docs/learn/architecture"
+---
+import Figure from '../../../components/Figure.astro';
+import loop from '../../../assets/blog/claude-as-your-designer-with-mcp/design-loop-es.svg';
+
+Un agente de código que solo sabe escribir código diseña por accidente: elige una maquetación mientras teclea el CSS y tú descubres lo que eligió en el navegador. Dale al mismo agente una herramienta de diseño por MCP y el orden se invierte. Boceta la pantalla en un lienzo, se hace una captura para comprobar su propio trabajo, ajusta y solo entonces escribe el código, y tú puedes decir "la barra lateral más estrecha" mientras todavía es un rectángulo. Dos servidores hacen esto práctico en 2026: **Pencil, de pen.dev**, una herramienta de diseño vectorial que vive dentro de tu IDE y hoy es gratuita, y **el servidor MCP de Figma**, que lee y ahora también escribe archivos nativos de Figma. Este artículo recorre el bucle con nombres de herramienta reales y costes reales.
+
+## La vuelta completa
+
+<Figure src={loop} alt="Diagrama de secuencia: pides una pantalla de ajustes; el agente llama a get_guidelines y get_app_state en el servidor de diseño y recibe reglas y el documento actual como texto; llama a execute para crear marcos, texto y botones, que el servidor dibuja en el lienzo; llama a get_screenshot y recibe un PNG; te informa; pides menos espaciado y un color de marca" caption="Una iteración. Todo lo del lado del agente es una llamada al modelo con la conversación hasta ese momento; la captura vuelve como tokens de imagen." ours="la lista de herramientas del servidor MCP de Pencil y la guía del servidor MCP de Figma" locale="es" plate />
+
+Con Pencil abierto y su servidor MCP conectado, todo el intercambio ocurre en la terminal que ya usas. El servidor es local, cosa que la documentación de pen.dev subraya: "el servidor MCP corre en tu máquina", "los archivos de diseño se quedan en local" y "la IA sugiere, tú apruebas". Sus siete herramientas, tal como las listó el propio servidor cuando se lo pedimos:
+
+| Herramienta | Qué hace |
+|---|---|
+| `get_guidelines` | Carga guías de tareas y estilos visuales para trabajar con archivos `.pen` |
+| `get_app_state` | Devuelve el estado del lienzo, la selección actual y el esquema del documento que necesitan las demás herramientas |
+| `execute` | Ejecuta un lote de operaciones de diseño: crear marcos, texto, componentes, aplicar estilos |
+| `get_screenshot` | Renderiza un nodo o el documento entero como imagen; la propia descripción del servidor dice que las capturas son caras y hay que usarlas con moderación |
+| `export_nodes` | Exporta nodos como archivos PNG, JPEG, WEBP o PDF |
+| `export_html` | Exporta nodos como HTML con Tailwind o CSS plano, opcionalmente como página completa |
+| `browser` | Carga una web real y la reproduce, o uno de sus elementos, como capas editables |
+
+El servidor de Figma cubre el mismo bucle con un vocabulario mayor: `get_design_context`, `get_metadata` (un esquema disperso de la selección), `get_variable_defs` y `get_screenshot` para leer; `use_figma` para crear y editar en general, `generate_figma_design` para dibujar capas a partir de una interfaz de código, `create_new_file`, `upload_assets` y `generate_diagram` (de Mermaid a FigJam) para escribir. El servidor remoto funciona en todos los planes de Figma; el de escritorio necesita un asiento Dev o Full en un plan de pago, y Figma dice sin rodeos que el acceso de agentes "acabará siendo una función de pago por uso".
+
+## Un ejemplo trabajado
+
+La ventana de ajustes del propio Tokendial es el caso que mejor conocemos. El autor dibujó una maquetación de dos columnas como mockup en Tailwind, se la pasó a Claude Code y el agente la reconstruyó como ventana nativa de Windows: proveedores a la izquierda, panel y alertas a la derecha, modo oscuro y claro, un sistema de diseño de tokens extraído del mockup. Con un servidor de diseño la misma conversación va al revés:
+
+1. *"Boceta la pantalla de ajustes en el `.pen` abierto: dos columnas, proveedores a la izquierda, alertas a la derecha, superficie oscura, nuestro verde de marca para la acción principal."* El agente llama a `get_guidelines` y `get_app_state`, aprende el esquema del documento y el estilo que hayas fijado, y hace el borrador con `execute`.
+2. *"Enséñamelo."* Un `get_screenshot`. Ves rectángulos y etiquetas, no código. Este es el momento barato para decir que la barra lateral es demasiado ancha o que la jerarquía está mal.
+3. *"Menos espaciado, y los botones de Instalar deberían leerse como secundarios."* Otro `execute`, otra captura.
+4. *"Ahora constrúyelo."* El agente relee los nodos finales, o los exporta con `export_html`, y escribe los componentes reales. Diseño e implementación coinciden porque uno se leyó del otro.
+
+La documentación de pen.dev lista los prompts que espera en cada fase, de "Create a pricing table with 3 tiers" a "Generate React code for this component" y "Create Tailwind config from these variables", que es un buen mapa de para qué sirve la herramienta.
+
+## Qué cuesta, y dónde
+
+Todo lo que hace el servidor de diseño pasa por la ventana de contexto del modelo, así que conviene conocer la forma de la factura.
+
+- **Definiciones de herramientas.** Medimos las siete herramientas de Pencil en 2.997 tokens de definiciones. En un host que manda las definiciones completas eso se paga en cada turno de la conversación; en Claude Code, que las difiere, son unas docenas de tokens de nombres hasta que se usa una. El conjunto mayor de Figma cuesta más; conecta cualquiera de los dos solo en los proyectos donde diseñes.
+- **Estado del documento.** `get_app_state` devuelve el lienzo y el esquema como texto. Un archivo grande es una devolución grande, y por eso la guía de Figma dice que evites seleccionar marcos grandes y pesados y ofrece `get_metadata` como esquema disperso.
+- **Capturas.** Las imágenes se miden en tokens y la propia descripción de la herramienta de Pencil avisa de que son caras. Una por iteración es una buena regla; pedir al agente que "mire otra vez" tras cada microcambio es como una sesión de diseño se come una ventana.
+- **Exportaciones.** Un `export_html` de una pantalla completa pueden ser varios miles de tokens de marcado. Exporta el componente que vas a construir, no la página.
+
+El bucle de diseño sigue siendo más barato que la alternativa a la que sustituye, escribir el CSS equivocado, mirarlo en el navegador y reescribirlo, porque la corrección ocurre sobre rectángulos y no sobre código y pruebas.
+
+## Mantener la mano en el volante
+
+El patrón que funciona es el que pen.dev declara como política: el agente propone, tú apruebas. Tres hábitos lo afianzan.
+
+- **Dale un estilo antes que una pantalla.** Colores, escala tipográfica, espaciado, en un estilo que el servidor pueda cargar con `get_guidelines` o en el archivo de instrucciones de tu proyecto. Sin eso, cada pantalla se diseña de cero y se nota.
+- **Revisa en la captura, no en el código.** Todo el sentido del bucle es que el paso caro, la implementación, llega después de que hayáis acordado la imagen.
+- **Deja las aprobaciones puestas.** `execute` escribe en tu archivo de diseño y `use_figma` en tu documento de Figma. La confirmación del host es la diferencia entre una sugerencia y una sorpresa.
+
+Si ya tienes un agente de código y un archivo de diseño, la configuración son unas líneas de MCP y una app abierta. El resultado no es que Claude se convierta en diseñador. Es que la conversación de diseño se traslada al sitio donde es más barata: antes de que exista el código, al borde de una ventana que puedes ver.

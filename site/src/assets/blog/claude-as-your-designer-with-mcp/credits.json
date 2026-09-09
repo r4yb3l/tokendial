@@ -1,0 +1,9 @@
+[
+  {
+    "file": "design-loop-en.svg / design-loop-es.svg",
+    "title": "One design round trip through an MCP design server",
+    "author": "Tokendial",
+    "license": "MIT (repository licence)",
+    "builtFrom": "Pencil MCP tools/list (local) and https://help.figma.com/hc/en-us/articles/32132100833559"
+  }
+]
