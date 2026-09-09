@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="372" viewBox="0 0 820 372" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">
+<text x="20" y="30" font-size="15" font-weight="600" fill="#0f172a">Every turn re-reads the whole conversation: the window only grows</text>
+<line x1="306" y1="107.80000000000001" x2="800" y2="107.80000000000001" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="6 4"/>
+<text x="306" y="99.80000000000001" font-size="12" fill="#be123c">window limit</text>
+<rect x="330" y="280.2" width="46" height="19.8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="330" y="271.4" width="46" height="8.8" fill="#3b82f6" stroke="#1d4ed8" stroke-width="0.8"/>
+<rect x="330" y="255.99999999999997" width="46" height="15.4" fill="#10b981" stroke="#047857" stroke-width="0.8"/>
+<text x="353.0" y="247.99999999999997" font-size="12" text-anchor="middle" fill="#0f172a" font-weight="600">200k</text>
+<text x="353.0" y="318" font-size="12" text-anchor="middle" fill="#475569">Turn 1</text>
+<rect x="422" y="280.2" width="46" height="19.8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="422" y="271.4" width="46" height="8.8" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="422" y="255.99999999999997" width="46" height="15.4" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="422" y="243.89999999999998" width="46" height="12.1" fill="#3b82f6" stroke="#1d4ed8" stroke-width="0.8"/>
+<rect x="422" y="224.09999999999997" width="46" height="19.8" fill="#10b981" stroke="#047857" stroke-width="0.8"/>
+<text x="445.0" y="216.09999999999997" font-size="12" text-anchor="middle" fill="#0f172a" font-weight="600">345k</text>
+<text x="445.0" y="318" font-size="12" text-anchor="middle" fill="#475569">Turn 2</text>
+<rect x="514" y="280.2" width="46" height="19.8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="514" y="271.4" width="46" height="8.8" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="514" y="255.99999999999997" width="46" height="15.4" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="514" y="243.89999999999998" width="46" height="12.1" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="514" y="224.09999999999997" width="46" height="19.8" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="514" y="214.19999999999996" width="46" height="9.9" fill="#3b82f6" stroke="#1d4ed8" stroke-width="0.8"/>
+<rect x="514" y="189.99999999999997" width="46" height="24.2" fill="#10b981" stroke="#047857" stroke-width="0.8"/>
+<text x="537.0" y="181.99999999999997" font-size="12" text-anchor="middle" fill="#0f172a" font-weight="600">500k</text>
+<text x="537.0" y="318" font-size="12" text-anchor="middle" fill="#475569">Turn 3</text>
+<rect x="606" y="280.2" width="46" height="19.8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="606" y="271.4" width="46" height="8.8" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="606" y="255.99999999999997" width="46" height="15.4" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="606" y="243.89999999999998" width="46" height="12.1" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="606" y="224.09999999999997" width="46" height="19.8" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="606" y="214.19999999999996" width="46" height="9.9" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="606" y="189.99999999999997" width="46" height="24.2" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="606" y="176.79999999999998" width="46" height="13.2" fill="#3b82f6" stroke="#1d4ed8" stroke-width="0.8"/>
+<rect x="606" y="159.2" width="46" height="17.6" fill="#10b981" stroke="#047857" stroke-width="0.8"/>
+<text x="629.0" y="151.2" font-size="12" text-anchor="middle" fill="#0f172a" font-weight="600">640k</text>
+<text x="629.0" y="318" font-size="12" text-anchor="middle" fill="#475569">Turn 4</text>
+<rect x="698" y="280.2" width="46" height="19.8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="271.4" width="46" height="8.8" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="255.99999999999997" width="46" height="15.4" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="243.89999999999998" width="46" height="12.1" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="224.09999999999997" width="46" height="19.8" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="214.19999999999996" width="46" height="9.9" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="189.99999999999997" width="46" height="24.2" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="176.79999999999998" width="46" height="13.2" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="159.2" width="46" height="17.6" fill="#bbf7d0" stroke="#94a3b8" stroke-width="0.8"/>
+<rect x="698" y="148.2" width="46" height="11.0" fill="#3b82f6" stroke="#1d4ed8" stroke-width="0.8"/>
+<rect x="698" y="121.79999999999998" width="46" height="26.4" fill="#10b981" stroke="#047857" stroke-width="0.8"/>
+<text x="721.0" y="113.79999999999998" font-size="12" text-anchor="middle" fill="#0f172a" font-weight="600">810k</text>
+<text x="721.0" y="318" font-size="12" text-anchor="middle" fill="#475569">Turn 5</text>
+<line x1="306" y1="300" x2="800" y2="300" stroke="#94a3b8"/>
+<rect x="20" y="70" width="14" height="14" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8"/>
+<text x="40" y="81" font-size="11.5" fill="#334155">System prompt and tool definitions</text>
+<text x="40" y="96" font-size="11.5" fill="#334155">(paid on every turn)</text>
+<rect x="20" y="107" width="14" height="14" rx="3" fill="#3b82f6" stroke="#1d4ed8" stroke-width="0.8"/>
+<text x="40" y="118" font-size="11.5" fill="#334155">Your new message</text>
+<rect x="20" y="129" width="14" height="14" rx="3" fill="#10b981" stroke="#047857" stroke-width="0.8"/>
+<text x="40" y="140" font-size="11.5" fill="#334155">The new answer (and its thinking)</text>
+<rect x="20" y="151" width="14" height="14" rx="3" fill="#bfdbfe" stroke="#94a3b8" stroke-width="0.8"/>
+<text x="40" y="162" font-size="11.5" fill="#334155">Earlier turns, carried along</text>
+<text x="40" y="177" font-size="11.5" fill="#334155">with every request</text>
+<text x="20" y="346" font-size="11" fill="#64748b">Diagram: Tokendial, built from Anthropic's description of context window behaviour (docs.anthropic.com, Context windows).</text>
+<text x="20" y="361" font-size="11" fill="#64748b">Sizes in thousands of tokens are illustrative.</text>
+</svg>

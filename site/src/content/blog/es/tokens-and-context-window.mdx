@@ -1,0 +1,87 @@
+---
+title: "Tokens y ventana de contexto: la moneda y el bolsillo"
+description: "Todos los planes te miden en tokens y toda conversación vive dentro de una ventana que solo crece. Qué es de verdad un token, medido sobre cadenas reales, y por qué la ventana es el número que te termina la tarde."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/tokens-and-context-window/context-window-es.svg
+coverAlt: "Gráfico de barras de la ventana de contexto de una conversación creciendo turno a turno hacia su límite"
+sources:
+  - title: "OpenAI Help: Understanding and counting tokens"
+    href: "https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them"
+  - title: "Anthropic: Context windows"
+    href: "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  - title: "Anthropic: Models overview"
+    href: "https://docs.anthropic.com/en/docs/about-claude/models/overview"
+  - title: "Wikipedia: Byte-pair encoding"
+    href: "https://en.wikipedia.org/wiki/Byte-pair_encoding"
+  - title: "tiktoken, la librería de tokenización de OpenAI (usada para las mediciones)"
+    href: "https://github.com/openai/tiktoken"
+---
+import Figure from '../../../components/Figure.astro';
+import tokenizer from '../../../assets/blog/tokens-and-context-window/tokenizer-es.svg';
+import window from '../../../assets/blog/tokens-and-context-window/context-window-es.svg';
+import embedding from '../../../assets/blog/tokens-and-context-window/word-embedding.svg';
+
+Dos números deciden cuánto puedes construir con un asistente de IA antes de que te pare. Uno es cuántos **tokens** has gastado en la ventana actual de tu plan. El otro es cuántos tokens hay en la **ventana de contexto** de la conversación en la que estás. Se confunden todo el tiempo, porque los dos se miden en la misma unidad y los dos suben mientras trabajas. Este artículo los separa: la moneda, y el bolsillo donde cae.
+
+## Un token es la unidad de texto del modelo
+
+Los modelos de lenguaje no leen caracteres ni palabras. Leen tokens: trozos de texto que el tokenizador del modelo decidió que merecen una entrada propia en su vocabulario. Un token puede ser una palabra entera, un pedazo de una, un signo de puntuación o un espacio pegado al principio de una palabra. La regla aproximada de OpenAI para el inglés es que un token son unos cuatro caracteres, o tres cuartos de palabra, así que 100 tokens vienen a ser unas 75 palabras.
+
+Las reglas aproximadas esconden lo interesante, así que aquí van cuatro cadenas reales pasadas por un tokenizador real.
+
+<Figure src={tokenizer} alt="Cuatro cadenas divididas en fichas de colores: una frase en inglés en 10 tokens, su traducción al español en 16, el identificador handleUserAuthCallback en 4 y console.log('ready') en 5" caption="Las palabras comunes en inglés son un token cada una. El español, los identificadores y el código se trocean." ours="mediciones con tiktoken (o200k_base) tomadas el 8 de septiembre de 2026" locale="es" plate />
+
+Tres cosas que mirar:
+
+- **La misma frase cuesta más en español.** "The quick brown fox…" son 10 tokens; su traducción al español, 16. El vocabulario se construyó con texto mayoritariamente en inglés, así que las palabras inglesas suelen ser un solo token mientras las españolas se partan (`marr` + `ón`, `p` + `erez` + `oso`). Si escribes tus prompts en otro idioma, pagas un recargo en cada mensaje.
+- **El código es denso.** `handleUserAuthCallback` son cuatro tokens; `console.log('ready')`, cinco. Un archivo C# de 309 líneas del repositorio de Tokendial, 12.298 caracteres, dio 2.561 tokens, unos 4,8 caracteres por token. El código tokeniza algo mejor que la regla del inglés porque las palabras clave y la puntuación se repiten muchísimo.
+- **Los espacios y las mayúsculas cuentan.** ` quick` con su espacio inicial es un token distinto de `quick`, y `Red` no es `red`. Por eso las fichas de la figura muestran el espacio inicial como ␣.
+
+¿Cómo decide el tokenizador? La mayoría de los modelos usan una variante de la **codificación por pares de bytes** (BPE), un algoritmo que Philip Gage publicó en 1994 para comprimir. Empieza con caracteres sueltos, busca el par adyacente más frecuente, lo fusiona en un token nuevo y repite hasta que el vocabulario alcanza el tamaño elegido. El tokenizador detrás de GPT-3.5 y GPT-4 tiene 100.258 entradas. Lo frecuente, como la palabra "the" o el fragmento `.log`, se gana un token propio; lo raro se monta con piezas. Esa es toda la razón de que una cadena de 40 letras *a* cueste solo 5 tokens (el tokenizador tiene un token de ocho aes) mientras `supercalifragilisticexpialidocious` cuesta 10.
+
+Una vez partido, cada token se convierte en una lista de números, un **embedding**, que lo coloca en un espacio donde los tokens relacionados quedan cerca. Esa es la representación con la que el modelo trabaja de verdad.
+
+<Figure src={embedding} alt="Gráfico bidimensional en el que la flecha de France a Paris es paralela a la flecha de Germany a Berlin" caption="Los embeddings convierten el significado en geometría: el paso de un país a su capital es la misma flecha dos veces." author="Fschwarzentruber" license="CC BY-SA 4.0" licenseHref="https://creativecommons.org/licenses/by-sa/4.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Word_embedding_illustration.svg" locale="es" natural plate />
+
+## Cuatro clases de token en la factura
+
+Los proveedores no cobran "tokens" a secas. La página de ayuda de OpenAI lista cuatro categorías, y los demás fabricantes usan la misma forma:
+
+| Clase | Qué es | Por qué te importa |
+|---|---|---|
+| Entrada | Todo lo que se manda al modelo en una petición: tu mensaje, la conversación hasta ahora, archivos, definiciones de herramientas | Se reenvía en cada turno, así que crece con la conversación |
+| Salida | Lo que el modelo escribe de vuelta | Normalmente la clase más cara por token |
+| Entrada cacheada | Entrada que el proveedor reconoció de una petición anterior y sirvió desde caché | Más barata; por eso un prompt de sistema estable cuesta menos que uno que cambia |
+| Razonamiento | El pensamiento interno del modelo antes de la respuesta visible | No lo ves, pero se cobra como salida |
+
+La última fila sorprende. En un modelo con razonamiento, una respuesta de dos líneas puede costar miles de tokens, porque el pensamiento que la produjo se mide aunque nunca lo veas. La documentación de Anthropic dice lo mismo de Claude: los tokens de razonamiento se cobran como salida y cuentan para la ventana.
+
+## La ventana de contexto es el bolsillo
+
+Anthropic define la ventana de contexto como "todo el texto al que un modelo de lenguaje puede referirse al generar una respuesta, incluida la respuesta misma". Es la memoria de trabajo del modelo para esta conversación, y es distinta de lo que aprendió en el entrenamiento. Todo lo de la petición cuenta: el prompt de sistema, cada mensaje hasta ahora, los resultados de herramientas, las imágenes y documentos, las definiciones de herramientas y la salida que el modelo está a punto de escribir, razonamiento incluido.
+
+Lo que importa para tu factura es cómo se comporta la ventana a lo largo de los turnos.
+
+<Figure src={window} alt="Cinco barras apiladas, una por turno. Cada barra contiene el prompt de sistema fijo, todos los mensajes y respuestas anteriores, más el mensaje y la respuesta nuevos, así que las barras crecen hasta llegar a una línea discontinua marcada como límite de la ventana" caption="En cada turno el modelo relee todo lo anterior. Tu tercer mensaje se paga en el tercer turno, en el cuarto, en el quinto…" ours="la descripción de Anthropic del comportamiento de la ventana de contexto" locale="es" plate />
+
+Tu primer mensaje se envía una vez. El segundo se envía con el primero adjunto. El décimo lleva los nueve anteriores, más nueve respuestas, más cada archivo que el agente leyó por el camino. Los tokens de entrada se acumulan, y como la entrada se cobra por turno, un mensaje viejo te sigue costando mucho después de haberlo escrito. Esa es la aritmética detrás del consejo de abrir una conversación nueva cuando cambia la tarea.
+
+Dos datos más de la misma página:
+
+- **Más grande no es mejor a partir de cierto punto.** Cuando la ventana se llena, la precisión y la memoria se degradan. Anthropic lo llama *context rot* y dice que elegir qué hay en la ventana importa tanto como cuánto sitio queda.
+- **Los chats ruedan, las API no.** Una interfaz de chat puede descartar en silencio los turnos más viejos cuando la ventana se llena. Un agente que trabaja por la API tiene que compactar, que es lo que hace `/compact` en Claude Code: pide al modelo que resuma la conversación y sigue con el resumen en lugar del historial.
+
+## Cuánto mide la ventana en 2026
+
+Los tamaños cambian cada año, así que tómalos de la página del fabricante y no de la memoria. Al escribir esto, Claude Fable 5.1, Opus 5 y Sonnet 5 de Anthropic tienen una ventana de un millón de tokens y pueden producir hasta 128.000 tokens de salida en una sola respuesta; Haiku 4.5 y modelos anteriores como Sonnet 4.5 tienen 200.000. Un millón de tokens son unas 750.000 palabras en inglés, o unos 390 archivos del tamaño del C# medido arriba.
+
+Suena a que nunca debería acabarse. Dos razones por las que se acaba igual. La ventana es por conversación, pero la **ventana de tu plan** es por periodo: un límite de sesión de cinco horas o uno semanal del que beben todas las conversaciones. Y la relectura de la figura hace que una sesión larga de agente consuma la ventana del plan mucho más rápido de lo que sugiere el tamaño de una sola petición.
+
+## Qué hacer con todo esto
+
+- **Escribe los prompts en el idioma que te cobran más barato, cuando no te cueste claridad.** Para la mayoría es el inglés, con un margen del 30 al 60 % en prosa.
+- **Señala, no pegues.** Un archivo que el agente lee con una herramienta entra en la ventana una vez, cuando hace falta. Uno que pegas entra en cada turno hasta que termina la conversación.
+- **Corta la ventana cuando cambie la tarea.** Tarea nueva, conversación nueva. Misma tarea que se arrastra, compacta.
+- **Cuenta con el razonamiento en la factura.** Si tu asistente piensa antes de responder, una respuesta corta no es una respuesta barata.
+- **Lee el medidor, no el número de mensajes.** Uses la herramienta que uses para vigilar tu plan, el número que importa son los tokens de la ventana actual, y las dos ventanas, conversación y plan, se vacían juntas.

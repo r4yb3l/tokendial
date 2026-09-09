@@ -1,0 +1,25 @@
+[
+  {
+    "file": "word-embedding.svg",
+    "title": "Word embedding illustration",
+    "author": "Fschwarzentruber",
+    "license": "CC BY-SA 4.0",
+    "licenseHref": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://commons.wikimedia.org/wiki/File:Word_embedding_illustration.svg",
+    "downloaded": "2026-09-08"
+  },
+  {
+    "file": "tokenizer-en.svg / tokenizer-es.svg",
+    "title": "How four real strings split into tokens",
+    "author": "Tokendial",
+    "license": "MIT (repository licence)",
+    "builtFrom": "tiktoken o200k_base measurements, 2026-09-08"
+  },
+  {
+    "file": "context-window-en.svg / context-window-es.svg",
+    "title": "Every turn re-reads the whole conversation",
+    "author": "Tokendial",
+    "license": "MIT (repository licence)",
+    "builtFrom": "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  }
+]

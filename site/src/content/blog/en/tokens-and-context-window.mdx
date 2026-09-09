@@ -1,0 +1,87 @@
+---
+title: "Tokens and the context window: the coin and the pocket"
+description: "Every plan meters you in tokens and every conversation lives inside a window that only grows. Here is what a token actually is, measured on real strings, and why the window is the number that ends your afternoon."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/tokens-and-context-window/context-window-en.svg
+coverAlt: "Bar chart of a conversation's context window growing turn by turn towards its limit"
+sources:
+  - title: "OpenAI Help: Understanding and counting tokens"
+    href: "https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them"
+  - title: "Anthropic: Context windows"
+    href: "https://docs.anthropic.com/en/docs/build-with-claude/context-windows"
+  - title: "Anthropic: Models overview"
+    href: "https://docs.anthropic.com/en/docs/about-claude/models/overview"
+  - title: "Wikipedia: Byte-pair encoding"
+    href: "https://en.wikipedia.org/wiki/Byte-pair_encoding"
+  - title: "tiktoken, OpenAI's tokenizer library (used for the measurements)"
+    href: "https://github.com/openai/tiktoken"
+---
+import Figure from '../../../components/Figure.astro';
+import tokenizer from '../../../assets/blog/tokens-and-context-window/tokenizer-en.svg';
+import window from '../../../assets/blog/tokens-and-context-window/context-window-en.svg';
+import embedding from '../../../assets/blog/tokens-and-context-window/word-embedding.svg';
+
+Two numbers decide how much you can build with an AI assistant before it stops you. One is how many **tokens** you have spent in the current window of your plan. The other is how many tokens are sitting in the **context window** of the conversation you are in. People confuse them constantly, because both are measured in the same unit and both go up as you work. This article separates them: the coin, and the pocket it goes into.
+
+## A token is the model's unit of text
+
+Language models do not read characters or words. They read tokens: chunks of text that the model's tokenizer has decided are worth a single entry in its vocabulary. A token can be a whole word, a piece of one, a punctuation mark, or a space glued to the start of a word. OpenAI's own rule of thumb for English is that one token is about four characters, or three quarters of a word, so 100 tokens come to roughly 75 words.
+
+Rules of thumb hide the interesting part, so here are four real strings passed through a real tokenizer.
+
+<Figure src={tokenizer} alt="Four strings split into coloured token chips: an English sentence in 10 tokens, its Spanish translation in 16, the identifier handleUserAuthCallback in 4, and console.log('ready') in 5" caption="Common English words are one token each. Spanish, identifiers and code get chopped into pieces." ours="tiktoken (o200k_base) measurements taken on 8 September 2026" locale="en" plate />
+
+Three things to notice:
+
+- **The same sentence costs more in Spanish.** "The quick brown fox…" is 10 tokens; its Spanish translation is 16. The vocabulary was built from text that is mostly English, so English words tend to be single tokens while Spanish ones get split (`marr` + `ón`, `p` + `erez` + `oso`). If you prompt in another language, you pay a surcharge on every message.
+- **Code is dense.** `handleUserAuthCallback` is four tokens; `console.log('ready')` is five. A 309-line C# file from the Tokendial repository, 12,298 characters, came to 2,561 tokens, which is about 4.8 characters per token. Code tokenizes a little better than the English rule of thumb because keywords and punctuation are so repetitive.
+- **Spaces and capitals matter.** ` quick` with its leading space is a different token from `quick`, and `Red` is not `red`. The chips in the figure show the leading space as ␣ for that reason.
+
+How does the tokenizer decide? Most models use a variant of **byte-pair encoding**, an algorithm Philip Gage published in 1994 for compression. It starts with single characters, finds the most frequent adjacent pair, merges it into a new token, and repeats until the vocabulary reaches a chosen size. The tokenizer behind GPT-3.5 and GPT-4 has 100,258 entries. Frequent things, like the word "the" or the fragment `.log`, earn their own token; rare things are assembled from pieces. That is the whole reason a 40-character string of the letter *a* costs only 5 tokens (the tokenizer has an 8-a token) while `supercalifragilisticexpialidocious` costs 10.
+
+Once split, each token becomes a list of numbers, an **embedding**, that places it in a space where related tokens sit near each other. That is the representation the model actually works on.
+
+<Figure src={embedding} alt="Two-dimensional plot in which the arrow from France to Paris is parallel to the arrow from Germany to Berlin" caption="Embeddings put meaning into geometry: the step from a country to its capital is the same arrow twice." author="Fschwarzentruber" license="CC BY-SA 4.0" licenseHref="https://creativecommons.org/licenses/by-sa/4.0/" sourceHref="https://commons.wikimedia.org/wiki/File:Word_embedding_illustration.svg" locale="en" natural plate />
+
+## Four kinds of token on the bill
+
+Providers do not bill "tokens" flat. OpenAI's help page lists four categories, and the other vendors use the same shape:
+
+| Kind | What it is | Why it matters to you |
+|---|---|---|
+| Input | Everything sent to the model in a request: your message, the conversation so far, files, tool definitions | It is re-sent on every turn, so it grows with the conversation |
+| Output | What the model writes back | Usually the most expensive kind per token |
+| Cached input | Input the provider recognised from a previous request and served from cache | Cheaper; it is why a stable system prompt costs less than a changing one |
+| Reasoning | The model's internal thinking before the visible answer | Not shown to you, but billed as output |
+
+The last row surprises people. On a reasoning model, a two-line answer can cost thousands of tokens, because the thinking that produced it is metered even though you never see it. Anthropic's documentation says the same about Claude: thinking tokens are billed as output and count towards the window.
+
+## The context window is the pocket
+
+Anthropic defines the context window as "all the text a language model can reference when generating a response, including the response itself". It is the model's working memory for this conversation, and it is separate from what the model learned in training. Everything in the request counts: the system prompt, every message so far, tool results, images and documents, the tool definitions, and the output the model is about to write, thinking included.
+
+The part that matters for your bill is how the window behaves across turns.
+
+<Figure src={window} alt="Five stacked bars, one per turn. Each bar contains the fixed system prompt, every earlier message and answer, plus the new message and answer, so the bars grow until they reach a dashed line marked window limit" caption="On every turn the model re-reads everything that came before. Your third message is paid for on the third, fourth, fifth… turn." ours="Anthropic's description of context window behaviour" locale="en" plate />
+
+Your first message is sent once. Your second message is sent with the first one attached. Your tenth message carries the nine before it, plus nine answers, plus every file the agent read along the way. Input tokens accumulate, and because input is billed per turn, an old message keeps costing you long after you wrote it. That is the arithmetic behind the advice to start a fresh conversation when the task changes.
+
+Two more facts from the same page:
+
+- **Bigger is not better past a point.** As the window fills, accuracy and recall degrade. Anthropic calls it *context rot* and says curating what is in the window matters as much as how much room there is.
+- **Chat products roll, APIs do not.** A chat interface may quietly drop the oldest turns when the window is full. An agent working through the API has to compact instead, which is what Claude Code's `/compact` does: it asks the model to summarise the conversation and continues with the summary in place of the history.
+
+## How big is the window in 2026
+
+Sizes change every year, so take them from the vendor's page rather than from memory. As of this writing, Anthropic's Claude Fable 5.1, Opus 5 and Sonnet 5 have a one-million-token window and can produce up to 128,000 output tokens in a single answer; Haiku 4.5 and older models such as Sonnet 4.5 have 200,000. A million tokens is roughly 750,000 English words, or about 390 files the size of the C# file measured above.
+
+That sounds like it should never run out. Two reasons it still does. The window is per conversation, but your **plan's window** is per period: a five-hour session limit or a weekly limit that every conversation draws from. And the re-reading in the figure means a long agent session can consume its plan window many times faster than the size of any single request suggests.
+
+## What to do with all this
+
+- **Prompt in the language you are billed cheapest in, when it does not cost you clarity.** For most people that is English, by a margin of 30 to 60 % on prose.
+- **Point, do not paste.** A file the agent reads with a tool enters the window once, when needed. A file you paste enters it on every turn until the conversation ends.
+- **Cut the window when the task changes.** New task, new conversation. Same task dragging on, compact.
+- **Expect thinking on the bill.** If your assistant reasons before answering, a short reply is not a cheap reply.
+- **Read the meter, not the message count.** Whatever tool you use to watch your plan, the number that matters is tokens in the current window, and the two windows, conversation and plan, drain together.
