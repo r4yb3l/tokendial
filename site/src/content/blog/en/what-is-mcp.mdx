@@ -1,0 +1,91 @@
+---
+title: "What MCP is and why your agent needs it"
+description: "The Model Context Protocol is the plug that lets a coding agent read your database, drive your browser or edit a Figma file. Here is how it works, what it costs in context, and what to watch before you install a server."
+date: 2026-09-09
+section: basics
+cover: ../../../assets/blog/what-is-mcp/mcp-components.svg
+coverAlt: "Component diagram: a host with two MCP clients, each connected over a transport layer to an MCP server in its own process"
+sources:
+  - title: "Model Context Protocol: What is MCP?"
+    href: "https://modelcontextprotocol.io/docs/getting-started/intro"
+  - title: "Model Context Protocol: Architecture overview"
+    href: "https://modelcontextprotocol.io/docs/learn/architecture"
+  - title: "Wikipedia: Model Context Protocol"
+    href: "https://en.wikipedia.org/wiki/Model_Context_Protocol"
+  - title: "Hou et al. 2025, Model Context Protocol (MCP): Landscape, Security Threats, and Future Research Directions"
+    href: "https://arxiv.org/abs/2503.23278"
+---
+import Figure from '../../../components/Figure.astro';
+import components from '../../../assets/blog/what-is-mcp/mcp-components.svg';
+import initialization from '../../../assets/blog/what-is-mcp/mcp-initialization.svg';
+
+A language model on its own can only do one thing: turn text into more text. Everything else your coding agent does, reading a file, running the tests, opening a pull request, querying Postgres, moving a rectangle in a design tool, happens because a program around the model exposes those actions as **tools**. Until late 2024 every assistant invented its own way of describing tools, so a connector written for one assistant was useless in the next. The Model Context Protocol, MCP, is the open standard that ended that. If you have added a "server" to Claude Code, Cursor or VS Code and suddenly the agent could see your tickets, you have used it.
+
+## The problem it solves
+
+Anthropic published MCP in November 2024 and described the situation it replaced as an "N × M" problem: N assistants, M data sources, and a custom integration for every pair. OpenAI's function-calling API from 2023 and the ChatGPT plug-in framework had solved pieces of it, but each was tied to one vendor. MCP borrowed its shape from something developers already knew, the Language Server Protocol that lets one language plugin work in every editor, and applied it to context: write one server for your data or tool, and every assistant that speaks MCP can use it.
+
+The bet paid off quickly. OpenAI adopted the protocol in March 2025, Google DeepMind followed, and in December 2025 Anthropic donated it to the Agentic AI Foundation under the Linux Foundation, co-founded with Block and OpenAI. By mid-2026, more than 10,000 servers were reported in production and the SDKs were being downloaded over 97 million times a month. The official site's own analogy is a USB-C port: one connector, any device.
+
+## Three participants
+
+<Figure src={components} alt="A host box containing two MCP clients; each client connects through a transport layer to an MCP server running in its own process" caption="One host, one client per server, each server in its own process. Local servers talk over standard input and output; remote ones over HTTP." author="modelcontextprotocol developers" license="MIT" licenseHref="https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/LICENSE" sourceHref="https://commons.wikimedia.org/wiki/File:Model_Context_Protocol_Component_diagram.svg" locale="en" natural plate />
+
+The protocol names three roles, and the naming trips people up because "client" is not you:
+
+- **Host.** The AI application: Claude Code, Claude Desktop, Cursor, VS Code, ChatGPT. It runs the model loop and decides when a tool should be called.
+- **Client.** A component inside the host that holds one connection to one server. Connect Claude Code to a filesystem server and a GitHub server and it creates two clients.
+- **Server.** A program that offers context and actions. It can run on your machine (the filesystem server Claude Desktop launches) or on someone else's (Sentry's hosted server).
+
+Local servers use the **stdio transport**: the host starts the server as a child process and they talk over standard input and output, with no network involved. Remote servers use **Streamable HTTP**: HTTP POST for messages, optional Server-Sent Events for streaming, and ordinary HTTP authentication, with OAuth recommended for obtaining tokens. Whatever the transport, the messages themselves are JSON-RPC 2.0, the same format used by language servers.
+
+## What a server can offer
+
+The interesting part of MCP is its small vocabulary of **primitives**, the things a server can expose:
+
+| Primitive | What it is | Example from a database server |
+|---|---|---|
+| Tools | Functions the model can call to act | `run_query(sql)` |
+| Resources | Data the host can read into context | The schema of the database |
+| Prompts | Reusable templates for a kind of interaction | A few-shot example of good queries |
+
+Each primitive has a list method (`tools/list`, `resources/list`, `prompts/list`), so the host discovers what is available at connection time rather than from a hard-coded manifest. Servers can also ask things of the host: **elicitation** lets a server request more input or a confirmation from the user mid-operation. Two client-side features you may see in older material, *sampling* (a server asking the host's model for a completion) and *roots*, were deprecated in the July 2026 revision of the specification.
+
+Here is the sequence when you type "why is the checkout test failing?" into a host connected to a test-runner server:
+
+1. At connection time the host has already asked the server for its tools and received each one's name, a plain-language description and the JSON schema of its arguments.
+2. Those descriptions were placed **into the model's context window** alongside your message.
+3. The model decides a tool is needed and emits a structured call: `run_tests` with `{ "filter": "checkout" }`.
+4. The host's client forwards the call to the server. The server runs the tests and returns the output.
+5. The host injects the output into the conversation as a tool result, and the model continues, now with the failing assertion in front of it.
+
+Step 2 is the one that touches your bill, and the next section is about it.
+
+<Figure src={initialization} alt="Sequence diagram: the client sends an initialize request, the server responds, the client sends an initialized notification, and the connection is ready for use" caption="The handshake as it worked from 2024 to mid-2026. The July 2026 revision made the protocol stateless: each request now carries its version and capabilities, and servers advertise themselves through a server/discover request." author="modelcontextprotocol developers" license="MIT" licenseHref="https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/LICENSE" sourceHref="https://commons.wikimedia.org/wiki/File:Model_Context_Protocol_Initialization_sequence_diagram.svg" locale="en" natural plate />
+
+## What it costs you in context
+
+Every tool a connected server exposes is described to the model as text: a name, a description, and a schema of its parameters. That text sits in the context window on **every turn**, whether or not the tool gets used, because the model has to know what it could call. A server with forty tools and verbose descriptions can add several thousand tokens to each request before you have typed a word, and as the article on context windows explains, input is re-read on every turn.
+
+Three practical consequences:
+
+- **Connect servers to the project that needs them, not globally.** Most hosts let you scope a server to a directory or a workspace. A browser-automation server is useful when you are debugging a web app and pure weight when you are writing a CLI.
+- **Prefer servers with few, well-named tools.** Ten precise tools cost less than fifty generic ones and, in practice, the model picks the right one more often.
+- **Watch the result sizes too.** A tool that returns a whole log file or a 2,000-row query result puts all of it into the window. Good servers paginate or summarise; if yours does not, ask the agent for the failing lines only.
+
+If you watch your plan's meter while working, you can see this directly: the same prompt in a project with six servers connected and in one with none does not cost the same.
+
+## What to check before you install a server
+
+MCP moves fast and the security work is catching up. A 2025 analysis by security researchers listed open issues including prompt injection through tool results and *poisoned tools*: a malicious server whose tool descriptions instruct the model to exfiltrate data through another connected tool. The protocol itself does not verify what a server says about itself.
+
+So treat a server like any dependency you give access to your machine:
+
+- **Know who publishes it.** Prefer the official server for a service (GitHub's, Sentry's, Figma's) or the reference implementations maintained by the project, over an unknown package that wraps the same API.
+- **Read what it can do.** Its tool list is its permission list. A "read-only" database server should have no tool that writes.
+- **Mind the credentials.** A local server usually runs with your user's rights and whatever tokens you pass it in its configuration. Give it a token scoped to what it needs.
+- **Keep confirmations on.** Hosts ask before running a tool for a reason. Turning approvals off for a server you installed ten minutes ago is how a bad description becomes a bad action.
+
+## Where this leaves you
+
+MCP is the reason a coding agent in 2026 can do more than edit files: it is how the agent reaches your database, your browser, your issue tracker and your design tool through one standard plug. The cost is paid in context on every turn, and the risk is the same as for any code you run with your own permissions. Connect what the project needs, read the tool list, and keep the approvals. Later articles in the Tools section look at which servers earn their place for coding work and how much context each one really takes.

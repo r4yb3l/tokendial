@@ -1,0 +1,29 @@
+[
+  {
+    "file": "mcp-components.svg",
+    "title": "Model Context Protocol: component diagram",
+    "author": "modelcontextprotocol developers",
+    "license": "MIT",
+    "licenseHref": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/LICENSE",
+    "source": "https://commons.wikimedia.org/wiki/File:Model_Context_Protocol_Component_diagram.svg",
+    "downloaded": "2026-09-08"
+  },
+  {
+    "file": "mcp-initialization.svg",
+    "title": "Model Context Protocol: initialization sequence diagram",
+    "author": "modelcontextprotocol developers",
+    "license": "MIT",
+    "licenseHref": "https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/LICENSE",
+    "source": "https://commons.wikimedia.org/wiki/File:Model_Context_Protocol_Initialization_sequence_diagram.svg",
+    "downloaded": "2026-09-08",
+    "note": "Shows the pre-2026-07-28 handshake; the caption says so."
+  },
+  {
+    "file": "mcp-logo.svg",
+    "title": "Model Context Protocol logo",
+    "author": "Model Context Protocol",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Model_Context_Protocol_logo.svg",
+    "downloaded": "2026-09-08"
+  }
+]
