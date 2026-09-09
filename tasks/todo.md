@@ -100,7 +100,8 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] Tests: catalog, script, locator, watcher
 - [ ] SECURITY.md and README paragraphs
 - [x] Live on this PC: OpenCode row Install → sheet → terminal (winget) → detected as installed → terminal closed without sign-in → row shows the not-seen hint with Sign in as the next step. Sign-in → auto-connect still to be exercised by the user pressing the buttons; Grok untested live
-- [ ] macOS: same recipes, zsh script, Terminal.app, Strings.load + bundled docs (later, when the Mac is on)
+- [x] macOS (2026-09-09): the recipes moved to Homebrew where brew publishes the tool (claude-code, codex, copilot-cli, opencode as well as the two casks that already were), Grok kept on xAI's own installer, and Gemini CLI added through npm, the only route that exists on both platforms; `npm` joins the requires enum. Swift core (catalogue, locator, state, sh script, watcher), the specs bundled beside the translations, rows and sheet on the Chrome components. The terminal is not ours here, so the script drops a marker file on its way out and the watcher polls that instead of waiting on a process
+- [x] Live on the Mac (2026-09-09): the user pressed Install on Grok. Script written executable, terminal opened, tool landed at ~/.grok/bin/grok, marker written, watcher completed with success, auto-connect followed and the reading came back nothingMetered. `which grok` finds nothing in that shell, which is the case the declared paths exist for
 
 ## Review
 - macOS v0.1.0 panel, card, banners, settings and Claude Code reading verified live on the Mac over SSH on 2026-09-08; Swift core passes the same 17 vectors and 25 fixtures as C#.
