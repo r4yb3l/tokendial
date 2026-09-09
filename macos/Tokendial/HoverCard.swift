@@ -16,7 +16,13 @@ enum HoverCard {
         switch tile.reading.status {
         case .needsSignIn: add(wrap(Label.make(Strings.t("card.notSignedIn"), size: 12, color: Theme.textSecondary)), to: body, top: 6)
         case .unsupported(let why): add(wrap(Label.make(why, size: 12, color: Theme.textSecondary)), to: body, top: 6)
-        case .failed(let why): add(wrap(Label.make(Strings.t("card.failed", ["why": why]), size: 12, color: Theme.textSecondary)), to: body, top: 6)
+        case .failed(let why):
+            add(wrap(Label.make(Strings.t("card.failed", ["why": why]), size: 12, color: Theme.textSecondary)), to: body, top: 6)
+            // Being turned away by the keychain is the one failure the user can fix, and the one that
+            // deserves saying what the access is for.
+            if why == Strings.t("error.keychainRefused") {
+                add(wrap(Label.make(Strings.t("card.keychainWhy"), size: 11, color: Theme.textDisabled)), to: body, top: 6)
+            }
         default: break
         }
 

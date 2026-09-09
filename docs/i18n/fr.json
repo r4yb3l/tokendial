@@ -29,7 +29,8 @@
     "card.derived": "Déduit de l'activité locale ; le fournisseur ne le publie pas",
     "card.waiting": "en attente depuis {elapsed}",
     "card.unavailable": "Indisponible ({why})",
-    "error.keychainRefused": "macOS a bloqué la lecture du trousseau",
+    "error.keychainRefused": "macOS a refusé la lecture du trousseau",
+    "card.keychainWhy": "Tokendial en a besoin pour lire la consommation que cet outil conserve déjà : la session est lue pour appeler le point d’accès de l’outil lui-même, jamais écrite, et jamais envoyée ailleurs. Autorisez-le dans Trousseaux d’accès, puis choisissez Actualiser.",
 
     "copy.resetIn": { "one": "Réinitialisation dans {n} min", "other": "Réinitialisation dans {n} min" },
     "copy.resetAt": "Réinitialisation {time}",

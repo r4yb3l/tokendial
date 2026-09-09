@@ -29,7 +29,8 @@
     "card.derived": "Derived from local activity, not published by the provider",
     "card.waiting": "waiting {elapsed}",
     "card.unavailable": "Unavailable ({why})",
-    "error.keychainRefused": "macOS blocked the keychain read",
+    "error.keychainRefused": "macOS did not allow the keychain read",
+    "card.keychainWhy": "Tokendial needs it to read the usage this tool already keeps for you: the sign-in is read to call that tool’s own endpoint, never written, and never sent anywhere else. Allow it in Keychain Access, then choose Refresh.",
 
     "copy.resetIn": { "one": "Resets in {n} min", "other": "Resets in {n} min" },
     "copy.resetAt": "Resets {time}",

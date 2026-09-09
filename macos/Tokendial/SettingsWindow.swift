@@ -47,6 +47,13 @@ final class SettingsModel: ObservableObject {
         }
     }
 
+    /// Whether this provider is unreadable only because the keychain turned Tokendial away, which is the one
+    /// failure worth explaining in the row: the user can fix it, and deserves to know what the access is for.
+    func keychainRefused(_ summary: ProviderSummary) -> Bool {
+        guard case .failed(let why)? = reading(summary.id)?.status else { return false }
+        return why == Strings.t("error.keychainRefused")
+    }
+
     private func waiting(_ summary: ProviderSummary) -> String {
         summary.account == nil ? summary.signIn.explanation : Strings.t("status.waitingFirst")
     }
@@ -167,6 +174,13 @@ private struct ProviderCard: View {
                         .foregroundStyle(summary.connected ? Chrome.slate400 : Chrome.slate500)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
+                    if model.keychainRefused(summary) {
+                        Text(Strings.t("card.keychainWhy"))
+                            .font(Chrome.font(11))
+                            .foregroundStyle(Chrome.slate500)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 2)
+                    }
                 }
                 Spacer(minLength: 8)
                 actions
@@ -499,6 +513,7 @@ struct WelcomeView: View {
                     Text(Strings.t("app.name")).font(Chrome.font(22, .semibold)).foregroundStyle(Chrome.strong)
                     ChromeBody(Strings.t("welcome.intro"))
                     ChromeBody(Strings.t("welcome.optIn"))
+                    ChromeBody(Strings.t("card.keychainWhy"), size: 11)
                     found
                     if !absent.isEmpty { notSignedIn }
                     buttons.padding(.top, 6)

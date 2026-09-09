@@ -29,7 +29,8 @@
     "card.derived": "Derivado de la actividad local; el proveedor no lo publica",
     "card.waiting": "esperando {elapsed}",
     "card.unavailable": "No disponible ({why})",
-    "error.keychainRefused": "macOS bloqueó la lectura del llavero",
+    "error.keychainRefused": "macOS no permitió leer el llavero",
+    "card.keychainWhy": "Tokendial lo necesita para leer el consumo que esta herramienta ya guarda: la sesión se lee para consultar el punto de acceso de la propia herramienta, nunca se escribe y no se envía a ningún sitio. Permítelo en Acceso a Llaveros y pulsa Actualizar.",
 
     "copy.resetIn": { "one": "Se reinicia en {n} min", "other": "Se reinicia en {n} min" },
     "copy.resetAt": "Se reinicia {time}",

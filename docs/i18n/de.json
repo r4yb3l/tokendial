@@ -29,7 +29,8 @@
     "card.derived": "Aus lokaler Aktivität abgeleitet; der Anbieter veröffentlicht es nicht",
     "card.waiting": "wartet seit {elapsed}",
     "card.unavailable": "Nicht verfügbar ({why})",
-    "error.keychainRefused": "macOS hat den Schlüsselbundzugriff blockiert",
+    "error.keychainRefused": "macOS hat den Schlüsselbundzugriff verweigert",
+    "card.keychainWhy": "Tokendial braucht ihn, um den Verbrauch zu lesen, den dieses Werkzeug ohnehin speichert: die Anmeldung wird gelesen, um den Endpunkt des Werkzeugs aufzurufen, nie geschrieben und nirgendwohin gesendet. Erlaube es in der Schlüsselbundverwaltung und wähle dann Aktualisieren.",
 
     "copy.resetIn": { "one": "Zurücksetzung in {n} Min.", "other": "Zurücksetzung in {n} Min." },
     "copy.resetAt": "Zurücksetzung {time}",
