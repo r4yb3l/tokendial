@@ -554,6 +554,14 @@ final class HostedWindow<Content: View> {
         window.isReleasedWhenClosed = false
         window.contentMinSize = NSSize(width: 480, height: 360)
         window.setContentSize(NSSize(width: width, height: height))
+        applyAppearance()
+    }
+
+    /// The window wears the theme's appearance, not the system's. Everything the system draws for us - the
+    /// selection behind a field's text, the caret, the focus ring, the scrollers - takes its colour from
+    /// there, so a light window under a dark system would otherwise fill a field with a black selection.
+    private func applyAppearance() {
+        window.appearance = NSAppearance(named: Theme.dark ? .darkAqua : .aqua)
     }
 
     private var centred = false
@@ -565,10 +573,14 @@ final class HostedWindow<Content: View> {
     }
 
     /// The window frame keeps the look too, so a theme switch does not leave a pale edge behind the content.
-    func retheme() { window.backgroundColor = NSColor(Chrome.windowBackground) }
+    func retheme() {
+        window.backgroundColor = NSColor(Chrome.windowBackground)
+        applyAppearance()
+    }
 
     func show() {
         window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(nil)
         if !centred, let screen = window.screen ?? NSScreen.main {
             let size = window.frame.size
             let visible = screen.visibleFrame

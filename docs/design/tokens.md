@@ -44,7 +44,12 @@ derived from the dark mockup and are open to a design pass.
 | `textPrimary` / `textSecondary` / `textDisabled` | #1B1F27 / #5B6270 / #A3A9B4 |
 
 Settings windows: window #F4F6FA, cards white at 60–95 %, edges #D9DFE8, lines #C5CEDA, inks
-#0F172A / #1E293B / #334155 / #64748B / #94A3B8; the brand green and its tints do not change.
+#0F172A / #1E293B / #334155 / #475569 / #64748B; the brand green and its tints do not change.
+The two quietest inks are one step darker than a plain inversion of the dark ramp would give:
+at 11 px on a white card, #64748B reached only 4.75:1 and #94A3B8 failed outright, where
+#475569 reads at 7.5:1. On macOS the settings window also wears the theme's own appearance, so
+what the system draws for us — the selection behind a field's text, the caret, the focus ring —
+cannot come back in dark-mode colours on a light window.
 
 ## Dial
 

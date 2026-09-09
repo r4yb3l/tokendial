@@ -30,8 +30,8 @@ enum Chrome {
     static let lightLook = Look(
         windowBackground: rgb(0xF4F6FA), surface850: rgb(0xFFFFFF), surface800: rgb(0xF1F4F8), surface750: rgb(0xE8ECF2),
         surface700: rgb(0xD9DFE8), surface600: rgb(0xB9C2CF),
-        slate100: rgb(0x0F172A), slate200: rgb(0x1E293B), slate300: rgb(0x334155), slate400: rgb(0x64748B),
-        slate500: rgb(0x94A3B8), strong: rgb(0x0F172A),
+        slate100: rgb(0x0F172A), slate200: rgb(0x1E293B), slate300: rgb(0x334155), slate400: rgb(0x475569),
+        slate500: rgb(0x64748B), strong: rgb(0x0F172A),
         divider: rgba(0x0F172A, 0.10), titleBarFill: rgba(0xFFFFFF, 0.85),
         sheet: rgba(0xFFFFFF, 0.95), sheetStrong: rgba(0xFFFFFF, 0.9), sheetSoft: rgba(0xFFFFFF, 0.8), sheetFaint: rgba(0xFFFFFF, 0.6),
         edge: rgba(0xD9DFE8, 0.9), edgeSoft: rgba(0xD9DFE8, 0.6), line: rgba(0xC5CEDA, 0.8), lineSoft: rgba(0xC5CEDA, 0.6), lineFaint: rgba(0xC5CEDA, 0.4),
