@@ -76,11 +76,11 @@
 
 .theme-light,
 :root[data-theme='light'] {
-  --color-ink-950: #f4f6fa;
+  --color-ink-950: #e9edf3;
   --color-ink-900: #ffffff;
   --color-ink-800: #f1f4f8;
-  --color-ink-750: #e8ecf2;
-  --color-ink-700: #d9dfe8;
+  --color-ink-750: #e1e7ef;
+  --color-ink-700: #d2dae5;
   --color-ink-600: #b9c2cf;
   --color-brand-400: #059669;
   --color-watch: #d97706;
@@ -97,13 +97,17 @@
   color-scheme: light;
 }
 
+/* Dark is the default look, chosen rather than inherited: the dials are the product and they only glow
+   against the dark. The head script therefore stamps data-theme="dark" when nothing is stored, and the
+   attribute is absent only when the reader has explicitly asked to follow the system - which is what this
+   block is for. */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    --color-ink-950: #f4f6fa;
+  :root:not([data-theme]) {
+    --color-ink-950: #e9edf3;
     --color-ink-900: #ffffff;
     --color-ink-800: #f1f4f8;
-    --color-ink-750: #e8ecf2;
-    --color-ink-700: #d9dfe8;
+    --color-ink-750: #e1e7ef;
+    --color-ink-700: #d2dae5;
     --color-ink-600: #b9c2cf;
     --color-brand-400: #059669;
     --color-watch: #d97706;
@@ -159,6 +163,45 @@ body {
 
 .btn-primary {
   @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-colors duration-200 cursor-pointer bg-brand-500 text-[#062b1f] hover:bg-brand-400;
+}
+
+/* The download buttons: the reader's own platform is the green one and comes first. Both stay on the page,
+   because people download for the machine they are not sitting at. With no JavaScript, or on a platform we
+   cannot name, Windows leads. */
+.btn-download {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-colors duration-200 cursor-pointer border border-ink-600/70 bg-ink-800 text-slate-200 hover:bg-ink-750;
+}
+
+:root:not([data-platform]) [data-download='windows'],
+:root[data-platform='other'] [data-download='windows'],
+:root[data-platform='mobile'] [data-download='windows'],
+:root[data-platform='windows'] [data-download='windows'],
+:root[data-platform='mac'] [data-download='mac'] {
+  @apply border-transparent bg-brand-500 text-[#062b1f] hover:bg-brand-400;
+}
+
+.req {
+  @apply text-slate-500;
+}
+
+/* Linux is not shipping yet, so this is not a download button: it is a dashed link to the thread where
+   people can ask for it, which is also how the demand gets counted. A reader whose platform we could not
+   name is most often on Linux, so the line addressed to them brightens for them. */
+.soon {
+  @apply inline-flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-ink-600/70 px-4 text-sm font-medium text-slate-500 transition-colors duration-200;
+}
+
+.soon:hover {
+  @apply border-brand-500/50 bg-brand-500/5 text-slate-200;
+}
+
+:root[data-platform='other'] .soon {
+  @apply border-brand-500/40 bg-brand-500/5 text-slate-300;
+}
+
+:root[data-platform='windows'] .req-windows,
+:root[data-platform='mac'] .req-mac {
+  @apply text-slate-300;
 }
 
 .btn-secondary {

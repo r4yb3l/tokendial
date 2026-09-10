@@ -105,6 +105,7 @@
   "footer.issues": "Tickets",
   "platform.windows": "Windows 10 1809 ou ultérieur",
   "platform.macos": "macOS 14 ou ultérieur",
+  "platform.linux": "Linux · bientôt",
   "nav.theme": "Thème",
   "theme.system": "Système",
   "theme.light": "Clair",

@@ -105,6 +105,7 @@
   "footer.issues": "Incidencias",
   "platform.windows": "Windows 10 1809 o posterior",
   "platform.macos": "macOS 14 o posterior",
+  "platform.linux": "Linux · próximamente",
   "nav.theme": "Tema",
   "theme.system": "Sistema",
   "theme.light": "Claro",

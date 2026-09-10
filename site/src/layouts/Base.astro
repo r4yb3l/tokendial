@@ -29,10 +29,21 @@ const ogImage = image ?? new URL('/og.png', site).href;
     <meta charset="utf-8" />
     <script is:inline>
       document.documentElement.classList.add('js');
+      const root = document.documentElement;
       try {
         const fromUrl = new URLSearchParams(location.search).get('theme');
         const stored = fromUrl || localStorage.getItem('theme');
-        if (stored === 'light' || stored === 'dark') document.documentElement.dataset.theme = stored;
+        const chosen = stored === 'light' || stored === 'dark' ? stored : stored === 'system' ? null : 'dark';
+        if (chosen) root.dataset.theme = chosen;
+        else delete root.dataset.theme;
+      } catch {
+        root.dataset.theme = 'dark';
+      }
+      try {
+        const ua = navigator.userAgent || '';
+        const platform = navigator.userAgentData?.platform || navigator.platform || ua;
+        const touch = /android|iphone|ipod/i.test(ua) || (/ipad/i.test(ua)) || (/mac/i.test(platform) && navigator.maxTouchPoints > 1);
+        root.dataset.platform = touch ? 'mobile' : /mac/i.test(platform) ? 'mac' : /win/i.test(platform) ? 'windows' : 'other';
       } catch {}
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />

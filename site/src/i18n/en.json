@@ -105,6 +105,7 @@
   "footer.issues": "Issues",
   "platform.windows": "Windows 10 1809 or later",
   "platform.macos": "macOS 14 or later",
+  "platform.linux": "Linux · coming soon",
   "nav.theme": "Theme",
   "theme.system": "System",
   "theme.light": "Light",

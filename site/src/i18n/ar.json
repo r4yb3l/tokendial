@@ -105,6 +105,7 @@
   "footer.issues": "المشكلات",
   "platform.windows": "Windows 10 1809 أو أحدث",
   "platform.macos": "macOS 14 أو أحدث",
+  "platform.linux": "لينكس · قريبًا",
   "nav.theme": "المظهر",
   "theme.system": "النظام",
   "theme.light": "فاتح",
