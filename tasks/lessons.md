@@ -114,3 +114,23 @@ macOS the same job is `open tokendial://settings`, which the app already handles
 UI Automation's `ScrollPattern` instead of faking a mouse.
 Rule: to inspect a running window, use the app's own entry points - a second launch with the flag, its URL
 scheme, or UI Automation. Synthetic global input is both unreliable and not mine to send.
+
+## A runner builds for the machine it is, not for the machines you ship to (2026-09-10)
+The macOS release job archived on a `macos-15` runner, which is Apple Silicon, and the archive took the
+active architecture alone: v0.1.0 went out with a thin arm64 binary that an Intel Mac cannot open. The
+signal was right in front of me - the dmg the runner produced was 1.07 MB where the same app built on the
+Mac an hour earlier was 1.9 MB - and I read it as "the runner strips better" instead of "half the binary is
+missing". I only caught it after publishing, by reading the Mach-O magic out of the released asset.
+Rule: a release artifact is not verified by the build going green. Assert the properties the download must
+have, in the workflow, next to where it is produced: `lipo -archs` must name every architecture, the
+signature must be the one intended, the version inside must match the tag. And when a size changes by half,
+that is the finding - chase it before shipping, not after.
+
+## Verify CI is green the same way you verify anything else (2026-09-10)
+I pushed six commits over a session believing CI was unverifiable from here, because `gh` was unauthenticated
+and the repository was private. The moment it went public the API showed CI had been failing on every run
+since 8 September - the macOS job asked `xcodebuild` for a test action on a scheme with no testable, which
+could never have passed. Nothing I pushed broke it, and nothing I pushed would have told me either.
+Rule: an unauthenticated `curl` of `api.github.com/repos/<repo>/actions/runs` answers "is CI green" for any
+public repository, and a red pipeline is a finding to report even when it predates the work. Do not treat a
+missing tool as a missing answer.
