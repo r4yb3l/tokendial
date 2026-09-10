@@ -42,6 +42,7 @@ function frontmatter(text) {
 }
 
 const problems = [];
+const warnings = [];
 const bySlug = new Map();
 
 for (const lang of LANGS) {
@@ -69,6 +70,10 @@ for (const lang of LANGS) {
     if (!/sources:/.test(front.__raw)) problems.push(`${where}: no sources; say what was read`);
     if (/example\.com|REPLACE/.test(front.__raw)) problems.push(`${where}: sources still hold the scaffold placeholder`);
     if (front.draft === 'true') problems.push(`${where}: still a draft`);
+    // Twelve of the twenty published articles have no cover, so this cannot be an error without calling
+    // the blog broken. It is still the thing most often forgotten, and a card and a social image both
+    // want one.
+    if (!front.cover) warnings.push(`${where}: no cover; the card and the social image fall back to nothing`);
 
     const body = text.slice(text.indexOf('\n---', 3) + 4);
     for (const [pattern, why] of FORBIDDEN) {
@@ -90,6 +95,10 @@ for (const [slug, langs] of bySlug) {
   if (missing.length) problems.push(`${slug}: exists only in ${[...langs].join(', ')}; missing ${missing.join(', ')}`);
 }
 
+if (warnings.length) {
+  console.warn(`${warnings.length} warning(s):`);
+  for (const w of warnings) console.warn('  ' + w);
+}
 if (problems.length) {
   console.error(`${problems.length} problem(s):`);
   for (const p of problems) console.error('  ' + p);

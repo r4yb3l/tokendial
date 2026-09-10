@@ -134,3 +134,14 @@ could never have passed. Nothing I pushed broke it, and nothing I pushed would h
 Rule: an unauthenticated `curl` of `api.github.com/repos/<repo>/actions/runs` answers "is CI green" for any
 public repository, and a red pipeline is a finding to report even when it predates the work. Do not treat a
 missing tool as a missing answer.
+
+## Never type into a surface you have not proved is the target (2026-09-10)
+Asked to open an editor in a pane, I split a new pane, called `focus-pane` on it, and sent the command.
+`focus-pane` answered `ok`, `send` answered `ok`, and the keystrokes landed in the Claude Code terminal
+instead - my command appeared inside the user's own prompt box and came back to me as if they had typed it.
+`send` writes to the active surface, `focus-pane` had not made the new pane active, and neither call said
+so. `send-key` does not even accept `--surface`, which was the clue that surface-addressed input is not
+supported here.
+Rule: opening a pane is mine to do; putting characters in it is not. Create the surface, then hand the user
+the command to paste. If input ever has to be driven, read the screen of the intended surface first and
+confirm it is what you think it is - an `ok` from the focus call is not that confirmation.
