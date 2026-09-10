@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://tokendial.app/sitemap-index.xml
