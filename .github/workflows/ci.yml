@@ -49,7 +49,10 @@ jobs:
       - name: Core tests
         if: hashFiles('macos/TokendialCore/Package.swift') != ''
         run: swift test --package-path macos/TokendialCore
-      - name: App build and tests
+      # The app target carries no XCTest bundle - its tests live in the Swift package and ran in the step
+      # above - so asking xcodebuild for the test action fails on a scheme that has no testable at all.
+      # This step builds, and now says so in its name.
+      - name: App build
         if: hashFiles('macos/project.yml') != ''
         run: |
           brew install xcodegen
@@ -57,9 +60,12 @@ jobs:
           xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -destination 'platform=macOS' \
             -configuration Debug -derivedDataPath build \
             CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= CODE_SIGN_ENTITLEMENTS= \
-            build test
+            build
+      # A picture of the panel is a diagnostic, not a gate: it needs a window server, and on a fresh
+      # machine the app can be sitting on a keychain prompt instead of drawing dials.
       - name: Smoke screenshot
         if: hashFiles('macos/project.yml') != ''
+        continue-on-error: true
         run: |
           APP=$(find macos/build -name 'Tokendial.app' -path '*Debug*' | head -1)
           open "$APP" && sleep 8 && screencapture -x macos/build/smoke.png
