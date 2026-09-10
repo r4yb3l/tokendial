@@ -3,6 +3,13 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Assets can be rebuilt for a tag that already exists. The tag itself never moves - a ruleset forbids
+  # it - so this is for replacing an artifact that was built wrong, not for changing what was released.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: An existing release tag to rebuild the macOS assets for, such as v0.1.0
+        required: true
 
 permissions:
   contents: write
@@ -10,6 +17,9 @@ permissions:
 jobs:
   windows:
     name: Windows package
+    # A manual run rebuilds macOS only; the Windows assets are produced by the tag push that made the
+    # release, and vpk would refuse to publish over a release that already exists.
+    if: github.event_name == 'push'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,16 +54,22 @@ jobs:
 
   macos:
     name: macOS package
-    # The release itself is created by the Windows job, so this one attaches to it rather than racing it.
+    # On a tag push the release is created by the Windows job, so this one waits rather than racing it for
+    # a release that does not exist yet. On a manual run the Windows job is skipped, which is not a failure.
     needs: windows
+    if: always() && needs.windows.result != 'failure' && needs.windows.result != 'cancelled'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - name: The tag must match VERSION
         run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
           VERSION=$(tr -d '[:space:]' < VERSION)
-          [ "${GITHUB_REF_NAME}" = "v${VERSION}" ] || { echo "tag ${GITHUB_REF_NAME} but VERSION is ${VERSION}"; exit 1; }
+          [ "${TAG}" = "v${VERSION}" ] || { echo "tag ${TAG} but VERSION is ${VERSION}"; exit 1; }
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate the project
@@ -70,6 +86,7 @@ jobs:
         run: >
           xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -configuration Release
           -derivedDataPath build -archivePath build/Tokendial.xcarchive archive
+          ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO
           CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
       - name: Export the app
         working-directory: macos
@@ -80,6 +97,17 @@ jobs:
           cp -R "$APP" dist/
           codesign --force --deep --sign - dist/Tokendial.app
           codesign -dv dist/Tokendial.app 2>&1 | grep -q "Signature=adhoc"
+      # v0.1.0 shipped arm64 only, because the runners are Apple Silicon and the archive took the active
+      # architecture alone. An Intel Mac could not open it. This fails the build rather than the download.
+      - name: The app must open on both Apple ecosystems
+        working-directory: macos
+        run: |
+          BIN="dist/Tokendial.app/Contents/MacOS/Tokendial"
+          ARCHS=$(lipo -archs "$BIN")
+          echo "architectures: ${ARCHS}"
+          for want in arm64 x86_64; do
+            case " ${ARCHS} " in *" ${want} "*) ;; *) echo "missing ${want}"; exit 1;; esac
+          done
       - name: Zip and disk image
         working-directory: macos/dist
         run: |
@@ -90,7 +118,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >
-          gh release upload ${{ github.ref_name }} --clobber
+          gh release upload ${{ env.TAG }} --clobber
           macos/dist/Tokendial-${{ env.VERSION }}-macos.zip
           macos/dist/Tokendial-${{ env.VERSION }}-macos.dmg
           macos/dist/Tokendial-${{ env.VERSION }}-macos.sha256
