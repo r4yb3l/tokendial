@@ -11,7 +11,6 @@ interface Props {
 }
 const { post, locale, compact = false } = Astro.props;
 const t = useTranslations(locale);
-const date = post.data.date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 const provider = post.data.provider as Parameters<typeof Mark>[0]['id'] | undefined;
 ---
 
@@ -22,7 +21,6 @@ const provider = post.data.provider as Parameters<typeof Mark>[0]['id'] | undefi
   <div class="flex items-center gap-2 text-xs text-slate-400">
     <span class="eyebrow !py-0.5">{t(`blog.section.${post.data.section}`)}</span>
     {provider && <span class="grid size-6 place-items-center rounded-md bg-ink-800 text-slate-300"><Mark id={provider} size={12} /></span>}
-    <span class="ms-auto">{date}</span>
   </div>
   <h3 class:list={['font-semibold text-slate-100 group-hover:text-brand-400 transition-colors', compact ? 'text-base' : 'text-lg']}>{post.data.title}</h3>
   <p class="text-sm leading-relaxed text-slate-400">{post.data.description}</p>

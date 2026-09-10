@@ -13,6 +13,13 @@ const site = production ? `https://${production}` : 'https://tokendial.app';
 export default defineConfig({
   site,
   output: 'static',
+  // Only the two index pages redirect. A dynamic source cannot be enumerated in a static build, and
+  // nothing outside the site ever linked to an individual post, so per-article redirects would be
+  // pages generated for links that do not exist.
+  redirects: {
+    '/blog': '/guides',
+    '/es/blog': '/es/guides'
+  },
   trailingSlash: 'never',
   build: { format: 'file' },
   i18n: {

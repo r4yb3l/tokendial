@@ -15,7 +15,7 @@ export function blogLocale(locale: Locale): Locale {
 
 export function blogPath(locale: Locale, slug = ''): string {
   const lang = blogLocale(locale);
-  const base = lang === defaultLocale ? '/blog' : `/${lang}/blog`;
+  const base = lang === defaultLocale ? '/guides' : `/${lang}/guides`;
   return slug ? `${base}/${slug}` : base;
 }
 
