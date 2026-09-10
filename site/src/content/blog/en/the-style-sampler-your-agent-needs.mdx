@@ -1,0 +1,110 @@
+---
+title: "The style sampler your agent is missing"
+description: "designprompts.dev holds thirty complete design systems, each browsable as a real page and downloadable as a prompt. What it gives you, what it costs in context, and the one technique inside it worth stealing."
+date: 2026-09-10
+section: tools
+sources:
+  - title: "Design Prompts, an AI-powered design style explorer"
+    href: "https://designprompts.dev/"
+  - title: "Claude Code documentation: CLAUDE.md and project memory"
+    href: "https://code.claude.com/docs/en/memory"
+---
+
+If you have been coding with an agent for a while you already know the shape of it. The code comes out
+fine, the logic comes out fine, and the interface comes out **the same**. White background, cards with
+rounded corners, a purple-to-blue gradient in the hero, Inter everywhere, and that blue-grey you can spot
+from a mile away. It is not that the model cannot design. It is that "make it look good" is zero
+information, and what comes back is the statistical average of every landing page it has ever seen.
+
+The obvious answer is to describe the style yourself. The problem is that describing a whole design system
+— palette, type scale, radii, shadows, how every component behaves, transitions — is hours of work, and you
+redo it in every project. designprompts.dev has already done it thirty times.
+
+## What it actually is
+
+Someone took one fictional landing page — a company called Acme Inc., with a hero, statistics, features,
+blog, pricing and an FAQ — and rendered it thirty times, once per visual system: Monochrome, Bauhaus,
+Terminal, Cyberpunk, Neo-brutalism, Academia, Vaporwave, Art Deco and on to thirty. You move through the
+list with the arrow keys and see each version whole and alive inside a fake browser frame. They are not
+screenshots: they are real pages, and you can open one in its own tab and scroll to the footer.
+
+When one of them fits, you press **Get Prompt**. What comes out is neither an image nor a Tailwind theme:
+it is a text document in two parts. The first defines who the model should be and orders it to read your
+stack before writing anything. The second is the style specification in Markdown, with the exact hexes, the
+full type scale, border weights, textures and their opacity, how every button and input behaves, and what
+happens on focus and on hover.
+
+## The part worth stealing
+
+What makes those documents work is not the level of detail. It is that each one carries an explicit list of
+what the style **is not**. Monochrome states that it has no gradients, no shadows, no rounded corners, and
+— word for word — that it must not look like "Minimalist Modern with the colours removed".
+
+A generative model obeys a concrete prohibition far better than an adjective. That is the technique, and it
+transfers to every design prompt you write from here on, whether or not you ever use one of these thirty.
+
+## Using it without burning your context
+
+Copy and paste works for a demo and fails for a project. This is the flow that pays off.
+
+1. **Choose by looking at the demo, not at the name.** "Professional", "Enterprise", "SaaS" and "Modern
+   Dark" sound alike and are four different things. Open the full page and scroll down to pricing and the
+   FAQ: that is where a visual system falls apart, not in the hero.
+2. **Save it as a file in the repository, not as a chat message.** Put it in `docs/design-system.md` and
+   reference it from your `CLAUDE.md` or your editor's rules. The style then survives a session restart,
+   you are not resending it every turn, and you can edit it the day you decide that a zero radius does not
+   apply to your modals.
+3. **Answer the interview before it asks.** The prompt is written to slot into code that already exists, so
+   its first move is to ask you about your stack, scope and constraints. Paste it expecting diffs and you
+   will get questions instead. Get ahead of it in the same message and you save two full turns.
+4. **Apply it to one screen and use that screen as the reference.** These are ambitious documents: they ask
+   for layered textures, enormous type, non-negotiable decisions. Applying one to a whole app at once
+   produces a redesign nobody can review. Leave one screen impeccable and let it be the example for the
+   rest; from there you are working against your own token file, which is far cheaper.
+
+## Where it falls down
+
+**The weight.** Six prompts measured by hand run from 6,574 characters (Terminal) to 32,588
+(Maximalism) — up to roughly eight thousand tokens in a single paste, at four characters to the token. Not
+catastrophic, but it is a medium-sized file of your project competing for the model's attention with the
+code you actually want it to look at. That is why step two above is not optional.
+
+**The stack.** All of it is written in React and Tailwind vocabulary: classes like `px-8 py-4`, scales like
+`text-8xl`, `var(--foreground)` variables, references to shadcn/ui and to Lucide's `strokeWidth`. If you
+work in Flutter, SwiftUI, or Vue with your own CSS, ask it first to convert the tokens section to your
+format, and only then to apply the style. Let it improvise and you end up with Tailwind class names written
+into a file that has no Tailwind.
+
+**The gallery's Light/Dark filter lies in two places.** Academia and Maximalism are labelled as light
+styles and both demos are unmistakably dark — Academia is deep brown with gold, Maximalism is black with
+neon — and the prompt modal itself declares them Dark Mode. They are two of the most interesting entries in
+the catalogue, and filtering by Dark hides them from you.
+
+## Before it goes into client work
+
+There is no terms page and no licence anywhere on the site. The material is plainly put there to be
+copied, but "free and frictionless" is not the same as "licensed for commercial use". If this is going into
+a repository you bill someone for, ask the author in writing rather than assume.
+
+## Who it serves, and who it half-serves
+
+It serves you enormously if you build landing pages, marketing sites, portfolios or the public face of a
+product, in React with Tailwind. That is where it drops in without friction and where the difference
+between using it and not using it shows up in the first render.
+
+It half-serves you if you are building an application. All thirty demos are marketing pages: not one app
+screen, no dashboard, no dense table, no long form, no empty state. The tokens and components still help,
+but each style's non-negotiable decisions are calibrated for a page you read top to bottom once, and
+one-hundred-and-sixty-pixel type is a different proposition when your user is going to sit inside it for
+six hours.
+
+## Verdict
+
+Worth the session it takes to try. Even if you use none of the thirty as they come, reading two or three of
+these documents teaches you the level of detail an agent needs before design stops coming out generic — and
+that lesson you take, for free, to every project after this one.
+
+*How this was checked: direct analysis of the live site on 10 September 2026 — reading the DOM and the
+metadata, inspecting the JavaScript bundle to extract the style registry, and opening the prompt modal on
+six styles to read the exact character counts. Token figures are approximations at four characters per
+token.*

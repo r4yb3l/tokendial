@@ -1,0 +1,114 @@
+---
+title: "El muestrario de estilos que le falta a tu agente"
+description: "designprompts.dev tiene treinta sistemas de diseño completos, cada uno navegable como página real y descargable como prompt. Qué te entrega, qué te cuesta en contexto y la técnica que hay dentro que sí vale robar."
+date: 2026-09-10
+section: tools
+sources:
+  - title: "Design Prompts, explorador de estilos de diseño para agentes"
+    href: "https://designprompts.dev/"
+  - title: "Documentación de Claude Code: CLAUDE.md y la memoria del proyecto"
+    href: "https://code.claude.com/docs/en/memory"
+---
+
+Si llevas un tiempo programando con un agente ya lo notaste. El código sale bien, la lógica sale bien, y la
+interfaz sale **igual**. Fondo blanco, tarjetas con esquinas redondeadas, un degradado de morado a azul en
+el hero, Inter para todo, y ese gris azulado que ya se reconoce a un kilómetro. No es que el modelo no sepa
+diseñar: es que "hazlo bonito" es cero información, y lo que devuelve es el promedio estadístico de todas
+las landings que ha visto.
+
+La respuesta obvia es describirle el estilo tú mismo. El problema es que describir un sistema de diseño
+completo —paleta, escala tipográfica, radios, sombras, comportamiento de cada componente, transiciones— es
+un trabajo de horas, y hay que rehacerlo en cada proyecto. designprompts.dev ya lo hizo treinta veces.
+
+## Qué es en realidad
+
+Alguien tomó una landing ficticia —una empresa llamada Acme Inc., con hero, estadísticas, features, blog,
+precios y FAQ— y la renderizó treinta veces, una por cada sistema visual: Monochrome, Bauhaus, Terminal,
+Cyberpunk, Neo-brutalism, Academia, Vaporwave, Art Deco y así hasta treinta. Recorres la lista con las
+flechas del teclado y ves cada versión completa y viva dentro de un marco de navegador falso. No son
+capturas: son páginas de verdad, y puedes abrirlas en su propia pestaña y bajar hasta el pie.
+
+Cuando una te sirve, aprietas **Get Prompt**. Lo que sale no es una imagen ni un tema de Tailwind: es un
+documento de texto en dos partes. La primera define quién debe ser el modelo y le ordena leer tu stack
+antes de escribir nada. La segunda es la especificación del estilo, en Markdown, con los hex exactos, la
+escala tipográfica completa, los grosores de borde, las texturas con su opacidad, cómo se comporta cada
+botón y cada input, y qué pasa en focus y en hover.
+
+## La parte que vale robar
+
+Lo que hace que esos documentos funcionen no es el nivel de detalle. Es que cada uno lleva una lista
+explícita de lo que el estilo **no es**. La de Monochrome aclara que no lleva degradados, no lleva sombras,
+no lleva esquinas redondeadas y —textualmente— que no debe parecerse a "Minimalist Modern con los colores
+quitados".
+
+Un modelo generativo obedece muchísimo mejor una prohibición concreta que un adjetivo. Esa es la técnica, y
+es transferible a cualquier prompt de diseño que escribas de aquí en adelante, uses o no uno de estos
+treinta.
+
+## Cómo usarlo sin quemarte el contexto
+
+Copiar y pegar funciona para una demo y falla para un proyecto. Este es el flujo que rinde.
+
+1. **Elige mirando la demo, no el nombre.** "Professional", "Enterprise", "SaaS" y "Modern Dark" suenan
+   parecido y son cuatro cosas distintas. Abre la página completa y baja hasta la sección de precios y la
+   FAQ: ahí es donde un sistema visual se cae, no en el hero.
+2. **Guárdalo como archivo del repositorio, no como mensaje de chat.** Pégalo en `docs/design-system.md` y
+   referéncialo desde tu `CLAUDE.md` o desde las reglas de tu editor. Así el estilo sobrevive al reinicio
+   de sesión, no lo reenvías en cada turno, y puedes editarlo el día que decidas que el radio cero no
+   aplica a tus modales.
+3. **Contesta la entrevista antes de que te la haga.** El prompt está escrito para integrarse en código que
+   ya existe, así que su primer movimiento es preguntarte el stack, el alcance y las restricciones. Si lo
+   pegas esperando diffs, vas a recibir preguntas. Adelántate en el mismo mensaje y te ahorras dos turnos
+   completos.
+4. **Aplícalo a una pantalla y usa esa pantalla como referencia.** Son documentos ambiciosos: piden
+   texturas superpuestas, tipografía enorme, decisiones no negociables. Aplicarlos de golpe a una app
+   entera produce un rediseño que nadie puede revisar. Deja una pantalla impecable y que esa pantalla sea
+   el ejemplo para las demás; a partir de ahí trabajas contra tu propio archivo de tokens, que es mucho más
+   barato.
+
+## Dónde falla
+
+**El peso.** Seis prompts medidos a mano van desde 6.574 caracteres (Terminal) hasta 32.588 (Maximalism),
+o sea hasta unos ocho mil tokens en una sola pegada, a cuatro caracteres por token. No es catastrófico,
+pero es un archivo mediano de tu proyecto compitiendo por la atención del modelo con el código que sí
+quieres que mire. Por eso el paso dos de arriba no es opcional.
+
+**El stack.** Todo está escrito en vocabulario de React y Tailwind: clases como `px-8 py-4`, escalas
+`text-8xl`, variables `var(--foreground)`, referencias a shadcn/ui y a los `strokeWidth` de Lucide. Si
+trabajas en Flutter, SwiftUI o Vue con CSS propio, pide primero que convierta la sección de tokens a tu
+formato y solo después que aplique el estilo. Si lo dejas improvisar, terminas con nombres de clases de
+Tailwind escritos en un archivo que no tiene Tailwind.
+
+**El filtro Light/Dark de la galería miente en dos casos.** Academia y Maximalism aparecen etiquetados como
+estilos claros y las dos demos son inequívocamente oscuras —Academia es marrón profundo con dorado,
+Maximalism es negro con neones— y el propio modal del prompt las declara Dark Mode. Son dos de los estilos
+más interesantes del catálogo y si filtras por Dark te los pierdes.
+
+## Antes de meterlo a un proyecto de cliente
+
+No hay página de términos ni licencia en ningún lado del sitio. El material está claramente puesto ahí para
+copiarse, pero "gratis y sin fricción" no es lo mismo que "licenciado para uso comercial". Si esto entra a
+un repositorio que le facturas a alguien, pregúntale al autor por escrito antes que asumir.
+
+## A quién sirve y a quién sirve a medias
+
+Sirve muchísimo si construyes landings, sitios de marketing, portafolios o el frente público de un
+producto, y trabajas en React con Tailwind. Ahí es donde entra sin fricción y donde la diferencia entre
+usarlo y no usarlo se ve en el primer render.
+
+Sirve a medias si estás haciendo una aplicación. Las treinta demos son páginas de marketing: no hay una
+sola pantalla de app, ni dashboard, ni tabla densa, ni formulario largo, ni estado vacío. Los tokens y los
+componentes te sirven igual, pero las decisiones no negociables de cada estilo están calibradas para una
+página que se lee de arriba abajo una vez, y una tipografía de ciento sesenta píxeles es otra cosa cuando
+el usuario va a pasar seis horas adentro.
+
+## Veredicto
+
+Vale la sesión que te toma probarlo. Aunque no uses ninguno de los treinta tal cual, leer dos o tres de
+estos documentos te enseña a qué nivel de detalle hay que escribirle a un agente para que el diseño deje de
+salir genérico —y esa lección te la llevas gratis a todos los proyectos que vengan después.
+
+*Cómo se comprobó: análisis directo sobre el sitio en vivo el 10 de septiembre de 2026 —lectura del DOM y
+los metadatos, inspección del bundle de JavaScript para extraer el registro de estilos, y apertura del
+modal de prompt en seis estilos para leer el conteo exacto de caracteres. Las cifras de tokens son
+aproximaciones a cuatro caracteres por token.*
