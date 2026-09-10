@@ -8,7 +8,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "new-post": "node scripts/new-post.mjs",
+    "check-posts": "node scripts/check-posts.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.14",

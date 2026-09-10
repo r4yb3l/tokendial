@@ -76,3 +76,25 @@ jobs:
           path: |
             macos/build/smoke.png
             macos/build/Build/Products/Debug/Tokendial.app
+
+  site:
+    name: Site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: Install
+        working-directory: site
+        run: npm ci
+      # The build validates the frontmatter schema. This validates the half a schema cannot see: both
+      # languages present, sources filled in, no fonts the content security policy would refuse.
+      - name: Articles follow the house rules
+        working-directory: site
+        run: npm run check-posts
+      - name: Build
+        working-directory: site
+        run: npm run build
