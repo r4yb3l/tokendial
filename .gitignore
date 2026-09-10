@@ -3,6 +3,7 @@ windows/**/bin/
 windows/**/obj/
 windows/**/*.user
 windows/dist/
+macos/dist/
 windows/publish/
 .vs/
 # Xcode / SwiftPM

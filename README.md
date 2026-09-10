@@ -5,13 +5,40 @@ screen shows how much of each tool's usage limit you have burned, and native
 notifications tell you when you cross a threshold, when a window is about to
 reset, when an agent is waiting on you, and when you have hit the limit.
 
-The website lives in `site/` (Astro, six languages, deployed to Cloudflare Pages as tokendial.app).
+The website lives in `site/` (Astro, six languages, deployed to Vercel at tokendial.vercel.app; no domain bought yet).
 
 macOS (Swift, AppKit) and Windows (WPF, .NET 10), built from one shared
 specification in `docs/`.
 
-Status: Windows is feature-complete for v0.1 (see `windows/README.md`); macOS is next.
-See `docs/` for the provider and alert specifications both platforms follow.
+Status: both platforms read the nine providers, install what is missing, and carry
+the same settings window; the macOS updater is not written yet, so a new version is
+found through GitHub Releases rather than fetched. See `docs/` for the provider and
+alert specifications both platforms follow, and `windows/README.md` for the Windows
+build.
+
+## Installing
+
+Releases are built by CI from a `v*` tag and attached to the GitHub release: a
+Velopack installer and a portable zip for Windows, a zip and a disk image for macOS.
+The macOS build is a universal binary, so one download covers Intel and Apple
+Silicon.
+
+Neither build is signed with a paid certificate, and both operating systems say so:
+
+- **Windows** shows "Windows protected your PC" the first time an unsigned installer
+  runs. More info, then Run anyway.
+- **macOS** refuses to open an app that was not notarised and arrives with a
+  quarantine flag, claiming it is damaged. Either right-click the app and choose
+  Open, then Open again in System Settings under Privacy & Security, or clear the
+  flag yourself:
+
+  ```sh
+  xattr -dr com.apple.quarantine /Applications/Tokendial.app
+  ```
+
+Signing properly means a code-signing certificate on Windows and an Apple Developer
+ID plus notarisation on macOS. Until then the checksums published with each release
+are what a careful reader can verify.
 
 ## Providers
 

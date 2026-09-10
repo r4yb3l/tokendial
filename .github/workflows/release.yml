@@ -41,3 +41,56 @@ jobs:
         run: >
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
           --outputDir windows/dist --publish --releaseName "Tokendial ${{ env.VERSION }}" --tag ${{ github.ref_name }}
+
+  macos:
+    name: macOS package
+    # The release itself is created by the Windows job, so this one attaches to it rather than racing it.
+    needs: windows
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag must match VERSION
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          [ "${GITHUB_REF_NAME}" = "v${VERSION}" ] || { echo "tag ${GITHUB_REF_NAME} but VERSION is ${VERSION}"; exit 1; }
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate the project
+        working-directory: macos
+        run: xcodegen generate
+      - name: Test
+        working-directory: macos/TokendialCore
+        run: swift test
+      # The repository is signed for this machine only: project.yml names a self-signed "Tokendial Dev"
+      # identity that exists on no runner. Releases are therefore signed ad hoc, which is enough for the
+      # binary to run once the user clears the quarantine flag, and is why the release notes have to say so.
+      - name: Archive
+        working-directory: macos
+        run: >
+          xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -configuration Release
+          -derivedDataPath build -archivePath build/Tokendial.xcarchive archive
+          CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+      - name: Export the app
+        working-directory: macos
+        run: |
+          APP="build/Tokendial.xcarchive/Products/Applications/Tokendial.app"
+          [ -d "$APP" ] || { echo "the archive carries no app"; exit 1; }
+          mkdir -p dist
+          cp -R "$APP" dist/
+          codesign --force --deep --sign - dist/Tokendial.app
+          codesign -dv dist/Tokendial.app 2>&1 | grep -q "Signature=adhoc"
+      - name: Zip and disk image
+        working-directory: macos/dist
+        run: |
+          ditto -c -k --keepParent Tokendial.app "Tokendial-${VERSION}-macos.zip"
+          hdiutil create -volname "Tokendial ${VERSION}" -srcfolder Tokendial.app -ov -format UDZO "Tokendial-${VERSION}-macos.dmg"
+          shasum -a 256 Tokendial-*-macos.* > "Tokendial-${VERSION}-macos.sha256"
+      - name: Attach to the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release upload ${{ github.ref_name }} --clobber
+          macos/dist/Tokendial-${{ env.VERSION }}-macos.zip
+          macos/dist/Tokendial-${{ env.VERSION }}-macos.dmg
+          macos/dist/Tokendial-${{ env.VERSION }}-macos.sha256
