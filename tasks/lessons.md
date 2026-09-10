@@ -88,3 +88,29 @@ Rule: when editing JSON by string surgery, re-read the file with a parser that r
 keys (`json.loads(..., object_pairs_hook=...)`), not with the default one that silently picks a winner. And
 prefer inserting a key only after proving it is absent from *that* object — not from the file, which may
 hold several objects with the same shape.
+
+## Never rewrite a hand-formatted file through a serialiser (2026-09-10)
+To add one key to the five catalogues I parsed each one with `json.loads` and wrote it back with
+`json.dumps(indent=2)`. Every file came back reformatted: the blank lines that group the keys by screen were
+gone and the one-line plural objects were exploded over four lines each, so a two-line change arrived as a
+133-line diff over work that was deliberately laid out by hand.
+Rule: a serialiser is for reading, not for writing back. To add or change a key in a file a human formatted,
+insert the text next to its neighbour and keep the surrounding style, then parse the result only to check it
+still loads and the value landed.
+
+## The Bash tool loses CRLF, so anchors built with \r\n stop matching (2026-09-10)
+`SettingsWindow.cs` was CRLF and `Chrome.cs` LF in the same folder, so my patch scripts built their anchors
+with `\r\n`. One `sed -i` on the CRLF file rewrote it as LF, and every later anchor missed - the script
+aborted mid-run, having already written its other file.
+Rule: read `.gitattributes` first. This repo declares `* text=auto eol=lf`, so LF is the intended ending and
+a CRLF working copy is the accident; normalise the file once and write anchors in LF. And make each patch
+script write nothing until every anchor has been found.
+
+## Opening a window to look at it: signal the running instance, do not send input (2026-09-10)
+On Windows, `Tokendial.exe --settings` from cold does not open the settings window; it starts the app, and
+the flag only means anything to an instance that is already up, so the second launch is what opens it. On
+macOS the same job is `open tokendial://settings`, which the app already handles. And a posted
+`WM_MOUSEWHEEL` does not scroll a WPF `ScrollViewer` - to see the foot of a column, drive the window through
+UI Automation's `ScrollPattern` instead of faking a mouse.
+Rule: to inspect a running window, use the app's own entry points - a second launch with the flag, its URL
+scheme, or UI Automation. Synthetic global input is both unreliable and not mine to send.

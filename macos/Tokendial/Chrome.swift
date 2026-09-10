@@ -28,14 +28,14 @@ enum Chrome {
         activeCard: gradient(rgba(0x171C26, 0.85), rgba(0x11151D, 0.95)))
 
     static let lightLook = Look(
-        windowBackground: rgb(0xF4F6FA), surface850: rgb(0xFFFFFF), surface800: rgb(0xF1F4F8), surface750: rgb(0xE8ECF2),
-        surface700: rgb(0xD9DFE8), surface600: rgb(0xB9C2CF),
+        windowBackground: rgb(0xE9EDF3), surface850: rgb(0xFFFFFF), surface800: rgb(0xF1F4F8), surface750: rgb(0xE1E7EF),
+        surface700: rgb(0xD2DAE5), surface600: rgb(0xB9C2CF),
         slate100: rgb(0x0F172A), slate200: rgb(0x1E293B), slate300: rgb(0x334155), slate400: rgb(0x475569),
         slate500: rgb(0x64748B), strong: rgb(0x0F172A),
         divider: rgba(0x0F172A, 0.10), titleBarFill: rgba(0xFFFFFF, 0.85),
         sheet: rgba(0xFFFFFF, 0.95), sheetStrong: rgba(0xFFFFFF, 0.9), sheetSoft: rgba(0xFFFFFF, 0.8), sheetFaint: rgba(0xFFFFFF, 0.6),
-        edge: rgba(0xD9DFE8, 0.9), edgeSoft: rgba(0xD9DFE8, 0.6), line: rgba(0xC5CEDA, 0.8), lineSoft: rgba(0xC5CEDA, 0.6), lineFaint: rgba(0xC5CEDA, 0.4),
-        well: rgba(0xE8ECF2, 0.6), wellStrong: rgb(0xE8ECF2), hoverWash: rgba(0x0F172A, 0.05), buttonEdge: rgba(0xB9C2CF, 0.8),
+        edge: rgba(0xD2DAE5, 0.9), edgeSoft: rgba(0xD2DAE5, 0.6), line: rgba(0xC5CEDA, 0.8), lineSoft: rgba(0xC5CEDA, 0.6), lineFaint: rgba(0xC5CEDA, 0.4),
+        well: rgba(0xE1E7EF, 0.6), wellStrong: rgb(0xE1E7EF), hoverWash: rgba(0x0F172A, 0.05), buttonEdge: rgba(0xB9C2CF, 0.8),
         activeCard: gradient(rgb(0xFFFFFF), rgb(0xF5F8FB)))
 
     private static var look: Look { Theme.dark ? darkLook : lightLook }
@@ -428,11 +428,175 @@ struct ChromeRadioCard: View {
     }
 }
 
+/// An on/off switch, for a row whose whole question is whether Tokendial reads that tool at all.
+struct ChromeSwitch: View {
+    let on: Bool
+    let action: (Bool) -> Void
+    @State private var hover = false
+
+    var body: some View {
+        Button { action(!on) } label: {
+            Capsule().fill(on ? Chrome.brand500 : Chrome.well)
+                .overlay(Capsule().stroke(on ? Chrome.brand500 : hover ? Chrome.surface600 : Chrome.buttonEdge, lineWidth: 1))
+                .frame(width: 34, height: 20)
+                .overlay(alignment: on ? .trailing : .leading) {
+                    Circle().fill(on ? Color.white : Chrome.slate500)
+                        .frame(width: 14, height: 14)
+                        .padding(.horizontal, 3)
+                }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hover = $0 }
+        .animation(Theme.reduceMotion ? nil : .easeOut(duration: 0.14), value: on)
+    }
+}
+
+/// A labelled row with the switch at its far end.
+struct ChromeSwitchRow: View {
+    let label: String
+    var hint: String?
+    let on: Bool
+    let action: (Bool) -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label).font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate200)
+                if let hint {
+                    Text(hint).font(Chrome.font(11)).foregroundStyle(Chrome.slate400)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 8)
+            ChromeSwitch(on: on, action: action)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// The dock's own dial at settings size: a 240 degree arc opening downward, with the tool's mark inside.
+/// The same shape in both places means a glance reads the same in the dock and in the settings list.
+struct ChromeDial<Mark: View>: View {
+    let fraction: Double?
+    var size: CGFloat = 34
+    var stroke: CGFloat = 3
+    @ViewBuilder let mark: () -> Mark
+
+    var body: some View {
+        ZStack {
+            Circle().trim(from: 0, to: 240 / 360)
+                .stroke(fraction == nil ? Chrome.surface700 : Chrome.surface750, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
+                .rotationEffect(.degrees(150))
+            if let fraction {
+                Circle().trim(from: 0, to: min(max(fraction, 0), 1) * 240 / 360)
+                    .stroke(Color(nsColor: Theme.color(fraction: fraction)), style: StrokeStyle(lineWidth: stroke, lineCap: .round))
+                    .rotationEffect(.degrees(150))
+            }
+            mark()
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+/// A picture-first option: a small drawing of what the choice does, with its name under it.
+struct ChromeTile<Diagram: View>: View {
+    let label: String
+    let selected: Bool
+    let action: () -> Void
+    @ViewBuilder let diagram: () -> Diagram
+    @State private var hover = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 9) {
+                diagram()
+                Text(label)
+                    .font(Chrome.font(11, selected ? .semibold : .medium))
+                    .foregroundStyle(selected ? Chrome.strong : hover ? Chrome.slate200 : Chrome.slate400)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(10)
+            .background(RoundedRectangle(cornerRadius: 10).fill(selected ? Chrome.brandFaint : Chrome.sheetSoft))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? Chrome.brandLine : hover ? Chrome.buttonEdge : Chrome.edge, lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hover = $0 }
+    }
+}
+
+/// What the panel puts at the edge: a compact row of dials, every dial expanded, or nothing but the menu bar.
+struct ChromeModeDiagram: View {
+    enum Kind { case compact, wide, tray }
+    let kind: Kind
+
+    var body: some View {
+        ChromeScreen(height: 38) {
+            switch kind {
+            case .compact: cells(width: 9, height: 5, radius: 2)
+            case .wide: cells(width: 14, height: 14, radius: 3)
+            case .tray: Circle().fill(Chrome.surface600).frame(width: 6, height: 6)
+            }
+        }
+    }
+
+    private func cells(width: CGFloat, height: CGFloat, radius: CGFloat) -> some View {
+        HStack(spacing: 3) {
+            ForEach(0..<3, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: radius).fill(Chrome.surface600).frame(width: width, height: height)
+            }
+        }
+    }
+}
+
+/// A screen with the dock drawn against one of its four edges.
+struct ChromeEdgeDiagram: View {
+    let vertical: Bool
+    let far: Bool
+    let selected: Bool
+
+    var body: some View {
+        ChromeScreen(height: 30, alignment: alignment, padding: 3) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(selected ? Chrome.brand500 : Chrome.surface600)
+                .frame(width: vertical ? nil : 5, height: vertical ? 5 : nil)
+        }
+    }
+
+    private var alignment: Alignment {
+        if vertical { return far ? .bottom : .top }
+        return far ? .trailing : .leading
+    }
+}
+
+/// The frame the diagrams live in: a plain screen, so what is drawn inside reads as being on it.
+struct ChromeScreen<Content: View>: View {
+    let height: CGFloat
+    var alignment: Alignment = .top
+    var padding: CGFloat = 6
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+            .padding(padding)
+            .frame(height: height)
+            .background(RoundedRectangle(cornerRadius: 7).fill(Chrome.windowBackground))
+            .overlay(RoundedRectangle(cornerRadius: 7).stroke(Chrome.edge, lineWidth: 1))
+    }
+}
+
 /// A small selectable chip, for the language, theme and position pickers. A square one reads as a
 /// checkbox, for the pickers where more than one may be on at a time.
 struct ChromeChip: View {
     let label: String
     var round = true
+    /// A language code, so the chip can carry that language's flag; "globe" for the one that follows the system.
+    var flag: String?
+    var globe = false
     let selected: Bool
     let action: () -> Void
     @State private var hover = false
@@ -441,6 +605,11 @@ struct ChromeChip: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 ChromeIndicator(round: round, on: selected, size: 12, glyph: round ? 4 : 7)
+                if globe {
+                    Image(systemName: "globe").font(.system(size: 11)).foregroundStyle(Chrome.slate400)
+                } else if let flag {
+                    Flag(code: flag)
+                }
                 Text(label).font(Chrome.font(11, .medium)).foregroundStyle(selected || hover ? Chrome.slate200 : Chrome.slate400)
             }
             .padding(.horizontal, 10).padding(.vertical, 6)

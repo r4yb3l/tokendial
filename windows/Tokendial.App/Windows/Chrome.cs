@@ -28,12 +28,12 @@ public static class Chrome
         ActiveCard: Gradient(Color.FromArgb(0xD9, 0x17, 0x1C, 0x26), Color.FromArgb(0xF2, 0x11, 0x15, 0x1D)));
 
     public static readonly Look LightLook = new(
-        WindowBackground: Rgb(0xF4, 0xF6, 0xFA), Surface850: Rgb(0xFF, 0xFF, 0xFF), Surface800: Rgb(0xF1, 0xF4, 0xF8), Surface750: Rgb(0xE8, 0xEC, 0xF2), Surface700: Rgb(0xD9, 0xDF, 0xE8), Surface600: Rgb(0xB9, 0xC2, 0xCF),
+        WindowBackground: Rgb(0xE9, 0xED, 0xF3), Surface850: Rgb(0xFF, 0xFF, 0xFF), Surface800: Rgb(0xF1, 0xF4, 0xF8), Surface750: Rgb(0xE1, 0xE7, 0xEF), Surface700: Rgb(0xD2, 0xDA, 0xE5), Surface600: Rgb(0xB9, 0xC2, 0xCF),
         Slate100: Rgb(0x0F, 0x17, 0x2A), Slate200: Rgb(0x1E, 0x29, 0x3B), Slate300: Rgb(0x33, 0x41, 0x55), Slate400: Rgb(0x47, 0x55, 0x69), Slate500: Rgb(0x64, 0x74, 0x8B), Strong: Rgb(0x0F, 0x17, 0x2A),
         Divider: Rgba(0x0F, 0x17, 0x2A, 0.10), TitleBarFill: Rgba(0xFF, 0xFF, 0xFF, 0.85),
         Sheet: Rgba(0xFF, 0xFF, 0xFF, 0.95), SheetStrong: Rgba(0xFF, 0xFF, 0xFF, 0.9), SheetSoft: Rgba(0xFF, 0xFF, 0xFF, 0.8), SheetFaint: Rgba(0xFF, 0xFF, 0xFF, 0.6),
-        Edge: Rgba(0xD9, 0xDF, 0xE8, 0.9), EdgeSoft: Rgba(0xD9, 0xDF, 0xE8, 0.6), Line: Rgba(0xC5, 0xCE, 0xDA, 0.8), LineSoft: Rgba(0xC5, 0xCE, 0xDA, 0.6), LineFaint: Rgba(0xC5, 0xCE, 0xDA, 0.4),
-        Well: Rgba(0xE8, 0xEC, 0xF2, 0.6), WellStrong: Rgb(0xE8, 0xEC, 0xF2), HoverWash: Rgba(0x0F, 0x17, 0x2A, 0.05), ButtonEdge: Rgba(0xB9, 0xC2, 0xCF, 0.8),
+        Edge: Rgba(0xD2, 0xDA, 0xE5, 0.9), EdgeSoft: Rgba(0xD2, 0xDA, 0xE5, 0.6), Line: Rgba(0xC5, 0xCE, 0xDA, 0.8), LineSoft: Rgba(0xC5, 0xCE, 0xDA, 0.6), LineFaint: Rgba(0xC5, 0xCE, 0xDA, 0.4),
+        Well: Rgba(0xE1, 0xE7, 0xEF, 0.6), WellStrong: Rgb(0xE1, 0xE7, 0xEF), HoverWash: Rgba(0x0F, 0x17, 0x2A, 0.05), ButtonEdge: Rgba(0xB9, 0xC2, 0xCF, 0.8),
         ActiveCard: Gradient(Color.FromRgb(0xFF, 0xFF, 0xFF), Color.FromRgb(0xF5, 0xF8, 0xFB)));
 
     private static Look current = DarkLook;
@@ -378,6 +378,22 @@ public static class Chrome
         return box;
     }
 
+    /// <summary>A labelled row whose whole question is on or off, with the switch at its far end.</summary>
+    public static UIElement SwitchRow(string label, string? hint, bool value, Action<bool> changed)
+    {
+        var row = new Grid();
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var caption = Caption(label, hint, Slate200, 11);
+        caption.Margin = new Thickness(0, 0, 12, 0);
+        row.Children.Add(caption);
+        var toggle = Switch(value, changed);
+        toggle.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(toggle, 1);
+        row.Children.Add(toggle);
+        return row;
+    }
+
     /// <summary>A radio row that lights up under the cursor.</summary>
     public static RadioButton Radio(string group, string label, bool value, Action changed, string? hint = null)
     {
@@ -402,10 +418,11 @@ public static class Chrome
         return button;
     }
 
-    /// <summary>A small selectable chip, for the language picker.</summary>
-    public static RadioButton Chip(string group, string label, bool value, Action changed)
+    /// <summary>A small selectable chip, for the language picker. The content may be a bare string or a
+    /// row of its own, so a language can carry its flag.</summary>
+    public static RadioButton Chip(string group, object content, bool value, Action changed)
     {
-        var button = new RadioButton { GroupName = group, IsChecked = value, Content = label, FontSize = 11, Foreground = Slate400, Margin = new Thickness(0, 0, 8, 8), Template = ChipTemplate(round: true) };
+        var button = new RadioButton { GroupName = group, IsChecked = value, Content = content, FontSize = 11, Foreground = Slate400, Margin = new Thickness(0, 0, 8, 8), Template = ChipTemplate(round: true) };
         button.Checked += (_, _) => changed();
         return button;
     }
@@ -413,6 +430,79 @@ public static class Chrome
     /// <summary>A chip that toggles on its own, for the pickers where more than one may be on at a time. The caller wires Click, so restoring the box after a refused change cannot re-enter the handler.</summary>
     public static CheckBox CheckChip(string label, bool value) =>
         new() { IsChecked = value, Content = label, FontSize = 11, Foreground = Slate400, Margin = new Thickness(0, 0, 8, 8), Template = ChipTemplate(round: false) };
+
+    /// <summary>An on/off switch, for a row whose whole question is whether Tokendial reads that tool.</summary>
+    public static ToggleButton Switch(bool value, Action<bool> changed)
+    {
+        var button = new ToggleButton { IsChecked = value, Template = SwitchTemplate(), Focusable = false, Cursor = System.Windows.Input.Cursors.Hand };
+        button.Checked += (_, _) => changed(true);
+        button.Unchecked += (_, _) => changed(false);
+        return button;
+    }
+
+    /// <summary>A picture-first option: a small drawing of what the choice does, with its name under it.
+    /// The label takes its colour from the tile, so selecting one darkens its own name.</summary>
+    public static RadioButton Tile(string group, UIElement diagram, string label, bool value, Action changed)
+    {
+        var body = new StackPanel();
+        diagram.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 9));
+        body.Children.Add(diagram);
+        body.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 11,
+            FontFamily = Theme.Font,
+            FontWeight = FontWeights.Medium,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+        var button = new RadioButton { GroupName = group, IsChecked = value, Content = body, Foreground = Slate400, Margin = new Thickness(0, 0, 8, 8), Template = TileTemplate(), Cursor = System.Windows.Input.Cursors.Hand };
+        button.Checked += (_, _) => changed();
+        return button;
+    }
+
+    /// <summary>The compact row of dials the dock shows before the cursor reaches it.</summary>
+    public static UIElement CompactDiagram(bool wide)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top };
+        for (var i = 0; i < 3; i++)
+            row.Children.Add(new Border { Width = wide ? 14 : 9, Height = wide ? 14 : 5, CornerRadius = new CornerRadius(wide ? 3 : 2), Background = Surface600, Margin = new Thickness(i == 0 ? 0 : 3, 0, 0, 0) });
+        return Screen(row, 38, new Thickness(0, 6, 0, 0));
+    }
+
+    /// <summary>Hidden: nothing at the edge but the tray icon.</summary>
+    public static UIElement TrayDiagram()
+    {
+        var dot = new Border { Width = 6, Height = 6, CornerRadius = new CornerRadius(3), Background = Surface600, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top };
+        return Screen(dot, 38, new Thickness(0, 6, 0, 0));
+    }
+
+    /// <summary>A screen with the dock drawn against one of its four edges.</summary>
+    public static UIElement EdgeDiagram(bool vertical, bool far, bool selected)
+    {
+        var bar = new Border
+        {
+            Background = selected ? Brand500 : Surface600,
+            CornerRadius = new CornerRadius(2),
+            Width = vertical ? double.NaN : 5,
+            Height = vertical ? 5 : double.NaN,
+            HorizontalAlignment = vertical ? HorizontalAlignment.Stretch : far ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+            VerticalAlignment = vertical ? far ? VerticalAlignment.Bottom : VerticalAlignment.Top : VerticalAlignment.Stretch
+        };
+        return Screen(bar, 30, new Thickness(3));
+    }
+
+    private static Border Screen(UIElement child, double height, Thickness padding) => new()
+    {
+        Height = height,
+        Background = WindowBackground,
+        BorderBrush = Edge,
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(7),
+        Padding = padding,
+        Child = child
+    };
 
     private static StackPanel Caption(string label, string? hint, Brush colour, double hintSize = 11)
     {
@@ -666,6 +756,60 @@ public static class Chrome
         on.Setters.Add(new Setter(Border.BackgroundProperty, Brand500, boxName));
         on.Setters.Add(new Setter(Border.BorderBrushProperty, Brand500, boxName));
         on.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Visible, glyphName));
+        template.Triggers.Add(on);
+        return template;
+    }
+
+    private static ControlTemplate SwitchTemplate()
+    {
+        var template = new ControlTemplate(typeof(ToggleButton));
+        var track = new FrameworkElementFactory(typeof(Border), "track");
+        track.SetValue(FrameworkElement.WidthProperty, 34.0);
+        track.SetValue(FrameworkElement.HeightProperty, 20.0);
+        track.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+        track.SetValue(Border.BackgroundProperty, Well);
+        track.SetValue(Border.BorderBrushProperty, ButtonEdge);
+        track.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        track.SetValue(Border.PaddingProperty, new Thickness(2));
+        var knob = new FrameworkElementFactory(typeof(Border), "knob");
+        knob.SetValue(FrameworkElement.WidthProperty, 14.0);
+        knob.SetValue(FrameworkElement.HeightProperty, 14.0);
+        knob.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
+        knob.SetValue(Border.BackgroundProperty, Slate500);
+        knob.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+        track.AppendChild(knob);
+        template.VisualTree = track;
+        var over = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        over.Setters.Add(new Setter(Border.BorderBrushProperty, Surface600, "track"));
+        template.Triggers.Add(over);
+        var on = new Trigger { Property = ToggleButton.IsCheckedProperty, Value = true };
+        on.Setters.Add(new Setter(Border.BackgroundProperty, Brand500, "track"));
+        on.Setters.Add(new Setter(Border.BorderBrushProperty, Brand500, "track"));
+        on.Setters.Add(new Setter(Border.BackgroundProperty, Brushes.White, "knob"));
+        on.Setters.Add(new Setter(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right, "knob"));
+        template.Triggers.Add(on);
+        return template;
+    }
+
+    private static ControlTemplate TileTemplate()
+    {
+        var template = new ControlTemplate(typeof(ToggleButton));
+        var tile = new FrameworkElementFactory(typeof(Border), "tile");
+        tile.SetValue(Border.BackgroundProperty, SheetSoft);
+        tile.SetValue(Border.BorderBrushProperty, Edge);
+        tile.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        tile.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+        tile.SetValue(Border.PaddingProperty, new Thickness(10));
+        tile.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+        template.VisualTree = tile;
+        var over = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        over.Setters.Add(new Setter(System.Windows.Controls.Control.ForegroundProperty, Slate200));
+        over.Setters.Add(new Setter(Border.BorderBrushProperty, ButtonEdge, "tile"));
+        template.Triggers.Add(over);
+        var on = new Trigger { Property = ToggleButton.IsCheckedProperty, Value = true };
+        on.Setters.Add(new Setter(System.Windows.Controls.Control.ForegroundProperty, Strong));
+        on.Setters.Add(new Setter(Border.BackgroundProperty, BrandFaint, "tile"));
+        on.Setters.Add(new Setter(Border.BorderBrushProperty, BrandLine, "tile"));
         template.Triggers.Add(on);
         return template;
     }

@@ -165,6 +165,8 @@
 
     "settings.providersSub": "Outils d’IA et quotas",
     "settings.readOnly": "Mode lecture seule",
+    "settings.readToggle": "Lire",
+    "settings.readToggleHint": "Lire cet outil et afficher son cadran. Désactivé, Tokendial n’y touche pas.",
     "settings.connectedCount": {"one": "Local · {n} actif", "other": "Local · {n} actifs"},
     "settings.inactive": "Inactif",
     "settings.usedBadge": "{pct} % utilisé",

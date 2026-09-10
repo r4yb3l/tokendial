@@ -165,6 +165,8 @@
 
     "settings.providersSub": "أدوات الذكاء الاصطناعي والحصص",
     "settings.readOnly": "وضع القراءة فقط",
+    "settings.readToggle": "قراءة",
+    "settings.readToggleHint": "اقرأ هذه الأداة واعرض مقياسها. عند الإيقاف لا يمسها Tokendial.",
     "settings.connectedCount": {"zero": "محلي · لا شيء نشط", "one": "محلي · {n} نشط", "two": "محلي · {n} نشطان", "few": "محلي · {n} نشطة", "many": "محلي · {n} نشطًا", "other": "محلي · {n} نشط"},
     "settings.inactive": "غير نشط",
     "settings.usedBadge": "{pct}% مستهلك",

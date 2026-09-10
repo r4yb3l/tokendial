@@ -181,6 +181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let model = SettingsModel(settings: settings, version: Self.version, save: { [weak self] s in self?.settings = s; self?.save(); self?.applySettings() },
                                       connect: { [weak self] id, on in self?.connect(id, on) },
                                       refresh: { [weak self] id in self?.store.poll(id) },
+                                      refreshAll: { [weak self] in self?.store.pollNow() },
                                       openSource: { [weak self] id in _ = self?.store.openSource(id) },
                                       testAlert: { [weak self] in self?.testAlert() })
             model.summaries = store.summaries

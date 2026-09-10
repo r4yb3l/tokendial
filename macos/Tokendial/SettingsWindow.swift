@@ -11,16 +11,18 @@ final class SettingsModel: ObservableObject {
     let save: (Settings) -> Void
     let connect: (String, Bool) -> Void
     let refresh: (String) -> Void
+    let refreshAll: () -> Void
     let openSource: (String) -> Void
     let testAlert: () -> Void
     let version: String
 
-    init(settings: Settings, version: String, save: @escaping (Settings) -> Void, connect: @escaping (String, Bool) -> Void, refresh: @escaping (String) -> Void, openSource: @escaping (String) -> Void, testAlert: @escaping () -> Void) {
+    init(settings: Settings, version: String, save: @escaping (Settings) -> Void, connect: @escaping (String, Bool) -> Void, refresh: @escaping (String) -> Void, refreshAll: @escaping () -> Void, openSource: @escaping (String) -> Void, testAlert: @escaping () -> Void) {
         self.settings = settings
         self.version = version
         self.save = save
         self.connect = connect
         self.refresh = refresh
+        self.refreshAll = refreshAll
         self.openSource = openSource
         self.testAlert = testAlert
     }
@@ -83,7 +85,6 @@ struct SettingsView: View {
                         ProvidersSection(model: model, installer: installer)
                         ChromeRule().padding(.top, 20).padding(.bottom, 16)
                         GeneralSection(model: model)
-                        AboutSection(model: model)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
@@ -99,6 +100,7 @@ struct SettingsView: View {
                 }
                 .frame(width: 460)
             }
+            SettingsFooter(model: model)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Chrome.windowBackground)
@@ -141,17 +143,32 @@ private struct ProvidersSection: View {
             .chromeCard(Chrome.sheet, Chrome.line, padding: 12)
             .padding(.top, 10)
 
-            VStack(spacing: 10) {
-                ForEach(model.summaries, id: \.id) { summary in
-                    ProviderCard(model: model, installer: installer, summary: summary)
+            Text(Strings.t("settings.readToggle"))
+                .font(Chrome.font(10, .medium)).foregroundStyle(Chrome.slate500)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.top, 12).padding(.trailing, 15)
+
+            VStack(spacing: 0) {
+                ForEach(Array(model.summaries.enumerated()), id: \.element.id) { pair in
+                    if pair.offset > 0 { Rectangle().fill(Chrome.lineFaint).frame(height: 1) }
+                    ProviderRow(model: model, installer: installer, summary: pair.element)
                 }
             }
-            .padding(.top, 12)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Chrome.sheet))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Chrome.line, lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.top, 6)
+
+            HStack {
+                Spacer(minLength: 0)
+                ChromeButton(label: Strings.t("settings.refresh")) { model.refreshAll() }
+            }
+            .padding(.top, 10)
         }
     }
 }
 
-private struct ProviderCard: View {
+private struct ProviderRow: View {
     @ObservedObject var model: SettingsModel
     @ObservedObject var installer: InstallAssistant
     let summary: ProviderSummary
@@ -166,70 +183,41 @@ private struct ProviderCard: View {
     private var tint: Color { Color(nsColor: Marks.tint(summary.id)) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 14) {
-                Button { model.connect(summary.id, !summary.connected) } label: {
-                    ChromeIndicator(round: false, on: summary.connected)
+        HStack(spacing: 12) {
+            ChromeDial(fraction: fraction) { mark }
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text(summary.name)
+                        .font(Chrome.font(12, summary.connected ? .semibold : .medium))
+                        .foregroundStyle(summary.connected ? Chrome.strong : Chrome.slate300)
+                    if let fraction { usedBadge(fraction) }
                 }
-                .buttonStyle(.plain)
-                tile
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
-                        Text(summary.name)
-                            .font(Chrome.font(12, summary.connected ? .semibold : .medium))
-                            .foregroundStyle(summary.connected ? Chrome.strong : Chrome.slate300)
-                        if let fraction { usedBadge(fraction) }
-                    }
-                    Text(assisted && recipe != nil ? InstallDetail.text(summary, recipe!, installer) : model.detail(summary))
+                Text(assisted && recipe != nil ? InstallDetail.text(summary, recipe!, installer) : model.detail(summary))
+                    .font(Chrome.font(11))
+                    .foregroundStyle(summary.connected ? Chrome.slate400 : Chrome.slate500)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                if assisted {
+                    InstallStrip(state: installer.state(summary)).padding(.top, 4)
+                }
+                if model.keychainRefused(summary) {
+                    Text(Strings.t("card.keychainWhy"))
                         .font(Chrome.font(11))
-                        .foregroundStyle(summary.connected ? Chrome.slate400 : Chrome.slate500)
-                        .lineLimit(2)
+                        .foregroundStyle(Chrome.slate500)
                         .fixedSize(horizontal: false, vertical: true)
-                    if assisted {
-                        InstallStrip(state: installer.state(summary)).padding(.top, 4)
-                    }
-                    if model.keychainRefused(summary) {
-                        Text(Strings.t("card.keychainWhy"))
-                            .font(Chrome.font(11))
-                            .foregroundStyle(Chrome.slate500)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .padding(.top, 2)
-                    }
+                        .padding(.top, 2)
                 }
-                Spacer(minLength: 8)
-                actions
             }
-            if let fraction { ProviderBar(fraction: fraction).padding(.top, 12) }
+            Spacer(minLength: 8)
+            actions
+            ChromeSwitch(on: summary.connected) { on in model.connect(summary.id, on) }
+                .help(Strings.t("settings.readToggleHint"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(summary.connected ? 14 : 12)
-        .background(background)
-        .overlay(RoundedRectangle(cornerRadius: radius).stroke(border, lineWidth: 1))
-        .opacity(summary.connected || hover ? 1 : 0.75)
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .background(summary.connected ? Chrome.brandFaint : Color.clear)
+        .opacity(summary.connected || assisted || hover ? 1 : 0.75)
         .onHover { hover = $0 }
-    }
-
-    private var radius: CGFloat { summary.connected ? 14 : 12 }
-
-    @ViewBuilder private var background: some View {
-        if summary.connected {
-            RoundedRectangle(cornerRadius: radius).fill(Chrome.activeCard)
-        } else {
-            RoundedRectangle(cornerRadius: radius).fill(Chrome.sheetSoft)
-        }
-    }
-
-    private var border: Color {
-        guard summary.connected else { return Chrome.edge }
-        return hover ? Chrome.brandLineStrong : Chrome.brandLine
-    }
-
-    private var tile: some View {
-        RoundedRectangle(cornerRadius: 8)
-            .fill(summary.connected ? tint.opacity(0.2) : Chrome.surface750)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(summary.connected ? tint.opacity(0.4) : Chrome.surface700, lineWidth: 1))
-            .frame(width: 32, height: 32)
-            .overlay { mark }
     }
 
     @ViewBuilder private var mark: some View {
@@ -238,12 +226,12 @@ private struct ProviderCard: View {
                 .renderingMode(.template)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 16, height: 16)
-                .foregroundStyle(summary.connected ? tint : Chrome.slate400)
+                .frame(width: 15, height: 15)
+                .foregroundStyle(summary.connected ? tint : Chrome.slate500)
         } else {
             Text(String(summary.name.prefix(2)).uppercased())
                 .font(Chrome.mono(9))
-                .foregroundStyle(Chrome.slate400)
+                .foregroundStyle(Chrome.slate500)
         }
     }
 
@@ -266,7 +254,6 @@ private struct ProviderCard: View {
                 if let url = summary.account?.manageURL {
                     ChromeButton(label: Strings.t("settings.manage")) { NSWorkspace.shared.open(url) }
                 }
-                ChromeButton(label: Strings.t("settings.refresh")) { model.refresh(summary.id) }
             }
         } else {
             Text(Strings.t("settings.inactive")).font(Chrome.mono(11)).foregroundStyle(Chrome.slate500)
@@ -289,27 +276,6 @@ private struct ProviderCard: View {
     }
 }
 
-/// A thin track under a connected provider, filled to its headline usage; the fill warms from green towards
-/// the band colour as it grows.
-private struct ProviderBar: View {
-    let fraction: Double
-
-    var body: some View {
-        GeometryReader { geo in
-            RoundedRectangle(cornerRadius: 3)
-                .fill(fill)
-                .frame(width: max(4, geo.size.width * min(max(fraction, 0.02), 1)))
-        }
-        .frame(height: 6)
-        .background(RoundedRectangle(cornerRadius: 3).fill(Chrome.surface800))
-    }
-
-    private var fill: LinearGradient {
-        let end = fraction < 0.5 ? Chrome.brand500 : Color(nsColor: Theme.color(fraction: fraction))
-        return LinearGradient(colors: [Theme.UI.ample, end], startPoint: .leading, endPoint: .trailing)
-    }
-}
-
 private struct GeneralSection: View {
     @ObservedObject var model: SettingsModel
 
@@ -322,7 +288,8 @@ private struct GeneralSection: View {
                 Text(Strings.t("settings.language")).font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate300)
                 ChromeWrap(spacing: 8) {
                     ForEach(languages) { choice in
-                        ChromeChip(label: choice.label, selected: model.settings.language == choice.value) { model.set(\.language, choice.value) }
+                        ChromeChip(label: choice.label, flag: choice.value, globe: choice.value == nil,
+                                   selected: model.settings.language == choice.value) { model.set(\.language, choice.value) }
                     }
                 }
                 .padding(.top, 8)
@@ -353,32 +320,31 @@ private struct GeneralSection: View {
     }
 }
 
-private struct AboutSection: View {
+/// The bar across the foot of the window: what this is, and where to go from here.
+private struct SettingsFooter: View {
     @ObservedObject var model: SettingsModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ChromeSmallTitle(Strings.t("settings.about")).padding(.top, 20)
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(Strings.t("app.name")) \(model.version)").font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate200)
-                    ChromeBody(Strings.t("settings.license"), size: 11)
-                }
-                Spacer(minLength: 8)
-                HStack(spacing: 8) {
-                    ChromeButton(label: Strings.t("settings.website")) { open("https://tokendial.app") }
-                    ChromeButton(label: Strings.t("settings.source")) { open("https://github.com/r4yb3l/tokendial") }
-                    ChromeButton(label: Strings.t("settings.dataFolder")) { NSWorkspace.shared.open(Paths.appSupport) }
-                }
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(Strings.t("app.name")) \(model.version)")
+                    .font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate200)
+                Text(Strings.t("settings.license"))
+                    .font(Chrome.font(11)).foregroundStyle(Chrome.slate400)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .chromeCard(Chrome.sheetFaint, Chrome.edgeSoft, padding: 16)
-            .padding(.top, 10)
+            Spacer(minLength: 12)
+            ChromeButton(label: Strings.t("settings.website")) { open("https://tokendial.app") }
+            ChromeButton(label: Strings.t("settings.source")) { open("https://github.com/r4yb3l/tokendial") }
+            ChromeButton(label: Strings.t("settings.dataFolder")) { NSWorkspace.shared.open(Paths.appSupport) }
         }
+        .padding(.horizontal, 20).padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Chrome.titleBarFill)
+        .overlay(alignment: .top) { Rectangle().fill(Chrome.lineSoft).frame(height: 1) }
     }
 
-    private func open(_ target: String) {
-        guard let url = URL(string: target) else { return }
+    private func open(_ address: String) {
+        guard let url = URL(string: address) else { return }
         NSWorkspace.shared.open(url)
     }
 }
@@ -391,34 +357,47 @@ private struct PanelSection: View {
             ChromeSectionTitle(title: Strings.t("settings.panel")) {
                 Text(Strings.t("settings.panelSub")).font(Chrome.font(12)).foregroundStyle(Chrome.slate400)
             }
-            VStack(spacing: 10) {
-                ForEach(modes) { choice in
-                    ChromeRadioCard(label: choice.label, hint: choice.hint, selected: model.settings.panel == choice.value) { model.set(\.panel, choice.value) }
-                }
+            HStack(alignment: .top, spacing: 8) {
+                tile(.expandOnHover, "settings.panel.hover") { ChromeModeDiagram(kind: .compact) }
+                tile(.alwaysExpanded, "settings.panel.always") { ChromeModeDiagram(kind: .wide) }
+                tile(.hidden, "settings.panel.hidden") { ChromeModeDiagram(kind: .tray) }
             }
             .padding(.top, 12)
-            Text(Strings.t("settings.position")).font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate300)
-                .padding(.top, 12)
-            ChromeWrap(spacing: 8) {
-                ForEach(edges) { choice in
-                    ChromeChip(label: choice.label, selected: model.settings.edge == choice.value) { model.set(\.edge, choice.value) }
-                }
+            Text(Strings.t(hintKey))
+                .font(Chrome.font(11)).foregroundStyle(Chrome.slate500)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
+
+            Text(Strings.t("settings.position"))
+                .font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate300)
+                .padding(.top, 14)
+            HStack(alignment: .top, spacing: 8) {
+                edge(.top, "settings.position.top", vertical: true, far: false)
+                edge(.bottom, "settings.position.bottom", vertical: true, far: true)
+                edge(.left, "settings.position.left", vertical: false, far: false)
+                edge(.right, "settings.position.right", vertical: false, far: true)
             }
             .padding(.top, 8)
         }
     }
 
-    private var modes: [ChromeChoice<PanelMode>] {
-        [ChromeChoice(value: .expandOnHover, label: Strings.t("settings.panel.hover"), hint: Strings.t("settings.panel.hoverHint")),
-         ChromeChoice(value: .alwaysExpanded, label: Strings.t("settings.panel.always"), hint: Strings.t("settings.panel.alwaysHint")),
-         ChromeChoice(value: .hidden, label: Strings.t("settings.panel.hidden"), hint: Strings.t("settings.panel.hiddenHint"))]
+    private var hintKey: String {
+        switch model.settings.panel {
+        case .alwaysExpanded: return "settings.panel.alwaysHint"
+        case .hidden: return "settings.panel.hiddenHint"
+        default: return "settings.panel.hoverHint"
+        }
     }
 
-    private var edges: [ChromeChoice<DockEdge>] {
-        [ChromeChoice(value: .top, label: Strings.t("settings.position.top")),
-         ChromeChoice(value: .bottom, label: Strings.t("settings.position.bottom")),
-         ChromeChoice(value: .left, label: Strings.t("settings.position.left")),
-         ChromeChoice(value: .right, label: Strings.t("settings.position.right"))]
+    private func tile<Diagram: View>(_ mode: PanelMode, _ key: String, @ViewBuilder diagram: @escaping () -> Diagram) -> some View {
+        ChromeTile(label: Strings.t(key), selected: model.settings.panel == mode, action: { model.set(\.panel, mode) }, diagram: diagram)
+    }
+
+    private func edge(_ dockEdge: DockEdge, _ key: String, vertical: Bool, far: Bool) -> some View {
+        let selected = model.settings.edge == dockEdge
+        return ChromeTile(label: Strings.t(key), selected: selected, action: { model.set(\.edge, dockEdge) }) {
+            ChromeEdgeDiagram(vertical: vertical, far: far, selected: selected)
+        }
     }
 }
 
@@ -513,7 +492,7 @@ private struct AlertCard<Input: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ChromeCheck(label: label, hint: hint, isOn: $isOn)
+            ChromeSwitchRow(label: label, hint: hint, on: isOn) { isOn = $0 }
             input()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -635,7 +614,12 @@ final class HostedWindow<Content: View> {
     private let window: NSWindow
 
     init(title: String, width: CGFloat, height: CGFloat, content: Content) {
-        window = NSWindow(contentViewController: NSHostingController(rootView: content))
+        let host = NSHostingController(rootView: content)
+        /// The window draws its own title bar, so the content has to reach the top of the frame. Without
+        /// this SwiftUI insets it by the title bar's safe area and our header lands in a second row, under
+        /// the close, minimise and zoom buttons instead of level with them.
+        host.safeAreaRegions = []
+        window = NSWindow(contentViewController: host)
         window.title = title
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true

@@ -165,6 +165,8 @@
 
     "settings.providersSub": "KI-Werkzeuge und Kontingente",
     "settings.readOnly": "Nur-Lese-Modus",
+    "settings.readToggle": "Lesen",
+    "settings.readToggleHint": "Dieses Werkzeug lesen und seine Anzeige zeigen. Aus lässt Tokendial es unberührt.",
     "settings.connectedCount": {"one": "Lokal · {n} aktiv", "other": "Lokal · {n} aktiv"},
     "settings.inactive": "Inaktiv",
     "settings.usedBadge": "{pct} % verbraucht",

@@ -43,13 +43,39 @@ derived from the dark mockup and are open to a design pass.
 | `working` | #1B1F27 |
 | `textPrimary` / `textSecondary` / `textDisabled` | #1B1F27 / #5B6270 / #A3A9B4 |
 
-Settings windows: window #F4F6FA, cards white at 60–95 %, edges #D9DFE8, lines #C5CEDA, inks
+Settings windows: window #E9EDF3, cards white at 60–95 %, edges #D2DAE5, lines #C5CEDA, inks
 #0F172A / #1E293B / #334155 / #475569 / #64748B; the brand green and its tints do not change.
 The two quietest inks are one step darker than a plain inversion of the dark ramp would give:
 at 11 px on a white card, #64748B reached only 4.75:1 and #94A3B8 failed outright, where
 #475569 reads at 7.5:1. On macOS the settings window also wears the theme's own appearance, so
 what the system draws for us — the selection behind a field's text, the caret, the focus ring —
-cannot come back in dark-mode colours on a light window.
+cannot come back in dark-mode colours on a light window. The window ground started at #F4F6FA and
+was deepened to #E9EDF3 (edges with it): three per cent from a white card is not a separation, and
+the whole light window read as one flat sheet.
+
+## Settings controls
+
+The settings window is a list on the left and controls on the right, over a footer bar carrying the
+version, the licence line and the three links.
+
+Each provider is a row of one list card, not a card of its own: the rows are divided by hairlines,
+the connected ones are washed with the brand at 10 % and the card clips its own rounded corners.
+The row leads with **the dock's own dial** — the same 240° arc opening downward, 34 px at 3 px
+stroke, coloured by band through the usage bands, with the tool's mark inside — so a glance means
+the same thing in the dock and in the settings list. There is no separate progress bar: the dial is
+the reading. The row ends with a switch for whether Tokendial reads that tool at all, under a small
+right-aligned `Read` caption over the column, because a switch with no label beside a `Manage`
+button does not say what it governs. One `Refresh` under the list replaces a refresh button per row.
+
+Panel mode and dock position are picture-first tiles: a small screen with what the choice puts at
+the edge (a compact row of cells, every cell expanded, a menu-bar dot; or the dock's bar against
+one of the four edges), with the name under it, and one hint line under the row that follows the
+selection instead of three repeated hints.
+
+Flags for the language picker are drawn from bands and crosses, never emoji: Segoe UI Emoji carries
+no regional indicator glyphs, so a flag emoji renders on Windows as its two letters in boxes, and
+drawing them keeps the platforms identical with no assets. Arabic is a language, not a country, so
+it carries ع on a plain badge rather than any one state's flag.
 
 ## Dial
 

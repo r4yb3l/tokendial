@@ -165,6 +165,8 @@
 
     "settings.providersSub": "AI tools and quotas",
     "settings.readOnly": "Read-only mode",
+    "settings.readToggle": "Read",
+    "settings.readToggleHint": "Read this tool and show its dial. Off leaves it alone entirely.",
     "settings.connectedCount": {"one": "Local · {n} active", "other": "Local · {n} active"},
     "settings.inactive": "Inactive",
     "settings.usedBadge": "{pct}% used",

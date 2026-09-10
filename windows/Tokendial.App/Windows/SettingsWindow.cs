@@ -17,6 +17,7 @@ namespace Tokendial.App.Windows;
 /// <summary>Providers, panel, alerts, language and startup in two independently scrolling columns. Every change saves immediately and takes effect through the host.</summary>
 public sealed class SettingsWindow
 {
+    private const string GlobeIcon = "M12 3a9 9 0 100 18 9 9 0 000-18zm0 0c2.5 2.2 3.8 5.2 3.8 9s-1.3 6.8-3.8 9c-2.5-2.2-3.8-5.2-3.8-9s1.3-6.8 3.8-9zM3.5 9h17M3.5 15h17";
     private const string ShieldIcon = "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z";
     private const string BellIcon = "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9";
 
@@ -28,6 +29,7 @@ public sealed class SettingsWindow
     private readonly Action testAlert;
     private readonly string version;
     private readonly Window window;
+    private TextBlock? panelHint;
     private readonly StackPanel providersList = new();
     private ScrollViewer? leftScroll;
     private ScrollViewer? rightScroll;
@@ -101,6 +103,9 @@ public sealed class SettingsWindow
     private UIElement Build()
     {
         building = true;
+        var shell = new Grid();
+        shell.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        shell.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var root = new Grid();
         root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(460) });
@@ -117,12 +122,46 @@ public sealed class SettingsWindow
 
         BuildProviders(left);
         BuildGeneral(left);
-        BuildAbout(left);
         BuildPanel(right);
         BuildAlerts(right);
 
+        shell.Children.Add(root);
+        var footer = BuildFooter();
+        Grid.SetRow(footer, 1);
+        shell.Children.Add(footer);
+
         building = false;
-        return root;
+        return shell;
+    }
+
+    /// <summary>The bar across the foot of the window: what this is, and where to go from here.</summary>
+    private Border BuildFooter()
+    {
+        var bar = new Grid();
+        bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        words.Children.Add(Text.Make($"{Strings.T("app.name")} {version}", 12, Chrome.Slate200, FontWeights.Medium));
+        var license = Chrome.Body(Strings.T("settings.license"));
+        license.FontSize = 11;
+        words.Children.Add(license);
+        bar.Children.Add(words);
+        var links = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.app")));
+        links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
+        var folder = Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial")));
+        folder.Margin = new Thickness(0);
+        links.Children.Add(folder);
+        Grid.SetColumn(links, 1);
+        bar.Children.Add(links);
+        return new Border
+        {
+            Background = Chrome.TitleBarFill,
+            BorderBrush = Chrome.LineSoft,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(20, 12, 20, 12),
+            Child = bar
+        };
     }
 
     private void BuildProviders(StackPanel column)
@@ -147,9 +186,20 @@ public sealed class SettingsWindow
         calloutCard.Margin = new Thickness(0, 10, 0, 0);
         column.Children.Add(calloutCard);
 
+        var readColumn = Text.Make(Strings.T("settings.readToggle"), 10, Chrome.Slate500, FontWeights.Medium);
+        readColumn.HorizontalAlignment = HorizontalAlignment.Right;
+        readColumn.Margin = new Thickness(0, 12, 15, -4);
+        column.Children.Add(readColumn);
+
         Detach(providersList);
-        providersList.Margin = new Thickness(0, 12, 0, 0);
-        column.Children.Add(providersList);
+        var listCard = Chrome.Card(providersList, Chrome.Sheet, Chrome.Line, 0);
+        listCard.Margin = new Thickness(0, 6, 0, 0);
+        column.Children.Add(listCard);
+        var listFooter = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
+        var refreshAll = Chrome.Button(Strings.T("settings.refresh"), () => store.PollNow());
+        refreshAll.Margin = new Thickness(0);
+        listFooter.Children.Add(refreshAll);
+        column.Children.Add(listFooter);
     }
 
     private void BuildGeneral(StackPanel column)
@@ -164,7 +214,7 @@ public sealed class SettingsWindow
         var chips = new WrapPanel { Margin = new Thickness(0, 8, 0, -8) };
         void AddLanguage(string? code, string name)
         {
-            chips.Children.Add(Chrome.Chip("language", name, settings.Language == code, () =>
+            chips.Children.Add(Chrome.Chip("language", LanguageContent(code, name), settings.Language == code, () =>
             {
                 if (building || settings.Language == code) return;
                 settings.Language = code;
@@ -197,61 +247,67 @@ public sealed class SettingsWindow
         column.Children.Add(card);
     }
 
-    private void BuildAbout(StackPanel column)
+    /// <summary>A language chip's content: its flag, then the language's own name for itself. The system
+    /// entry belongs to no place, so it keeps a globe instead.</summary>
+    private static UIElement LanguageContent(string? code, string name)
     {
-        var title = Chrome.SmallTitle(Strings.T("settings.about"));
-        title.Margin = new Thickness(0, 20, 0, 0);
-        column.Children.Add(title);
-        var about = new Grid();
-        about.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        about.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        words.Children.Add(Text.Make($"{Strings.T("app.name")} {version}", 12, Chrome.Slate200, FontWeights.Medium));
-        var license = Chrome.Body(Strings.T("settings.license"));
-        license.FontSize = 11;
-        words.Children.Add(license);
-        about.Children.Add(words);
-        var links = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.app")));
-        links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
-        var folder = Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial")));
-        folder.Margin = new Thickness(0);
-        links.Children.Add(folder);
-        Grid.SetColumn(links, 1);
-        about.Children.Add(links);
-        var card = Chrome.Card(about, Chrome.SheetFaint, Chrome.EdgeSoft, 16);
-        card.Margin = new Thickness(0, 10, 0, 0);
-        column.Children.Add(card);
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        var badge = Flags.For(code) ?? Chrome.Icon(GlobeIcon, 13, Chrome.Slate400);
+        badge.VerticalAlignment = VerticalAlignment.Center;
+        badge.Margin = new Thickness(0, 0, 7, 0);
+        row.Children.Add(badge);
+        var label = Text.Make(name, 11, Chrome.Slate400, FontWeights.Medium);
+        label.VerticalAlignment = VerticalAlignment.Center;
+        row.Children.Add(label);
+        return row;
     }
 
     private void BuildPanel(StackPanel column)
     {
         column.Children.Add(Chrome.SectionTitle(Strings.T("settings.panel"), null, Text.Make(Strings.T("settings.panelSub"), 12, Chrome.Slate400)));
-        var modes = new StackPanel { Margin = new Thickness(0, 12, 0, 0) };
-        modes.Children.Add(Chrome.RadioCard("panel", Strings.T("settings.panel.hover"), settings.Panel == PanelMode.ExpandOnHover, () => SetPanel(PanelMode.ExpandOnHover), Strings.T("settings.panel.hoverHint")));
-        modes.Children.Add(Chrome.RadioCard("panel", Strings.T("settings.panel.always"), settings.Panel == PanelMode.AlwaysExpanded, () => SetPanel(PanelMode.AlwaysExpanded), Strings.T("settings.panel.alwaysHint")));
-        modes.Children.Add(Chrome.RadioCard("panel", Strings.T("settings.panel.hidden"), settings.Panel == PanelMode.Hidden, () => SetPanel(PanelMode.Hidden), Strings.T("settings.panel.hiddenHint")));
-        column.Children.Add(modes);
-        var positionTitle = Text.Make(Strings.T("settings.position"), 12, Chrome.Slate300, FontWeights.Medium);
-        positionTitle.Margin = new Thickness(0, 2, 0, 0);
-        column.Children.Add(positionTitle);
-        var edges = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
-        void AddEdge(DockEdge dockEdge, string key)
+        var modes = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3, Margin = new Thickness(0, 12, -8, 0) };
+        void AddMode(PanelMode mode, string key, UIElement diagram)
         {
-            edges.Children.Add(Chrome.Chip("edge", Strings.T(key), settings.Edge == dockEdge, () =>
+            modes.Children.Add(Chrome.Tile("panel", diagram, Strings.T(key), settings.Panel == mode, () => SetPanel(mode)));
+        }
+        AddMode(PanelMode.ExpandOnHover, "settings.panel.hover", Chrome.CompactDiagram(wide: false));
+        AddMode(PanelMode.AlwaysExpanded, "settings.panel.always", Chrome.CompactDiagram(wide: true));
+        AddMode(PanelMode.Hidden, "settings.panel.hidden", Chrome.TrayDiagram());
+        column.Children.Add(modes);
+        panelHint = Chrome.Body(PanelHint(settings.Panel));
+        panelHint.FontSize = 11;
+        panelHint.Margin = new Thickness(0, 2, 0, 0);
+        column.Children.Add(panelHint);
+
+        var positionTitle = Text.Make(Strings.T("settings.position"), 12, Chrome.Slate300, FontWeights.Medium);
+        positionTitle.Margin = new Thickness(0, 14, 0, 0);
+        column.Children.Add(positionTitle);
+        var edges = new System.Windows.Controls.Primitives.UniformGrid { Columns = 4, Margin = new Thickness(0, 8, -8, 0) };
+        void AddEdge(DockEdge dockEdge, string key, bool vertical, bool far)
+        {
+            var selected = settings.Edge == dockEdge;
+            edges.Children.Add(Chrome.Tile("edge", Chrome.EdgeDiagram(vertical, far, selected), Strings.T(key), selected, () =>
             {
                 if (building || settings.Edge == dockEdge) return;
                 settings.Edge = dockEdge;
                 save();
                 EdgeChanged?.Invoke(dockEdge);
+                Relocalize();
             }));
         }
-        AddEdge(DockEdge.Top, "settings.position.top");
-        AddEdge(DockEdge.Bottom, "settings.position.bottom");
-        AddEdge(DockEdge.Left, "settings.position.left");
-        AddEdge(DockEdge.Right, "settings.position.right");
+        AddEdge(DockEdge.Top, "settings.position.top", vertical: true, far: false);
+        AddEdge(DockEdge.Bottom, "settings.position.bottom", vertical: true, far: true);
+        AddEdge(DockEdge.Left, "settings.position.left", vertical: false, far: false);
+        AddEdge(DockEdge.Right, "settings.position.right", vertical: false, far: true);
         column.Children.Add(edges);
     }
+
+    private static string PanelHint(PanelMode mode) => Strings.T(mode switch
+    {
+        PanelMode.AlwaysExpanded => "settings.panel.alwaysHint",
+        PanelMode.Hidden => "settings.panel.hiddenHint",
+        _ => "settings.panel.hoverHint"
+    });
 
     private void BuildAlerts(StackPanel column)
     {
@@ -263,19 +319,19 @@ public sealed class SettingsWindow
         column.Children.Add(hint);
 
         column.Children.Add(AlertCard(
-            Chrome.Check(Strings.T("settings.thresholds"), settings.AlertThresholds, v => { settings.AlertThresholds = v; Save(); }, Strings.T("settings.thresholdsHint")),
+            Chrome.SwitchRow(Strings.T("settings.thresholds"), Strings.T("settings.thresholdsHint"), settings.AlertThresholds, v => { settings.AlertThresholds = v; Save(); }),
             Picker("thresholds", Strings.T("settings.thresholdsField"), Strings.T("settings.thresholdsFieldHint"), Thresholds, settings.Thresholds,
                 pct => $"{pct}%", pct => settings.Thresholds.Contains(pct), ToggleThreshold, multiple: true)));
         column.Children.Add(AlertCard(
-            Chrome.Check(Strings.T("settings.resetSoon"), settings.AlertResetSoon, v => { settings.AlertResetSoon = v; Save(); }, Strings.T("settings.resetSoonHint")),
+            Chrome.SwitchRow(Strings.T("settings.resetSoon"), Strings.T("settings.resetSoonHint"), settings.AlertResetSoon, v => { settings.AlertResetSoon = v; Save(); }),
             Picker("leadTime", Strings.T("settings.leadTime"), null, LeadMinutes, [settings.ResetLeadMinutes],
                 n => n.ToString(), n => settings.ResetLeadMinutes == n, n => { settings.ResetLeadMinutes = n; Save(); }, multiple: false)));
         column.Children.Add(AlertCard(
-            Chrome.Check(Strings.T("settings.waiting"), settings.AlertWaiting, v => { settings.AlertWaiting = v; Save(); }, Strings.T("settings.waitingHint")),
+            Chrome.SwitchRow(Strings.T("settings.waiting"), Strings.T("settings.waitingHint"), settings.AlertWaiting, v => { settings.AlertWaiting = v; Save(); }),
             Picker("afterWaiting", Strings.T("settings.afterWaiting"), null, WaitingSeconds, [settings.WaitingDebounceSeconds],
                 n => n.ToString(), n => settings.WaitingDebounceSeconds == n, n => { settings.WaitingDebounceSeconds = n; Save(); }, multiple: false)));
         column.Children.Add(AlertCard(
-            Chrome.Check(Strings.T("settings.limit"), settings.AlertLimit, v => { settings.AlertLimit = v; Save(); }, Strings.T("settings.limitHint")), null));
+            Chrome.SwitchRow(Strings.T("settings.limit"), Strings.T("settings.limitHint"), settings.AlertLimit, v => { settings.AlertLimit = v; Save(); }), null));
 
         var deliveryTitle = Text.Make(Strings.T("settings.delivery"), 12, Chrome.Slate300, FontWeights.Medium);
         deliveryTitle.Margin = new Thickness(0, 6, 0, 6);
@@ -339,7 +395,7 @@ public sealed class SettingsWindow
     }
 
     /// <summary>One alert kind: its switch, and under a rule the number it takes.</summary>
-    private static Border AlertCard(CheckBox toggle, UIElement? input)
+    private static Border AlertCard(UIElement toggle, UIElement? input)
     {
         var stack = new StackPanel();
         stack.Children.Add(toggle);
@@ -366,6 +422,7 @@ public sealed class SettingsWindow
         settings.Panel = mode;
         Save();
         PanelModeChanged?.Invoke(mode);
+        if (panelHint is not null) panelHint.Text = PanelHint(mode);
     }
 
     private void SetDelivery(AlertDelivery delivery)
@@ -398,46 +455,37 @@ public sealed class SettingsWindow
             var live = connected && !assisted;
             if (live) active++;
             var reading = connected ? readings.GetValueOrDefault(summary.Id) : null;
-            providersList.Children.Add(ProviderCard(summary, recipe, state, assisted, live, reading));
+            if (providersList.Children.Count > 0) providersList.Children.Add(new Border { Height = 1, Background = Chrome.LineFaint });
+            providersList.Children.Add(ProviderRow(summary, recipe, state, assisted, live, reading));
         }
+        Round(providersList);
         statusText.Text = Strings.Plural("settings.connectedCount", active);
     }
 
-    private Border ProviderCard(ProviderSummary summary, InstallRecipe? recipe, InstallState state, bool assisted, bool live, Core.Model.ProviderReading? reading)
+    /// <summary>One line of the provider list: the tool's dial, what is known about it, and whether
+    /// Tokendial reads it at all. The dial is the same 240-degree arc the dock draws, so a glance means
+    /// the same thing in both places.</summary>
+    private Border ProviderRow(ProviderSummary summary, InstallRecipe? recipe, InstallState state, bool assisted, bool live, Core.Model.ProviderReading? reading)
     {
         var row = new Grid();
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var toggle = Chrome.CheckBox(summary.Connected, on => Connect(summary.Id, on));
-        toggle.VerticalAlignment = VerticalAlignment.Center;
-        toggle.Margin = new Thickness(0, 0, 14, 0);
-        row.Children.Add(toggle);
-
         var tint = Marks.Tint(summary.Id);
-        var mark = new MarkView(summary.Id, 16) { Fill = live ? new SolidColorBrush(tint) : Chrome.Slate400, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var read = live && reading is { HasReading: true };
+        var fraction = read ? reading!.HeadlineFraction ?? 0 : 0;
+        var face = new Grid { Width = 34, Height = 34, Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
+        face.Children.Add(new Dial(34, 3) { Fraction = fraction, Hollow = !read, Track = Chrome.Surface750, Fill = Theme.Of(fraction) });
+        var mark = new MarkView(summary.Id, 15) { Fill = live ? new SolidColorBrush(tint) : Chrome.Slate500, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         if (assisted && assistant.Waiting(summary.Id)) mark.Pulse(true, Theme.AmpleColor, Theme.TextDisabledColor, Chrome.Slate400);
-        var tile = new Border
-        {
-            Width = 32,
-            Height = 32,
-            CornerRadius = new CornerRadius(8),
-            Background = live ? new SolidColorBrush(Color.FromArgb(0x33, tint.R, tint.G, tint.B)) : Chrome.Surface750,
-            BorderBrush = live ? new SolidColorBrush(Color.FromArgb(0x66, tint.R, tint.G, tint.B)) : Chrome.Surface700,
-            BorderThickness = new Thickness(1),
-            Margin = new Thickness(0, 0, 14, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = mark
-        };
-        Grid.SetColumn(tile, 1);
-        row.Children.Add(tile);
+        face.Children.Add(mark);
+        row.Children.Add(face);
 
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var header = new StackPanel { Orientation = Orientation.Horizontal };
         header.Children.Add(Text.Make(summary.Name, 12, live ? Chrome.Strong : Chrome.Slate300, live ? FontWeights.SemiBold : FontWeights.Medium));
-        if (live && reading is { HasReading: true } && reading.HeadlineFraction is double fraction)
+        if (read)
         {
             var percent = (int)Math.Round(fraction * 100);
             var badge = Chrome.Pill(Strings.T("settings.usedBadge", ("pct", percent)), percent > 0 ? Chrome.Accent : Chrome.Slate300, percent > 0 ? Chrome.BrandSoft : Chrome.Surface700, Brushes.Transparent, mono: true, size: 10, radius: 4);
@@ -455,19 +503,13 @@ public sealed class SettingsWindow
         detail.Margin = new Thickness(0, 2, 0, 0);
         words.Children.Add(detail);
         if (assisted) words.Children.Add(InstallSteps.Strip(state));
-        Grid.SetColumn(words, 2);
+        Grid.SetColumn(words, 1);
         row.Children.Add(words);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
         if (assisted && recipe is not null)
         {
-            if (InstallSteps.Action(window, summary, recipe, state, assistant, () => store.OpenSource(summary.Id)) is Button next) { next.Margin = new Thickness(0); actions.Children.Add(next); }
-            else
-            {
-                var pending = Text.Make(Strings.T("settings.inactive"), 11, Chrome.Slate500);
-                pending.FontFamily = Chrome.Mono;
-                actions.Children.Add(pending);
-            }
+            if (InstallSteps.Action(window, summary, recipe, state, assistant, () => store.OpenSource(summary.Id)) is Button next) { next.Margin = new Thickness(0, 0, 10, 0); actions.Children.Add(next); }
         }
         else if (live)
         {
@@ -475,55 +517,42 @@ public sealed class SettingsWindow
                 actions.Children.Add(Chrome.Button(Strings.T("settings.open", ("name", app.Name)), () => store.OpenSource(summary.Id)));
             if (summary.Account?.ManageUrl is Uri manage)
                 actions.Children.Add(Chrome.Button(Strings.T("settings.manage"), () => Open(manage.ToString())));
-            var refresh = Chrome.Button(Strings.T("settings.refresh"), () => _ = store.Poll(summary.Id));
-            refresh.Margin = new Thickness(0);
-            actions.Children.Add(refresh);
+            if (actions.Children.Count > 0) ((FrameworkElement)actions.Children[^1]).Margin = new Thickness(0, 0, 10, 0);
         }
         else
         {
             var inactive = Text.Make(Strings.T("settings.inactive"), 11, Chrome.Slate500);
             inactive.FontFamily = Chrome.Mono;
+            inactive.VerticalAlignment = VerticalAlignment.Center;
+            inactive.Margin = new Thickness(0, 0, 10, 0);
             actions.Children.Add(inactive);
         }
-        Grid.SetColumn(actions, 3);
+        var toggle = Chrome.Switch(summary.Connected, on => Connect(summary.Id, on));
+        toggle.VerticalAlignment = VerticalAlignment.Center;
+        toggle.ToolTip = Strings.T("settings.readToggleHint");
+        actions.Children.Add(toggle);
+        Grid.SetColumn(actions, 2);
         row.Children.Add(actions);
 
-        var body = new StackPanel();
-        body.Children.Add(row);
-        if (live && reading is { HasReading: true } && reading.HeadlineFraction is double f) body.Children.Add(ProgressBar(f));
-
-        Border card;
-        if (live)
+        var host = new Border { Padding = new Thickness(12, 10, 12, 10), Child = row, Tag = summary.Id };
+        if (live) host.Background = Chrome.BrandFaint;
+        if (!live && !assisted)
         {
-            card = Chrome.Card(body, Chrome.ActiveCard, Chrome.BrandLine, 14);
-            card.MouseEnter += (_, _) => card.BorderBrush = Chrome.BrandLineStrong;
-            card.MouseLeave += (_, _) => card.BorderBrush = Chrome.BrandLine;
+            host.Opacity = 0.75;
+            host.MouseEnter += (_, _) => host.Opacity = 1;
+            host.MouseLeave += (_, _) => host.Opacity = 0.75;
         }
-        else
-        {
-            card = Chrome.Card(body, Chrome.SheetSoft, Chrome.Edge, 12);
-            if (!assisted)
-            {
-                card.Opacity = 0.75;
-                card.MouseEnter += (_, _) => card.Opacity = 1;
-                card.MouseLeave += (_, _) => card.Opacity = 0.75;
-            }
-        }
-        card.Margin = new Thickness(0, 0, 0, 10);
-        card.Tag = summary.Id;
-        return card;
+        return host;
     }
 
-    /// <summary>A thin track under a connected provider, filled to its headline usage; the fill warms from green towards the band colour as it grows.</summary>
-    private static Border ProgressBar(double fraction)
+    /// <summary>The list is one card, so the rows at its ends carry its rounded corners; a tinted row
+    /// would otherwise square them off.</summary>
+    private static void Round(StackPanel list)
     {
-        var shown = Math.Clamp(fraction, 0.02, 1);
-        var track = new Grid { Height = 6 };
-        track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(shown, GridUnitType.Star) });
-        track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1 - shown, GridUnitType.Star) });
-        Brush fill = fraction < 0.5 ? Chrome.Brand500 : new LinearGradientBrush(Theme.AmpleColor, ((SolidColorBrush)Theme.Of(fraction)).Color, 0);
-        track.Children.Add(new Border { Background = fill, CornerRadius = new CornerRadius(3) });
-        return new Border { Background = Chrome.Surface800, CornerRadius = new CornerRadius(3), Margin = new Thickness(0, 12, 0, 0), Child = track };
+        foreach (var child in list.Children) if (child is Border row) row.CornerRadius = new CornerRadius(0);
+        if (list.Children.Count == 0) return;
+        if (list.Children[0] is Border first) first.CornerRadius = new CornerRadius(11, 11, 0, 0);
+        if (list.Children[list.Children.Count - 1] is Border last) last.CornerRadius = new CornerRadius(0, 0, 11, 11);
     }
 
     /// <summary>Bring one provider's row into view, for a click on a dial whose tool still has to be installed.</summary>

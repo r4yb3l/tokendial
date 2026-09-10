@@ -165,6 +165,8 @@
 
     "settings.providersSub": "Herramientas de IA y cuotas",
     "settings.readOnly": "Modo solo lectura",
+    "settings.readToggle": "Leer",
+    "settings.readToggleHint": "Leer esta herramienta y mostrar su dial. Apagado, Tokendial no la toca.",
     "settings.connectedCount": {"one": "Local · {n} activo", "other": "Local · {n} activos"},
     "settings.inactive": "Inactivo",
     "settings.usedBadge": "{pct}% usado",
