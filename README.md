@@ -1,72 +1,137 @@
+<div align="center">
+
+![Tokendial](site/public/og.png)
+
 # Tokendial
 
-Native dials for your AI coding assistants. A small panel on the top edge of the
-screen shows how much of each tool's usage limit you have burned, and native
-notifications tell you when you cross a threshold, when a window is about to
-reset, when an agent is waiting on you, and when you have hit the limit.
+**Know how much of your AI coding limits you have left.**
+Native usage dials for Claude Code, Codex, Copilot, Cursor and five more, on the edge of your screen.
 
-The website lives in `site/` (Astro, six languages, deployed to Vercel at tokendial.vercel.app; no domain bought yet).
+[![Release](https://img.shields.io/github/v/release/r4yb3l/tokendial?color=10b981&label=release)](https://github.com/r4yb3l/tokendial/releases/latest)
+[![CI](https://github.com/r4yb3l/tokendial/actions/workflows/ci.yml/badge.svg)](https://github.com/r4yb3l/tokendial/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/r4yb3l/tokendial?color=10b981)](LICENSE)
+![Platforms](https://img.shields.io/badge/platforms-macOS%2014%2B%20%C2%B7%20Windows%2010%2B-1f2937)
 
-macOS (Swift, AppKit) and Windows (WPF, .NET 10), built from one shared
-specification in `docs/`.
+[**Download**](https://github.com/r4yb3l/tokendial/releases/latest) · [Website](https://tokendial.vercel.app) · [Guides](https://tokendial.vercel.app/guides) · [Security](SECURITY.md)
 
-Status: both platforms read the nine providers, install what is missing, and carry
-the same settings window; the macOS updater is not written yet, so a new version is
-found through GitHub Releases rather than fetched. See `docs/` for the provider and
-alert specifications both platforms follow, and `windows/README.md` for the Windows
-build.
+</div>
 
-## Installing
+---
 
-Releases are built by CI from a `v*` tag and attached to the GitHub release: a
-Velopack installer and a portable zip for Windows, a zip and a disk image for macOS.
-The macOS build is a universal binary, so one download covers Intel and Apple
-Silicon.
+You build with several assistants at once, and the only way to find out you are out of quota is when one
+of them stops answering. Every vendor meters differently and none of them warns you first.
 
-Neither build is signed with a paid certificate, and both operating systems say so:
+Tokendial puts a dial per tool on the edge of your screen. It reads the session each tool already keeps on
+your machine, asks that tool's own usage endpoint, and tells you before a window runs out — not after.
 
-- **Windows** shows "Windows protected your PC" the first time an unsigned installer
-  runs. More info, then Run anyway.
-- **macOS** refuses to open an app that was not notarised and arrives with a
-  quarantine flag, claiming it is damaged. Either right-click the app and choose
-  Open, then Open again in System Settings under Privacy & Security, or clear the
-  flag yourself:
+- **A dock, not a window.** A compact row of dials at the edge you choose, which opens when the cursor
+  reaches it and never takes focus from what you are typing in.
+- **Read-only by design.** Credentials are read where their tool already stores them, never written, never
+  refreshed, never sent anywhere but that tool's own endpoint.
+- **Two native apps.** Swift and AppKit on macOS, C# and WPF on Windows, built from one shared
+  specification in [`docs/`](docs/) so a provider added once appears on both.
+- **Free and open source.** No account, no telemetry, no crash reports.
 
-  ```sh
-  xattr -dr com.apple.quarantine /Applications/Tokendial.app
-  ```
+## What it looks like
 
-Signing properly means a code-signing certificate on Windows and an Apple Developer
-ID plus notarisation on macOS. Until then the checksums published with each release
-are what a careful reader can verify.
+![The Tokendial settings window](docs/media/settings.png)
 
-## Providers
+The settings window: a dial per provider coloured through its usage bands, the install assistant for the
+tools you do not have yet, and the dock's position and behaviour as pictures rather than radio buttons.
+Shown here in Spanish, one of the six languages it speaks.
 
-Claude Code, Codex, GitHub Copilot, Cursor, Antigravity, Gemini CLI (Code Assist Standard and Enterprise), GLM (Z.ai Coding Plan), Grok, OpenCode Go. Each is
-opt-in. Tokendial reads the sign-in each tool already stores on your machine and asks that
-tool's usage endpoint; it never writes credentials and never sends them anywhere else.
+## Install
 
-A tool you do not have yet shows an **Install** button in Settings and on the first run. It shows
-the vendor's own install command before running it in a visible terminal, chains the tool's sign-in,
-and connects the dial the moment the sign-in lands. Nothing runs until you press Run; see
-`SECURITY.md`. GLM is a key rather than a tool and keeps its instructions instead.
+Download the [latest release](https://github.com/r4yb3l/tokendial/releases/latest):
 
-## Several accounts
+| Platform | File | Requirement |
+|---|---|---|
+| Windows | `Tokendial-win-Setup.exe`, or the portable zip | Windows 10 1809 or later |
+| macOS | `Tokendial-<version>-macos.dmg`, or the zip | macOS 14 or later, Intel and Apple Silicon in one universal binary |
 
-Tokendial reads what a tool stores, so a second account is a second configuration directory. Claude Code
-signed in with `CLAUDE_CONFIG_DIR=~/.claude-work` and Codex with `CODEX_HOME=~/.codex-work` each get their own
-dial ("Claude Code (work)", "Codex (work)"), their own alerts and their own sessions. The other tools keep a
-single sign-in.
+**Neither build is signed with a paid certificate, and both systems will say so.** Windows shows
+"Windows protected your PC": choose More info, then Run anyway. macOS refuses a notarised-less app that
+arrives with a quarantine flag and claims it is damaged — either right-click the app, choose Open, and
+Open again under System Settings → Privacy & Security, or clear the flag yourself:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Tokendial.app
+```
+
+Signing properly means a code-signing certificate on Windows and an Apple Developer ID with notarisation
+on macOS. Until then, every release publishes checksums.
+
+## What it reads
+
+Each provider is opt-in, and a tool you do not have yet shows an **Install** button that puts the vendor's
+own command on screen before running it in a terminal you can watch. Nothing runs until you press Run.
+
+| Provider | Installed with, on macOS | on Windows |
+|---|---|---|
+| Claude Code | `brew install --cask claude-code` | `irm https://claude.ai/install.ps1 \| iex` |
+| Codex | `brew install --cask codex` | `irm https://chatgpt.com/codex/install.ps1 \| iex` |
+| GitHub Copilot | `brew install --cask copilot-cli` | `winget install GitHub.Copilot` |
+| Cursor | `brew install --cask cursor` | `winget install Anysphere.Cursor` |
+| Antigravity | `brew install --cask antigravity` | `winget install Google.Antigravity` |
+| Gemini CLI | `npm install -g @google/gemini-cli` | `npm install -g @google/gemini-cli` |
+| Grok | `curl -fsSL https://x.ai/cli/install.sh \| sh` | `irm https://x.ai/cli/install.ps1 \| iex` |
+| OpenCode | `brew install opencode` | `winget install SST.opencode` |
+| GLM (Z.ai Coding Plan) | an API key rather than a tool | — |
 
 ## Alerts
 
 | Alert | When |
 |---|---|
 | Threshold | crossing 50, 80 or 95 % of a provider's headline window, once per window |
-| Reset soon | ten minutes before a window you have leaned on resets; and "available again" once a limit lifts |
-| Waiting | an agent has waited on you for 20 s, repeating every five minutes |
-| Limit | a window hits 100 % or the provider reports a block, with the time it lifts |
+| Reset soon | ten minutes before a window you have leaned on resets, and again when a limit lifts |
+| Waiting | an agent has waited on your answer for 20 s, repeating every five minutes |
+| Limit | a window hits 100 % or the provider reports a block, with the time it comes back |
 
-Silent while the panel is expanded under your cursor, at most one per provider per minute,
-remembered across restarts. The engine is specified in `docs/alerts/spec.md` and both
+Silent while the dock is open under your cursor, at most one per provider per minute, and remembered
+across restarts. The engine is specified in [`docs/alerts/spec.md`](docs/alerts/spec.md), and both
 platforms pass the same conformance vectors.
+
+## Several accounts
+
+Tokendial reads what a tool stores, so a second account is a second configuration directory. Claude Code
+signed in with `CLAUDE_CONFIG_DIR=~/.claude-work`, or Codex with `CODEX_HOME=~/.codex-work`, each get their
+own dial ("Claude Code (work)"), their own alerts and their own sessions. The other tools keep a single
+sign-in.
+
+## Building from source
+
+```sh
+# Windows
+dotnet test windows/Tokendial.slnx
+dotnet run --project windows/Tokendial.App
+
+# macOS
+swift test --package-path macos/TokendialCore
+brew install xcodegen && cd macos && xcodegen generate
+xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -configuration Debug build
+
+# the website
+cd site && npm ci && npm run dev
+```
+
+A release is built by CI from a `v*` tag that matches [`VERSION`](VERSION): Velopack packages Windows,
+`xcodebuild` archives a universal macOS binary, and both are attached to the GitHub release.
+
+## What is where
+
+| Path | |
+|---|---|
+| `docs/` | the shared specification: providers, alert vectors, i18n catalogues, design tokens |
+| `windows/` | the WPF app and its core, plus the test suite |
+| `macos/` | the AppKit app and `TokendialCore`, its Swift package |
+| `site/` | the website and the guides (Astro, six languages) |
+| `tools/` | the helper that builds and tests macOS over SSH from a Windows machine |
+
+Both apps read `docs/` at runtime and both test suites read it too, so a provider or a string is changed
+once. See [`docs/design/tokens.md`](docs/design/tokens.md) for the design system and
+[`SECURITY.md`](SECURITY.md) for what leaves your machine, which is as little as we could manage.
+
+## Licence
+
+[MIT](LICENSE). Tokendial is not affiliated with Anthropic, OpenAI, GitHub, Google, xAI, Anysphere, Z.ai
+or SST; each product name belongs to its owner.
