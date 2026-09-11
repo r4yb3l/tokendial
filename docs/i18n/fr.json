@@ -213,7 +213,9 @@
     "setup.install": "Installer",
     "setup.justRun": "Juste l’exécuter",
 
-    "settings.delivery.bannersHintPlain": "Coin supérieur droit, dans la couleur propre à Tokendial. Affichées même en mode Ne pas déranger."
+    "settings.delivery.bannersHintPlain": "Coin supérieur droit, dans la couleur propre à Tokendial. Affichées même en mode Ne pas déranger.",
+
+    "install.requires.node": "Node 22 ou plus récent est introuvable. Installez-le depuis les paquets de votre distribution ou depuis nodejs.org, puis réessayez."
   },
   "labels": {
     "Current session": "Session en cours",

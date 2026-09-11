@@ -125,7 +125,8 @@ public static class InstallScript
     {
         "winget" => "install.requires.winget",
         "brew" => "install.requires.brew",
-        _ => "install.requires.npm"
+        // The npm sentence offers Homebrew, which is a macOS answer; the shell script runs on Linux.
+        _ => "install.requires.node"
     };
 
     private static void RunShell(Action<string> line, string command)

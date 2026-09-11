@@ -7,6 +7,8 @@ using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Settings;
 using Tokendial.Core.Store;
+using Tokendial.Core.Install;
+using Tokendial.Linux.Install;
 using Tokendial.Linux.Panel;
 
 namespace Tokendial.Linux.Windows;
@@ -24,11 +26,12 @@ public sealed class SettingsWindow : Window
     private readonly Action save;
     private readonly Action quit;
     private readonly Action testAlert;
+    private readonly InstallAssistant assistant;
     private readonly StackPanel providerList = new() { Spacing = 1 };
     private readonly TextBlock menuHint = Chrome.HintText("");
     private Button? menuButton;
 
-    public SettingsWindow(Settings settings, UsageStore store, IReadOnlyList<IUsageProvider> providers, Action save, Action quit, Action testAlert)
+    public SettingsWindow(Settings settings, UsageStore store, IReadOnlyList<IUsageProvider> providers, Action save, Action quit, Action testAlert, InstallAssistant assistant)
     {
         this.settings = settings;
         this.store = store;
@@ -36,6 +39,9 @@ public sealed class SettingsWindow : Window
         this.save = save;
         this.quit = quit;
         this.testAlert = testAlert;
+        this.assistant = assistant;
+        assistant.Changed += RefreshProviders;
+        Closed += (_, _) => assistant.Changed -= RefreshProviders;
 
         Title = Strings.T("settings.title");
         Width = 1120;
@@ -92,34 +98,55 @@ public sealed class SettingsWindow : Window
     private void RefreshProviders()
     {
         providerList.Children.Clear();
-        foreach (var provider in providers) providerList.Children.Add(ProviderRow(provider));
+        foreach (var summary in store.Summaries)
+        {
+            var recipe = assistant.Recipe(summary.Id);
+            var state = recipe is null ? InstallState.Connected : assistant.State(summary);
+            providerList.Children.Add(ProviderRow(summary, recipe, state, assisted: recipe is not null && state != InstallState.Connected));
+        }
     }
 
-    private Control ProviderRow(IUsageProvider provider)
+    /// <summary>
+    /// One line of the provider list: what is known about the tool, and either the step that moves it forward
+    /// or the switch that decides whether Tokendial reads it. A tool that is not installed or not signed in
+    /// shows the assistant rather than a switch, because connecting it would read nothing.
+    /// </summary>
+    private Control ProviderRow(ProviderSummary summary, InstallRecipe? recipe, InstallState state, bool assisted)
     {
-        var connected = !settings.Disconnected.Contains(provider.Id);
-        var account = provider.Account();
+        var connected = summary.Connected;
+        var mark = new MarkView(summary.Id, 18) { Fill = Chrome.Slate300, VerticalAlignment = VerticalAlignment.Center };
+        var name = Chrome.Label(summary.Name);
+        var status = Chrome.Body(assisted && recipe is not null
+            ? InstallSteps.Detail(summary.Id, summary.Name, recipe, state, assistant)
+            : summary.Account?.Summary ?? Strings.T("status.signIn"), wrap: false);
+        status.FontSize = 11;
 
-        var mark = new MarkView(provider.Id, 18) { Fill = Chrome.Slate300, VerticalAlignment = VerticalAlignment.Center };
-        var name = Chrome.Label(provider.DisplayName);
-        var status = Chrome.Body(account?.Summary ?? Strings.T("status.signIn"), wrap: false);
+        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { name, status } };
+        if (assisted) words.Children.Add(InstallSteps.Strip(state));
+        var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { mark, words } };
 
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { name, status } };
-        var head = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { mark, text } };
-
-        var toggle = Chrome.Switch(connected, on => Connect(provider.Id, on));
-        toggle.VerticalAlignment = VerticalAlignment.Center;
+        Control right;
+        if (assisted && recipe is not null
+            && InstallSteps.Action(this, summary, recipe, state, assistant, () => store.OpenSource(summary.Id)) is Button next)
+        {
+            right = next;
+        }
+        else
+        {
+            right = Chrome.Switch(connected, on => Connect(summary.Id, on));
+        }
+        right.VerticalAlignment = VerticalAlignment.Center;
 
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         grid.Children.Add(head);
-        Grid.SetColumn(toggle, 1);
-        grid.Children.Add(toggle);
+        Grid.SetColumn(right, 1);
+        grid.Children.Add(right);
 
         return new Border
         {
             Child = grid,
             Padding = new Thickness(12, 10, 12, 10),
-            Background = connected ? Chrome.ActiveCard : Chrome.Well,
+            Background = connected && !assisted ? Chrome.ActiveCard : Chrome.Well,
             BorderBrush = Chrome.EdgeSoft,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(10)

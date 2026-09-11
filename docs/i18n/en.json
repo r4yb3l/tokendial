@@ -213,7 +213,9 @@
     "setup.install": "Install",
     "setup.justRun": "Just run it",
 
-    "settings.delivery.bannersHintPlain": "Top-right corner, in Tokendial's own colour. Shown even under Do not disturb."
+    "settings.delivery.bannersHintPlain": "Top-right corner, in Tokendial's own colour. Shown even under Do not disturb.",
+
+    "install.requires.node": "Node 22 or later was not found. Install it from your distribution's packages or from nodejs.org, then try again."
   },
   "labels": {
     "Current session": "Current session",

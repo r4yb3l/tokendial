@@ -47,6 +47,7 @@ public sealed class TokendialApp : Application
     private NotifySink? notifications;
     private BannerSink? banners;
     private AlertRouter? router;
+    private InstallAssistant? assistant;
     private PanelWindow? panel;
     private Tokendial.Linux.Tray.TrayIcon? tray;
     private SettingsWindow? window;
@@ -82,6 +83,8 @@ public sealed class TokendialApp : Application
         Adopt(providers);
 
         store = new UsageStore(providers, archive, settings.Disconnected);
+        assistant = new InstallAssistant(providers);
+        assistant.SignedIn += id => { settings.Disconnected.Remove(id); store!.Connect(id); Save(); Refresh(); };
         hub = new ActivityHub(ProviderCatalog.Monitors());
         store.IsBusy = () => hub.AnyWorking;
 
@@ -163,6 +166,7 @@ public sealed class TokendialApp : Application
             hub.Dispose();
             tray?.Dispose();
             alerts?.Dispose();
+            assistant?.Dispose();
             notifications?.Dispose();
             banners?.Close();
         };
@@ -200,7 +204,7 @@ public sealed class TokendialApp : Application
         if (store is null) return;
         if (window is null)
         {
-            window = new SettingsWindow(settings, store, catalogue, Save, Quit, TestAlert);
+            window = new SettingsWindow(settings, store, catalogue, Save, Quit, TestAlert, assistant!);
             window.Closed += (_, _) => window = null;
             window.Changed += Refresh;
             window.AlertsChanged += config => alerts?.Reconfigure(config, settings.Wants);
