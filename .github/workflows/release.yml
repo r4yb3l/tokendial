@@ -86,7 +86,7 @@ jobs:
         run: >
           xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -configuration Release
           -derivedDataPath build -archivePath build/Tokendial.xcarchive archive
-          ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO
+          ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO MARKETING_VERSION="${VERSION}"
           CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
       - name: Export the app
         working-directory: macos
@@ -108,11 +108,22 @@ jobs:
           for want in arm64 x86_64; do
             case " ${ARCHS} " in *" ${want} "*) ;; *) echo "missing ${want}"; exit 1;; esac
           done
-      - name: Zip and disk image
-        working-directory: macos/dist
+      - name: The app must carry its icon
+        working-directory: macos
         run: |
+          APP=dist/Tokendial.app
+          NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconFile" "$APP/Contents/Info.plist")
+          [ -f "$APP/Contents/Resources/${NAME}.icns" ] || { echo "Info.plist claims ${NAME} but no icns was compiled"; exit 1; }
+          echo "icon: ${NAME}.icns ($(stat -f%z "$APP/Contents/Resources/${NAME}.icns") bytes)"
+      # v0.1.0 shipped a bare image: one app icon in a plain Finder window, with no hint of what to do
+      # with it. The script builds the arranged window instead, and is the same one used to check the
+      # image by hand, so what ships is what was looked at.
+      - name: Zip and disk image
+        working-directory: macos
+        run: |
+          tools/make-dmg.sh
+          cd dist
           ditto -c -k --keepParent Tokendial.app "Tokendial-${VERSION}-macos.zip"
-          hdiutil create -volname "Tokendial ${VERSION}" -srcfolder Tokendial.app -ov -format UDZO "Tokendial-${VERSION}-macos.dmg"
           shasum -a 256 Tokendial-*-macos.* > "Tokendial-${VERSION}-macos.sha256"
       - name: Attach to the GitHub release
         env:

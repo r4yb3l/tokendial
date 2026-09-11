@@ -15,7 +15,7 @@ cat > /tmp/tokendial-build.sh <<SCRIPT
 export PATH=/opt/homebrew/bin:/usr/local/bin:\$PATH
 cd "$(pwd)"
 xcodegen generate >/dev/null 2>&1
-xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -destination 'platform=macOS' -configuration $CONFIG -derivedDataPath build CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build
+xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -destination 'platform=macOS' -configuration $CONFIG -derivedDataPath build CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= MARKETING_VERSION=$(tr -d '[:space:]' < ../VERSION) build
 echo "exit=\$?" > $DONE
 SCRIPT
 chmod +x /tmp/tokendial-build.sh
