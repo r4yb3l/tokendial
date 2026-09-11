@@ -8,7 +8,13 @@ namespace Tokendial.Core.Providers.Cursor;
 /// <summary>The editor's own session, read from its global state database. The cookie pair is what the usage endpoint accepts.</summary>
 public sealed record CursorCredential(string AccessToken, string AccountId)
 {
-    public static string DefaultStore => Path.Combine(Http.AppData, "Cursor", "User", "globalStorage", "state.vscdb");
+    public static string DefaultStore => StorePath(Roots.Here);
+
+    /// <summary>
+    /// Electron keeps its user data under the platform's config root: %APPDATA% on Windows,
+    /// Application Support on macOS, $XDG_CONFIG_HOME or ~/.config on Linux.
+    /// </summary>
+    public static string StorePath(Roots roots) => roots.In(roots.Config, "Cursor", "User", "globalStorage", "state.vscdb");
 
     public string Cookie => $"WorkosCursorSessionToken={AccountId}::{AccessToken}";
 

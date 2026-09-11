@@ -13,6 +13,11 @@
       "kind": "file",
       "path": "same four files under the user profile",
       "notes": "Same rules."
+    },
+    "linux": {
+      "kind": "file",
+      "path": "~/.claude/settings.json | ~/.zcode/v2/config.json | ~/.zcode/v2/credentials.json | ~/.local/share/opencode/auth.json",
+      "notes": "Four sources, all home-relative. The OpenCode one is already the XDG data directory, which is where it lives on Linux too; $XDG_DATA_HOME moves it."
     }
   },
   "endpoints": [

@@ -43,7 +43,7 @@ public sealed class InstallAssistant : IDisposable
     {
         var provider = providers.First(p => p.Id == summary.Id);
         var recipe = Recipe(summary.Id);
-        var installed = recipe is null || ProviderFamily.IsProfile(summary.Id) || locator.IsInstalled(recipe.Here.Detect);
+        var installed = recipe?.Here is not PlatformRecipe here || ProviderFamily.IsProfile(summary.Id) || locator.IsInstalled(here.Detect);
         return InstallProgress.Of(installed, provider.Account() is not null, summary.Connected);
     }
 
@@ -54,7 +54,7 @@ public sealed class InstallAssistant : IDisposable
     /// <summary>The platform recipe with the sign-in a profile actually needs.</summary>
     public PlatformRecipe Platform(string providerId)
     {
-        var platform = Recipe(providerId)!.Here;
+        var platform = Recipe(providerId)!.Here!;
         if (providers.First(p => p.Id == providerId) is IProfiled profiled && ProviderFamily.IsProfile(providerId) && platform.SignIn is SignInStep signIn)
             return platform with { SignIn = signIn with { Command = profiled.SignInCommand } };
         return platform;

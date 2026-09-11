@@ -7,7 +7,22 @@ namespace Tokendial.Core.Install;
 /// </summary>
 public sealed class ToolLocator
 {
-    private static readonly EnvironmentVariableTarget[] Targets = [EnvironmentVariableTarget.Process, EnvironmentVariableTarget.User, EnvironmentVariableTarget.Machine];
+    /// <summary>
+    /// User and Machine are Windows registry scopes; asking for them on Unix throws PlatformNotSupported.
+    /// </summary>
+    private static readonly EnvironmentVariableTarget[] Targets =
+        OperatingSystem.IsWindows()
+            ? [EnvironmentVariableTarget.Process, EnvironmentVariableTarget.User, EnvironmentVariableTarget.Machine]
+            : [EnvironmentVariableTarget.Process];
+
+    /// <summary>
+    /// Where a Unix installer puts a tool for one user. An application started from a desktop entry inherits
+    /// the session's PATH, which on most distributions does not include ~/.local/bin - Claude Code's own
+    /// installer warns about exactly that - so a tool that installed perfectly would be reported missing.
+    /// </summary>
+    private static readonly string[] UnixFallback =
+        [".local/bin", "bin", ".opencode/bin", "/usr/local/bin", "/usr/bin", "/snap/bin",
+         ".local/share/flatpak/exports/bin", "/var/lib/flatpak/exports/bin"];
 
     private readonly Func<EnvironmentVariableTarget, string?> readPath;
     private readonly string home;
@@ -36,10 +51,26 @@ public sealed class ToolLocator
             foreach (var name in detect.Commands)
             {
                 var candidate = Path.Combine(directory, name);
-                if (File.Exists(candidate)) return candidate;
+                if (Executable(candidate)) return candidate;
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// On Unix a file is only a command if it is marked executable; a same-named data file is not the tool.
+    /// A mode that cannot be read is treated as executable rather than as a miss.
+    /// </summary>
+    private static bool Executable(string path)
+    {
+        if (!File.Exists(path)) return false;
+        if (OperatingSystem.IsWindows()) return true;
+        try
+        {
+            var mode = File.GetUnixFileMode(path);
+            return (mode & (UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute)) != 0;
+        }
+        catch (Exception) { return true; }
     }
 
     private IEnumerable<string> Directories()
@@ -53,6 +84,13 @@ public sealed class ToolLocator
                 var directory = Environment.ExpandEnvironmentVariables(raw.Trim('"'));
                 if (directory.Length > 0 && seen.Add(directory)) yield return directory;
             }
+        }
+
+        if (OperatingSystem.IsWindows()) yield break;
+        foreach (var entry in UnixFallback)
+        {
+            var directory = entry.StartsWith('/') ? entry : Path.Combine(home, entry);
+            if (seen.Add(directory)) yield return directory;
         }
     }
 

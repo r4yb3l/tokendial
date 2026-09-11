@@ -16,8 +16,10 @@
       "required": ["macos", "windows"],
       "properties": {
         "macos": { "$ref": "#/$defs/credential" },
-        "windows": { "$ref": "#/$defs/credential" }
-      }
+        "windows": { "$ref": "#/$defs/credential" },
+        "linux": { "$ref": "#/$defs/credential" }
+      },
+      "additionalProperties": false
     },
     "endpoints": {
       "type": "array",
@@ -81,9 +83,11 @@
         "kind": { "enum": ["registry", "sqlite", "mtime", "none"] },
         "macos": { "type": "string" },
         "windows": { "type": "string" },
+        "linux": { "type": "string" },
         "staleSeconds": { "type": "integer" },
         "notes": { "type": "string" }
-      }
+      },
+      "additionalProperties": false
     },
     "install": { "$ref": "#/$defs/install" },
     "status": {
@@ -93,7 +97,17 @@
         "enabled": { "type": "boolean" },
         "minAppVersion": { "type": "string" },
         "notice": { "type": "string" },
-        "termsRisk": { "enum": ["low", "medium", "high"] }
+        "termsRisk": { "enum": ["low", "medium", "high"] },
+        "platforms": {
+          "type": "object",
+          "description": "Where a usage reading works. Absent means everywhere. A platform set to false is declared unsupported rather than left to fail as needsAuth, which would tell a signed-in user to sign in again.",
+          "properties": {
+            "windows": { "type": "boolean" },
+            "macos": { "type": "boolean" },
+            "linux": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        }
       }
     }
   },
@@ -107,7 +121,8 @@
         "vendor": { "type": "string" },
         "docsUrl": { "type": "string", "format": "uri" },
         "windows": { "$ref": "#/$defs/installPlatform" },
-        "macos": { "$ref": "#/$defs/installPlatform" }
+        "macos": { "$ref": "#/$defs/installPlatform" },
+        "linux": { "$ref": "#/$defs/installPlatform" }
       }
     },
     "installPlatform": {
@@ -123,7 +138,7 @@
             "paths": { "type": "array", "items": { "type": "string" }, "description": "Absolute locations with ~, %VAR% and one * per segment allowed." }
           }
         },
-        "requires": { "type": "array", "items": { "enum": ["winget", "brew", "npm"] }, "description": "Package managers the line needs. The assistant offers to install a missing one as a first step before the tool." },
+        "requires": { "type": "array", "items": { "enum": ["winget", "brew", "npm", "apt", "snap", "flatpak"] }, "description": "Package managers the line needs. The assistant offers to install a missing one as a first step before the tool." },
         "install": { "type": "string", "description": "The exact shell line, PowerShell on Windows and zsh on macOS." },
         "signIn": {
           "type": "object",
@@ -140,7 +155,7 @@
       "type": "object",
       "required": ["kind"],
       "properties": {
-        "kind": { "enum": ["file", "sqlite", "keychain", "credman", "none"] },
+        "kind": { "enum": ["file", "sqlite", "keychain", "credman", "secret-service", "none"] },
         "path": { "type": "string", "description": "With ~ for the home directory and %VAR% for Windows environment variables." },
         "service": { "type": "string" },
         "account": { "type": "string" },

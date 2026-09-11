@@ -15,6 +15,11 @@
       "path": "~/.local/share/opencode/auth.json",
       "fields": { "token": "same" },
       "notes": "Unverified on Windows; OpenCode may also use %APPDATA%/opencode/auth.json."
+    },
+    "linux": {
+      "kind": "file",
+      "path": "~/.local/share/opencode/auth.json",
+      "notes": "Already the XDG data directory on every platform, so this is the macOS block unchanged. $XDG_DATA_HOME moves it."
     }
   },
   "endpoints": [
@@ -54,6 +59,25 @@
       "requires": ["brew"],
       "install": "brew install opencode",
       "signIn": {"command": "opencode auth login", "hint": "install.hint.opencode"}
+    },
+    "linux": {
+      "kind": "cli",
+      "detect": {
+        "commands": [
+          "opencode"
+        ],
+        "paths": [
+          "~/.opencode/bin/opencode",
+          "~/.local/bin/opencode",
+          "/usr/local/bin/opencode"
+        ]
+      },
+      "requires": [],
+      "install": "curl -fsSL https://opencode.ai/install | bash",
+      "signIn": {
+        "command": "opencode",
+        "hint": "install.hint.opencode"
+      }
     }
   }
 }

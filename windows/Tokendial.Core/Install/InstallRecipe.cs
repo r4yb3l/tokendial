@@ -24,8 +24,22 @@ public sealed record PlatformRecipe(InstallKind Kind, Detect Detect, IReadOnlyLi
     public bool NeedsBrew => Requires.Contains("brew");
 }
 
-/// <summary>The install block of one provider spec in docs/providers, embedded in this assembly and never fetched from the network.</summary>
-public sealed record InstallRecipe(string ProviderId, string Vendor, string DocsUrl, PlatformRecipe Windows, PlatformRecipe MacOS)
+/// <summary>
+/// The install block of one provider spec in docs/providers, embedded in this assembly and never fetched
+/// from the network.
+/// </summary>
+/// <remarks>
+/// A map rather than one field per operating system, because the pair it replaced meant "everything that is
+/// not Windows is macOS" - and so the assistant offered Homebrew commands to a Mint user. A platform that is
+/// absent is absent: the assistant has nothing to offer rather than something wrong.
+/// </remarks>
+public sealed record InstallRecipe(string ProviderId, string Vendor, string DocsUrl, IReadOnlyDictionary<Desktop, PlatformRecipe> Platforms)
 {
-    public PlatformRecipe Here => OperatingSystem.IsWindows() ? Windows : MacOS;
+    public PlatformRecipe? On(Desktop desktop) => Platforms.GetValueOrDefault(desktop);
+
+    public PlatformRecipe? Here => On(Roots.Current);
+
+    public PlatformRecipe Windows => Platforms[Desktop.Windows];
+    public PlatformRecipe MacOS => Platforms[Desktop.MacOS];
+    public PlatformRecipe? Linux => On(Desktop.Linux);
 }

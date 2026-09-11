@@ -18,6 +18,16 @@
       "fields": { "accessToken": "$.claudeAiOauth.accessToken", "subscriptionType": "$.claudeAiOauth.subscriptionType" },
       "expiry": "$.claudeAiOauth.expiresAt as epochMillis",
       "notes": "Profiles: every ~/.claude-<slug> directory containing sessions/, projects/, settings.json, history.jsonl or .claude.json is an account of its own with its own .credentials.json."
+    },
+    "linux": {
+      "kind": "file",
+      "path": "~/.claude/.credentials.json",
+      "fields": {
+        "accessToken": "$.claudeAiOauth.accessToken",
+        "subscriptionType": "$.claudeAiOauth.subscriptionType"
+      },
+      "expiry": "$.claudeAiOauth.expiresAt as epochMillis",
+      "notes": "Verified on Linux Mint 22.3 with Claude Code 2.1.268 installed from claude.ai/install.sh: the token is a plain file at mode 600 and the keyring under ~/.local/share/keyrings stays empty, so this is the Windows block verbatim. The credential also carries rateLimitTier, which nothing reads yet. Profiles work the same way: every ~/.claude-<slug> directory with its own .credentials.json is an account of its own."
     }
   },
   "endpoints": [
@@ -46,7 +56,8 @@
     "macos": "~/.claude/sessions/<pid>.json",
     "windows": "~/.claude/sessions/<pid>.json",
     "staleSeconds": 0,
-    "notes": "One file per running process: pid, cwd, name, entrypoint (cli | claude-vscode | claude-desktop | local-agent), status (busy | waiting | idle) or tempo (active | blocked), statusUpdatedAt/updatedAt in epoch millis, startedAt in epoch millis, procStart as a UTC ctime string, waitingFor/needs. Trust the file only while the pid is alive and its start time is within 5 minutes of startedAt."
+    "notes": "One file per running process: pid, cwd, name, entrypoint (cli | claude-vscode | claude-desktop | local-agent), status (busy | waiting | idle) or tempo (active | blocked), statusUpdatedAt/updatedAt in epoch millis, startedAt in epoch millis, procStart as a UTC ctime string, waitingFor/needs. Trust the file only while the pid is alive and its start time is within 5 minutes of startedAt.",
+    "linux": "~/.claude/sessions/<pid>.json"
   },
   "status": { "enabled": true, "termsRisk": "low", "notice": "Reads the token Claude Code stores; never refreshes or writes it." },
   "install": {
@@ -65,6 +76,24 @@
       "requires": ["brew"],
       "install": "brew install --cask claude-code",
       "signIn": {"command": "claude", "hint": "install.hint.claude"}
+    },
+    "linux": {
+      "kind": "cli",
+      "detect": {
+        "commands": [
+          "claude"
+        ],
+        "paths": [
+          "~/.local/bin/claude",
+          "/usr/local/bin/claude"
+        ]
+      },
+      "requires": [],
+      "install": "curl -fsSL https://claude.ai/install.sh | bash",
+      "signIn": {
+        "command": "claude",
+        "hint": "install.hint.claude"
+      }
     }
   }
 }

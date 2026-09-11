@@ -110,10 +110,19 @@ public sealed class CursorSessions : PolledMonitor
 
     protected override IReadOnlyList<AgentSession> Read() => Read(store, EditorStart(), StaleAfter, DateTimeOffset.UtcNow);
 
-    /// <summary>The oldest Cursor.exe is the editor; renderers come and go. No readable start time counts as "since forever".</summary>
+    /// <summary>
+    /// The oldest Cursor process is the editor; renderers come and go. No readable start time counts as
+    /// "since forever".
+    /// </summary>
+    /// <remarks>
+    /// Process names are case-sensitive on Unix and the executable there is "cursor", so asking only for
+    /// "Cursor" found nothing, EditorStart returned null, and every Cursor session vanished without a word.
+    /// </remarks>
     public static DateTimeOffset? EditorStart()
     {
-        var processes = Process.GetProcessesByName("Cursor");
+        var processes = OperatingSystem.IsWindows()
+            ? Process.GetProcessesByName("Cursor")
+            : Process.GetProcessesByName("cursor").Concat(Process.GetProcessesByName("Cursor")).ToArray();
         try
         {
             if (processes.Length == 0) return null;

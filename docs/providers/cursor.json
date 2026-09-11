@@ -16,6 +16,12 @@
       "path": "%APPDATA%/Cursor/User/globalStorage/state.vscdb",
       "query": "SELECT value FROM ItemTable WHERE key = ?",
       "fields": { "accessToken": "cursorAuth/accessToken", "accountId": "cursorAuth/stripeMembershipAuthId", "email": "cursorAuth/cachedEmail", "plan": "cursorAuth/stripeMembershipType" }
+    },
+    "linux": {
+      "kind": "sqlite",
+      "path": "~/.config/Cursor/User/globalStorage/state.vscdb",
+      "query": "SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'",
+      "notes": "Electron keeps its user data under $XDG_CONFIG_HOME on Linux, so the directory is ~/.config/Cursor rather than the macOS Application Support path."
     }
   },
   "endpoints": [
@@ -42,7 +48,8 @@
     "macos": "state.vscdb: SELECT value FROM composerHeaders WHERE isArchived = 0 ORDER BY recency DESC LIMIT 40",
     "windows": "same",
     "staleSeconds": 900,
-    "notes": "Polled every 2 s (the writes land in the WAL sidecar). Fields: composerId, hasBlockingPendingActions | hasPendingPlan → waiting; unfinishedRunAt (set while a run is in flight, but it is the composer's creation time) plus conversationCheckpointLastUpdatedAt | lastUpdatedAt within 15 minutes and not before the editor's own start time → busy; otherwise dropped. Timestamps in epoch millis. The editor start time is the oldest Cursor process."
+    "notes": "Polled every 2 s (the writes land in the WAL sidecar). Fields: composerId, hasBlockingPendingActions | hasPendingPlan → waiting; unfinishedRunAt (set while a run is in flight, but it is the composer's creation time) plus conversationCheckpointLastUpdatedAt | lastUpdatedAt within 15 minutes and not before the editor's own start time → busy; otherwise dropped. Timestamps in epoch millis. The editor start time is the oldest Cursor process.",
+    "linux": "~/.config/Cursor/User/globalStorage/state.vscdb: SELECT value FROM composerHeaders WHERE isArchived = 0 ORDER BY recency DESC LIMIT 40"
   },
   "status": { "enabled": true, "termsRisk": "high", "notice": "Reuses the editor's browser session cookie against cursor.com." },
   "install": {
@@ -61,6 +68,27 @@
       "requires": ["brew"],
       "install": "brew install --cask cursor",
       "downloadUrl": "https://cursor.com/downloads"
+    },
+    "linux": {
+      "kind": "app",
+      "detect": {
+        "commands": [
+          "cursor"
+        ],
+        "paths": [
+          "~/.local/bin/cursor",
+          "/usr/bin/cursor",
+          "/opt/Cursor/cursor",
+          "~/Applications/Cursor.AppImage"
+        ]
+      },
+      "requires": [],
+      "install": "",
+      "downloadUrl": "https://cursor.com/downloads",
+      "signIn": {
+        "command": "cursor",
+        "hint": "install.hint.app"
+      }
     }
   }
 }

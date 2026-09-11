@@ -68,7 +68,7 @@ public sealed class AppLauncher : IAppLauncher
         }
     }
 
-    private string? Resolve(string appKey) => InstallCatalog.For(appKey) is InstallRecipe recipe ? locator.Resolve(recipe.Here.Detect) : null;
+    private string? Resolve(string appKey) => InstallCatalog.For(appKey)?.Here is PlatformRecipe platform ? locator.Resolve(platform.Detect) : null;
 }
 
 /// <summary>Rolling text log under %LOCALAPPDATA%\Tokendial\logs. Debug lines only with TOKENDIAL_DEBUG set.</summary>

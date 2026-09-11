@@ -27,8 +27,13 @@ public static class InstallCatalog
             var root = document.RootElement;
             if (!root.TryGetProperty("install", out var install)) continue;
             var id = root.GetProperty("id").GetString()!;
-            recipes[id] = new InstallRecipe(id, install.GetProperty("vendor").GetString()!, install.GetProperty("docsUrl").GetString()!,
-                Platform(install.GetProperty("windows")), Platform(install.GetProperty("macos")));
+            var platforms = new Dictionary<Desktop, PlatformRecipe>
+            {
+                [Desktop.Windows] = Platform(install.GetProperty("windows")),
+                [Desktop.MacOS] = Platform(install.GetProperty("macos"))
+            };
+            if (install.TryGetProperty("linux", out var linux)) platforms[Desktop.Linux] = Platform(linux);
+            recipes[id] = new InstallRecipe(id, install.GetProperty("vendor").GetString()!, install.GetProperty("docsUrl").GetString()!, platforms);
         }
         return recipes;
     }

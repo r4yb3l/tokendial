@@ -53,13 +53,23 @@ public static class Sqlite
             return (IReadOnlyList<string?[]>)rows;
         });
 
+    /// <summary>
+    /// A path as a SQLite file URI. A Unix path already starts with a slash, so gluing it onto "file:///"
+    /// produced file:////home/..., which names a host of nothing and an absolute path - not the same file.
+    /// </summary>
+    private static string FileUri(string path)
+    {
+        var slashes = path.Replace('\\', '/').Replace(" ", "%20");
+        return slashes.StartsWith('/') ? "file://" + slashes : "file:///" + slashes;
+    }
+
     private static T? Read<T>(string path, Func<SqliteConnection, T> query) where T : class
     {
         if (!File.Exists(path)) return null;
         foreach (var connectionString in new[]
                  {
                      Builder(path).ToString(),
-                     Builder("file:///" + path.Replace('\\', '/').Replace(" ", "%20") + "?immutable=1").ToString()
+                     Builder(FileUri(path) + "?immutable=1").ToString()
                  })
         {
             try

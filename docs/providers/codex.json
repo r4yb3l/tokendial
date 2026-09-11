@@ -15,6 +15,17 @@
       "path": "~/.codex/auth.json",
       "fields": { "accessToken": "$.tokens.access_token", "accountId": "$.tokens.account_id", "idToken": "$.tokens.id_token" },
       "expiry": "exp claim of the access token JWT, epochSeconds"
+    },
+    "linux": {
+      "kind": "file",
+      "path": "~/.codex/auth.json",
+      "fields": {
+        "accessToken": "$.tokens.access_token",
+        "accountId": "$.tokens.account_id",
+        "planType": "$.tokens.id_token.chatgpt_plan_type"
+      },
+      "expiry": "$.tokens.id_token.exp as epochSeconds",
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
     }
   },
   "endpoints": [
@@ -39,7 +50,8 @@
     "macos": "~/.codex/state_5.sqlite (threads.rollout_path, archived=0, order by updated_at_ms) and ~/.codex/sqlite/codex-dev.db (local_thread_catalog.source_updated_at in fractional seconds, display_title)",
     "windows": "same paths under the user profile",
     "staleSeconds": 8,
-    "notes": "No status field exists; a rollout file or catalogue row written within 8 seconds means a turn is running. One session at most, the newest of the two sources. Never 'waiting'."
+    "notes": "No status field exists; a rollout file or catalogue row written within 8 seconds means a turn is running. One session at most, the newest of the two sources. Never 'waiting'.",
+    "linux": "~/.codex/state_5.sqlite (threads.rollout_path, archived=0, order by updated_at_ms) and ~/.codex/sqlite/codex-dev.db (local_thread_catalog.source_updated_at in fractional seconds, display_title)"
   },
   "status": { "enabled": true, "termsRisk": "medium", "notice": "Uses the ChatGPT session the Codex CLI holds." },
   "install": {
@@ -58,6 +70,24 @@
       "requires": ["brew"],
       "install": "brew install --cask codex",
       "signIn": {"command": "codex login", "hint": "install.hint.codex"}
+    },
+    "linux": {
+      "kind": "cli",
+      "detect": {
+        "commands": [
+          "codex"
+        ],
+        "paths": [
+          "~/.local/bin/codex",
+          "/usr/local/bin/codex"
+        ]
+      },
+      "requires": [],
+      "install": "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+      "signIn": {
+        "command": "codex",
+        "hint": "install.hint.codex"
+      }
     }
   }
 }

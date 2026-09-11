@@ -16,6 +16,14 @@
       "path": "~/.grok/auth.json",
       "fields": { "key": "$[entry].key", "email": "$[entry].email" },
       "expiry": "$[entry].expires_at as iso8601"
+    },
+    "linux": {
+      "kind": "file",
+      "path": "~/.grok/auth.json",
+      "fields": {
+        "accessToken": "$.access_token"
+      },
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
     }
   },
   "endpoints": [
@@ -40,7 +48,8 @@
     "macos": "~/.grok/active_sessions.json (array of {session_id, pid, opened_at, cwd}) and ~/.grok/sessions/<percent-encoded cwd>/<session_id>/updates.jsonl",
     "windows": "same under the user profile",
     "staleSeconds": 45,
-    "notes": "A row is live when its pid is alive (start time within 5 minutes of opened_at), its session directory is found (encoded cwd first, then a scan for the id), and updates.jsonl was written within 45 s. Many sessions allowed; never waiting."
+    "notes": "A row is live when its pid is alive (start time within 5 minutes of opened_at), its session directory is found (encoded cwd first, then a scan for the id), and updates.jsonl was written within 45 s. Many sessions allowed; never waiting.",
+    "linux": "~/.grok/active_sessions.json (array of {session_id, pid, opened_at, cwd}) and ~/.grok/sessions/<percent-encoded cwd>/<session_id>/updates.jsonl"
   },
   "status": { "enabled": true, "termsRisk": "medium" },
   "install": {
@@ -59,6 +68,24 @@
       "requires": [],
       "install": "curl -fsSL https://x.ai/cli/install.sh | bash",
       "signIn": {"command": "grok login", "hint": "install.hint.grok"}
+    },
+    "linux": {
+      "kind": "cli",
+      "detect": {
+        "commands": [
+          "grok"
+        ],
+        "paths": [
+          "~/.local/bin/grok",
+          "/usr/local/bin/grok"
+        ]
+      },
+      "requires": [],
+      "install": "curl -fsSL https://x.ai/cli/install.sh | bash",
+      "signIn": {
+        "command": "grok",
+        "hint": "install.hint.grok"
+      }
     }
   }
 }

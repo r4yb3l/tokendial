@@ -13,14 +13,25 @@ public sealed record CopilotCredential(string Token, string? User, string Source
 {
     public sealed record Files(string Apps, string Hosts, string GhHosts)
     {
-        public static Files Default
+        public static Files Default => For(Roots.Current, Roots.Here, Environment.GetEnvironmentVariable);
+
+        /// <summary>
+        /// The only provider that genuinely branches three ways. Windows keeps the plugin's tokens in
+        /// %LOCALAPPDATA% and the gh CLI's under %APPDATA%\GitHub CLI; everywhere else Copilot follows the
+        /// XDG convention directly - ~/.config/github-copilot and ~/.config/gh - which is not the same thing
+        /// as the platform's config root, since on macOS that is Application Support.
+        /// </summary>
+        public static Files For(Desktop desktop, Roots roots, Func<string, string?> env)
         {
-            get
-            {
-                var local = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "github-copilot");
-                return new Files(Path.Combine(local, "apps.json"), Path.Combine(local, "hosts.json"),
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GitHub CLI", "hosts.yml"));
-            }
+            var plugin = desktop == Desktop.Windows
+                ? roots.In(roots.Data, "github-copilot")
+                : roots.UnderHome(".config", "github-copilot");
+            var gh = env("GH_CONFIG_DIR") is { Length: > 0 } configured
+                ? configured.TrimEnd('/', '\\')
+                : desktop == Desktop.Windows
+                    ? roots.In(roots.Config, "GitHub CLI")
+                    : roots.UnderHome(".config", "gh");
+            return new Files(roots.In(plugin, "apps.json"), roots.In(plugin, "hosts.json"), roots.In(gh, "hosts.yml"));
         }
     }
 

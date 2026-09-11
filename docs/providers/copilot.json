@@ -15,6 +15,14 @@
       "path": "%LOCALAPPDATA%/github-copilot/apps.json",
       "fields": { "token": "$['github.com:*'].oauth_token", "user": "$['github.com:*'].user" },
       "notes": "Same shape; hosts.json alongside; the GitHub CLI token lives in %APPDATA%/GitHub CLI/hosts.yml."
+    },
+    "linux": {
+      "kind": "file",
+      "path": "~/.config/github-copilot/apps.json",
+      "fields": {
+        "accessToken": "$.*.oauth_token"
+      },
+      "notes": "The C# was Windows-only from birth and produced ~/.local/share/github-copilot/apps.json and '~/.config/GitHub CLI/hosts.yml' on Linux, both wrong. Copilot CLI follows the XDG base directory specification here: ~/.config/github-copilot/apps.json, with the gh CLI's own token at ~/.config/gh/hosts.yml, which $GH_CONFIG_DIR overrides."
     }
   },
   "endpoints": [
@@ -53,6 +61,26 @@
       "requires": ["brew"],
       "install": "brew install --cask copilot-cli",
       "signIn": {"command": "copilot", "hint": "install.hint.copilot"}
+    },
+    "linux": {
+      "kind": "cli",
+      "detect": {
+        "commands": [
+          "copilot"
+        ],
+        "paths": [
+          "~/.local/bin/copilot",
+          "/usr/local/bin/copilot"
+        ]
+      },
+      "requires": [
+        "npm"
+      ],
+      "install": "npm install -g @github/copilot",
+      "signIn": {
+        "command": "copilot",
+        "hint": "install.hint.copilot"
+      }
     }
   }
 }

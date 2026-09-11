@@ -16,6 +16,16 @@
       "fields": { "accessToken": "$.access_token" },
       "expiry": "$.expiry_date as epochMillis",
       "notes": "Same rules as macOS; %USERPROFILE%\\.gemini unless GEMINI_CLI_HOME is set."
+    },
+    "linux": {
+      "kind": "file",
+      "path": "~/.gemini/oauth_creds.json",
+      "fields": {
+        "accessToken": "$.access_token",
+        "refreshToken": "$.refresh_token"
+      },
+      "expiry": "$.expiry_date as epochMillis",
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
     }
   },
   "endpoints": [
@@ -61,6 +71,26 @@
       "requires": ["npm"],
       "install": "npm install -g @google/gemini-cli",
       "signIn": {"command": "gemini", "hint": "install.hint.gemini"}
+    },
+    "linux": {
+      "kind": "cli",
+      "detect": {
+        "commands": [
+          "gemini"
+        ],
+        "paths": [
+          "~/.local/bin/gemini",
+          "/usr/local/bin/gemini"
+        ]
+      },
+      "requires": [
+        "npm"
+      ],
+      "install": "npm install -g @google/gemini-cli",
+      "signIn": {
+        "command": "gemini",
+        "hint": "install.hint.gemini"
+      }
     }
   },
   "sessions": { "kind": "none", "notes": "Gemini CLI keeps no session registry; usage only." },

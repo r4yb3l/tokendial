@@ -68,8 +68,13 @@ public static class Http
         if (status is < 200 or >= 300) throw UsageError.BadResponse(status);
     }
 
-    public static string Home => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    public static string AppData => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    public static string Home => Roots.Here.Home;
+
+    /// <summary>
+    /// A path under the user's home. AppData used to sit beside this with a single consumer and a name that
+    /// was the bug: on Unix .NET maps it to ~/.config, which is not where Cursor keeps its store on macOS.
+    /// Anything that is not home-relative now goes through <see cref="Roots"/>, which says which root it means.
+    /// </summary>
     public static string Under(params string[] parts) => Path.Combine([Home, .. parts]);
 }
 

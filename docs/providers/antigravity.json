@@ -18,6 +18,10 @@
       "fields": { "authMethod": "$.auth_method", "accessToken": "$.token.access_token" },
       "expiry": "$.token.expiry as RFC 3339",
       "notes": "Go's wincred backend names the generic credential service:user. Fall back to target 'gemini', then to enumerating generic credentials containing both words, newest LastWritten first. The blob is UTF-8 JSON (UTF-16 if written by PowerShell). Credential Manager never prompts, so a failed read is not-found or transient, never a refusal."
+    },
+    "linux": {
+      "kind": "secret-service",
+      "notes": "The token lives in the session keyring behind org.freedesktop.secrets rather than in a file. Tokendial does not read it yet, so status.platforms declares usage unsupported on Linux rather than reporting needsAuth to someone who is signed in. Sessions do work: they are plain files under ~/.gemini."
     }
   },
   "endpoints": [
@@ -63,9 +67,10 @@
     "macos": "~/.gemini/antigravity/brain/<trajectory>/.system_generated/logs/transcript.jsonl",
     "windows": "same under the user profile",
     "staleSeconds": 45,
-    "notes": "Step statuses all read DONE because a step is written once finished; the transcript's modification time is the only live signal. One busy session at most, never waiting."
+    "notes": "Step statuses all read DONE because a step is written once finished; the transcript's modification time is the only live signal. One busy session at most, never waiting.",
+    "linux": "~/.gemini/antigravity/brain/<trajectory>/.system_generated/logs/transcript.jsonl"
   },
-  "status": { "enabled": true, "termsRisk": "medium", "notice": "Talks to Antigravity's own language server and to Google's internal Cloud Code endpoints with the token Antigravity holds." },
+  "status": { "enabled": true, "termsRisk": "medium", "notice": "Talks to Antigravity's own language server and to Google's internal Cloud Code endpoints with the token Antigravity holds.", "platforms": { "windows": true, "macos": true, "linux": false } },
   "install": {
     "vendor": "Google",
     "docsUrl": "https://antigravity.google/docs/getting-started",
@@ -82,6 +87,26 @@
       "requires": ["brew"],
       "install": "brew install --cask antigravity",
       "downloadUrl": "https://antigravity.google/download"
+    },
+    "linux": {
+      "kind": "app",
+      "detect": {
+        "commands": [
+          "antigravity"
+        ],
+        "paths": [
+          "~/.local/bin/antigravity",
+          "/usr/bin/antigravity",
+          "/opt/antigravity/antigravity"
+        ]
+      },
+      "requires": [],
+      "install": "",
+      "downloadUrl": "https://antigravity.google/download",
+      "signIn": {
+        "command": "antigravity",
+        "hint": "install.hint.app"
+      }
     }
   }
 }
