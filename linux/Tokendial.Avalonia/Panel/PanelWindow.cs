@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -17,28 +18,41 @@ using Tokens = Tokendial.Linux.Panel.Theme;
 namespace Tokendial.Linux.Panel;
 
 /// <summary>
-/// The dock: a trapezoid hanging from the top edge with one cell per provider, each a dial with the
-/// provider's mark inside it. Every window-manager concession it needs was measured on Cinnamon before this
-/// was written - see tasks/lessons.md - so the X11 calls here are the ones that were proven.
+/// The dock: a trapezoid hanging from the top edge that carries a row of dials and opens into a grid when
+/// the pointer reaches it. Every window-manager concession it needs was measured on Cinnamon before this was
+/// written - see tasks/lessons.md - so the X11 calls here are the ones that were proven.
 /// </summary>
+/// <remarks>
+/// The window is always the expanded size and the capsule animates inside it, which is what the Windows dock
+/// does: a window that resized with the animation would make the compositor fight the spring, and on X11 the
+/// input shape would have to be rewritten on every frame. Only the shape changes when the state does.
+/// </remarks>
 public sealed class PanelWindow : Window
 {
     private readonly Canvas root = new();
+    // Clipped: the expanded cells are laid out for the open capsule, so while they fade in they would
+    // otherwise be drawn outside a capsule that has not grown yet - a flash of content floating over
+    // the transparent margin. Clipping makes the shape reveal them, which is what the growth is for.
+    private readonly Canvas capsule = new() { ClipToBounds = true };
     // Fully qualified: implicit usings bring System.IO.Path into scope alongside the shape.
     private readonly Avalonia.Controls.Shapes.Path dockFill = new();
     private readonly Avalonia.Controls.Shapes.Path dockEdge = new();
-    private readonly StackPanel row = new() { Orientation = Orientation.Horizontal, Spacing = Tokens.CompactSpacing };
+    private readonly StackPanel compactRow = new() { Orientation = Orientation.Horizontal, Spacing = Tokens.CompactSpacing };
+    private readonly StackPanel expandedRow = new() { Orientation = Orientation.Horizontal, Opacity = 0, IsHitTestVisible = false };
+
     private readonly ReadingArchive archive = new();
     private readonly Settings settings = Settings.Load();
     private readonly CardWindow card = new();
 
     private readonly List<Dial> dials = [];
     private readonly List<MarkView> marks = [];
+    private readonly List<Cell> cells = [];
     private readonly List<Tile> tiles = [];
     private IReadOnlyList<IUsageProvider> providers = [];
 
     private DispatcherTimer? poll;
-    private double along;
+    private double compactAlong, expandedAlong;
+    private bool expanded;
     private int hovered = -1;
 
     public PanelWindow()
@@ -56,9 +70,11 @@ public sealed class PanelWindow : Window
         dockEdge.Stroke = Tokens.SurfaceEdge;
         dockEdge.StrokeThickness = 1;
 
-        root.Children.Add(dockFill);
-        root.Children.Add(dockEdge);
-        root.Children.Add(row);
+        capsule.Children.Add(dockFill);
+        capsule.Children.Add(dockEdge);
+        capsule.Children.Add(compactRow);
+        capsule.Children.Add(expandedRow);
+        root.Children.Add(capsule);
         Content = root;
 
         Opened += OnOpened;
@@ -75,15 +91,7 @@ public sealed class PanelWindow : Window
             X11.MakeDock(handle.Handle);
             X11.RefuseFocus(handle.Handle);
             Place();
-            var scale = Screens.Primary?.Scaling ?? 1;
-            // Only the trapezoid takes clicks. The hot-zone strip below stays outside the input region, so a
-            // click there reaches the desktop while the cursor poll still sees the pointer in it.
-            X11.InputShape(handle.Handle, new X11.XRectangle
-            {
-                X = 0, Y = 0,
-                Width = (ushort)Math.Round(along * scale),
-                Height = (ushort)Math.Round(Tokens.CompactHeight * scale)
-            });
+            Shape();
         }
 
         StartPolling();
@@ -91,7 +99,7 @@ public sealed class PanelWindow : Window
     }
 
     /// <summary>
-    /// The dock shows the tools you actually use, not the nine that exist. The rule is the one
+    /// The dock shows the tools the user actually uses, not the nine that exist. The rule is the one
     /// windows/Tokendial.App/App.cs:124 already applies: a provider met for the first time whose
     /// <c>Account()</c> is null - no credential, so not signed in or not installed - is recorded as
     /// disconnected, and disconnected providers are not shown. Connecting one later is a settings
@@ -115,12 +123,12 @@ public sealed class PanelWindow : Window
     private void Build()
     {
         var count = providers.Count;
-        along = 2 * Tokens.CompactPadding + count * Tokens.CompactDial + (count - 1) * Tokens.CompactSpacing + 2 * Tokens.DockSlant;
-        Width = along;
-        Height = Tokens.CompactHeight + Tokens.HotZone;
+        compactAlong = 2 * Tokens.DockSlant + 2 * Tokens.CompactPadding + count * Tokens.CompactDial + (count - 1) * Tokens.CompactSpacing;
+        expandedAlong = 2 * Tokens.DockSlant + Math.Max(2 * Tokens.ExpandedPadding + count * Tokens.CellWidth,
+                                                        Tokens.CardWidth + 2 * Tokens.ExpandedPadding);
 
-        dockFill.Data = DockShape.Fill(along, Tokens.CompactHeight, Tokens.DockSlant, Tokens.CompactRadius);
-        dockEdge.Data = DockShape.Edge(along, Tokens.CompactHeight, Tokens.DockSlant, Tokens.CompactRadius);
+        Width = expandedAlong;
+        Height = Tokens.ExpandedHeight + Tokens.HotZone;
 
         foreach (var provider in providers)
         {
@@ -135,11 +143,58 @@ public sealed class PanelWindow : Window
             marks.Add(mark);
             tiles.Add(null!);
             // The mark sits inside the ring, which is why the dial is hollow in the middle.
-            row.Children.Add(new Avalonia.Controls.Panel { Width = Tokens.CompactDial, Height = Tokens.CompactDial, Children = { dial, mark } });
+            compactRow.Children.Add(new Avalonia.Controls.Panel
+            {
+                Width = Tokens.CompactDial, Height = Tokens.CompactDial, Children = { dial, mark }
+            });
+
+            var cell = new Cell(provider.Id);
+            cells.Add(cell);
+            expandedRow.Children.Add(cell.Root);
         }
 
-        Canvas.SetLeft(row, Tokens.DockSlant + Tokens.CompactPadding);
-        Canvas.SetTop(row, (Tokens.CompactHeight - Tokens.CompactDial) / 2);
+        // The spring is the product's, not Avalonia's: three platforms solve the same damped spring so the
+        // capsule opens with the same weight everywhere.
+        capsule.Transitions =
+        [
+            new DoubleTransition { Property = WidthProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand },
+            new DoubleTransition { Property = HeightProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand }
+        ];
+        compactRow.Transitions = [Fade()];
+        expandedRow.Transitions = [Fade()];
+        capsule.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == WidthProperty || e.Property == HeightProperty) Layout();
+        };
+
+        capsule.Width = compactAlong;
+        capsule.Height = Tokens.CompactHeight;
+        Layout();
+    }
+
+    private static DoubleTransition Fade() =>
+        new() { Property = OpacityProperty, Duration = Spring.Contents.SettleTime, Easing = Spring.Contents };
+
+    /// <summary>Redraws the trapezoid at the capsule's current size and re-centres what it carries.</summary>
+    private void Layout()
+    {
+        var along = capsule.Width;
+        var across = capsule.Height;
+        if (double.IsNaN(along) || double.IsNaN(across)) return;
+
+        var radius = expanded ? Tokens.ExpandedRadius : Tokens.CompactRadius;
+        dockFill.Data = DockShape.Fill(along, across, Tokens.DockSlant, radius);
+        dockEdge.Data = DockShape.Edge(along, across, Tokens.DockSlant, radius);
+
+        Canvas.SetLeft(capsule, (Width - along) / 2);
+        Canvas.SetTop(capsule, 0);
+
+        var compactWidth = compactAlong - 2 * Tokens.DockSlant - 2 * Tokens.CompactPadding;
+        Canvas.SetLeft(compactRow, (along - compactWidth) / 2);
+        Canvas.SetTop(compactRow, (Tokens.CompactHeight - Tokens.CompactDial) / 2);
+
+        Canvas.SetLeft(expandedRow, (along - providers.Count * Tokens.CellWidth) / 2);
+        Canvas.SetTop(expandedRow, Tokens.ExpandedPadding);
     }
 
     /// <summary>Centred on the top edge of the work area, so the desktop panel is never covered.</summary>
@@ -147,7 +202,28 @@ public sealed class PanelWindow : Window
     {
         var area = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
         var scale = Screens.Primary?.Scaling ?? 1.0;
-        Position = new PixelPoint(area.X + (area.Width - (int)Math.Round(along * scale)) / 2, area.Y);
+        Position = new PixelPoint(area.X + (area.Width - (int)Math.Round(Width * scale)) / 2, area.Y);
+    }
+
+    /// <summary>
+    /// Only the capsule takes clicks. Everything else in the window - the margins either side and the hot
+    /// zone below - stays outside the input region so a click there reaches whatever is behind, while the
+    /// cursor poll still sees the pointer in it.
+    /// </summary>
+    private void Shape()
+    {
+        var handle = TryGetPlatformHandle();
+        if (handle is null) return;
+        var scale = Screens.Primary?.Scaling ?? 1.0;
+        var along = expanded ? expandedAlong : compactAlong;
+        var across = expanded ? Tokens.ExpandedHeight : Tokens.CompactHeight;
+        X11.InputShape(handle.Handle, new X11.XRectangle
+        {
+            X = (short)Math.Round((Width - along) / 2 * scale),
+            Y = 0,
+            Width = (ushort)Math.Round(along * scale),
+            Height = (ushort)Math.Round(across * scale)
+        });
     }
 
     private async Task Read()
@@ -174,22 +250,16 @@ public sealed class PanelWindow : Window
 
     private void Apply(int index, ProviderReading reading, ProviderAccount? account)
     {
-        tiles[index] = new Tile(reading.ProviderId, reading.DisplayName, Tile.MarkFor(reading.ProviderId),
+        var tile = new Tile(reading.ProviderId, reading.DisplayName, Tile.MarkFor(reading.ProviderId),
             reading, account, null, false);
+        tiles[index] = tile;
 
         var dial = dials[index];
-        if (reading.HeadlineFraction is double fraction)
-        {
-            dial.Hollow = false;
-            dial.Fill = Tokens.Of(reading.Band);
-            dial.Fraction = fraction;
-            marks[index].Fill = Tokens.TextPrimary;
-        }
-        else
-        {
-            dial.Hollow = true;
-            marks[index].Fill = Tokens.TextDisabled;
-        }
+        dial.Hollow = !tile.HasReading;
+        dial.Fill = Tokens.Of(tile.Band);
+        dial.Fraction = tile.HasReading ? Math.Clamp(tile.Fraction ?? 0, 0, 1) : 0;
+        marks[index].Fill = tile.HasReading ? Tokens.TextPrimary : Tokens.TextDisabled;
+        cells[index].Apply(tile);
     }
 
     /// <summary>
@@ -212,29 +282,58 @@ public sealed class PanelWindow : Window
         var origin = Position;
         var local = new Point((x - origin.X) / scale, (y - origin.Y) / scale);
 
-        // The strip below the capsule counts as hovering it, so the pointer does not have to land on the
-        // ring itself for the card to stay open.
-        var within = local.X >= 0 && local.X <= along && local.Y >= 0 && local.Y <= Tokens.CompactHeight + Tokens.HotZone;
-        var index = within ? CellAt(local.X) : -1;
-        if (index == hovered) return;
+        var along = expanded ? expandedAlong : compactAlong;
+        var across = expanded ? Tokens.ExpandedHeight : Tokens.CompactHeight;
+        var left = (Width - along) / 2;
+        // The strip below the capsule counts as hovering it, so the pointer does not have to stay on the
+        // capsule for it to remain open.
+        var inside = local.X >= left && local.X <= left + along && local.Y >= 0 && local.Y <= across + Tokens.HotZone;
 
+        if (inside != expanded) Reconcile(inside);
+        Card(inside, local, left, origin, scale);
+    }
+
+    private void Reconcile(bool open)
+    {
+        expanded = open;
+        capsule.Width = open ? expandedAlong : compactAlong;
+        capsule.Height = open ? Tokens.ExpandedHeight : Tokens.CompactHeight;
+        compactRow.Opacity = open ? 0 : 1;
+        expandedRow.Opacity = open ? 1 : 0;
+        compactRow.IsHitTestVisible = !open;
+        expandedRow.IsHitTestVisible = open;
+        Layout();
+        Shape();
+        if (!open) { hovered = -1; card.HideCard(); }
+    }
+
+    private void Card(bool inside, Point local, double left, PixelPoint origin, double scale)
+    {
+        if (!inside || !expanded) { if (hovered != -1) { hovered = -1; card.HideCard(); } return; }
+
+        // The card hangs off the bottom of the open capsule. Showing it while the capsule is still growing
+        // puts it where the dock is about to be rather than where it is, which reads as a jump.
+        if (capsule.Bounds.Height < Tokens.ExpandedHeight - 1) return;
+
+        var index = CellAt(local.X - left);
+        if (index == hovered) return;
         hovered = index;
+
         if (index < 0 || tiles.Count <= index || tiles[index] is null) { card.HideCard(); return; }
 
-        var left = Tokens.DockSlant + Tokens.CompactPadding + index * (Tokens.CompactDial + Tokens.CompactSpacing);
+        var cellLeft = (expandedAlong - providers.Count * Tokens.CellWidth) / 2 + index * Tokens.CellWidth;
         var anchor = new PixelPoint(
-            origin.X + (int)Math.Round((left + Tokens.CompactDial / 2) * scale),
-            origin.Y + (int)Math.Round((Tokens.CompactHeight + 6) * scale));
+            origin.X + (int)Math.Round((left + cellLeft + Tokens.CellWidth / 2) * scale),
+            origin.Y + (int)Math.Round((Tokens.ExpandedHeight + 6) * scale));
         card.ShowAt(HoverCard.Build(tiles[index], DateTimeOffset.Now), anchor,
             Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080));
     }
 
-    /// <summary>Which cell a horizontal position falls in, with the gaps counted to the nearer cell.</summary>
+    /// <summary>Which expanded cell a position within the capsule falls in.</summary>
     private int CellAt(double x)
     {
-        var first = Tokens.DockSlant + Tokens.CompactPadding;
-        var pitch = Tokens.CompactDial + Tokens.CompactSpacing;
-        var index = (int)Math.Floor((x - first + Tokens.CompactSpacing / 2) / pitch);
-        return index >= 0 && index < dials.Count ? index : -1;
+        var first = (expandedAlong - providers.Count * Tokens.CellWidth) / 2;
+        var index = (int)Math.Floor((x - first) / Tokens.CellWidth);
+        return index >= 0 && index < cells.Count ? index : -1;
     }
 }

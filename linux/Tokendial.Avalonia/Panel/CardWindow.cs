@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Tokendial.Linux.Interop;
 
 namespace Tokendial.Linux.Panel;
@@ -12,8 +13,16 @@ namespace Tokendial.Linux.Panel;
 /// macOS reached the same conclusion for its own reasons and uses a second NSPanel, so this is the shape the
 /// product already has on one platform rather than a new idea.
 /// </summary>
+/// <remarks>
+/// The window is mapped once and then never unmapped. Showing an X11 window puts it wherever the server
+/// chooses until a move request lands, so a card that was shown and then positioned appeared for a frame in
+/// the wrong place - a visible flash every time the pointer entered the dock. Mapped once, it is moved while
+/// invisible and only then faded in.
+/// </remarks>
 public sealed class CardWindow : Window
 {
+    private bool primed;
+
     public CardWindow()
     {
         Title = "Tokendial card";
@@ -25,6 +34,7 @@ public sealed class CardWindow : Window
         SizeToContent = SizeToContent.WidthAndHeight;
         Background = Brushes.Transparent;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
+        Opacity = 0;
         Opened += (_, _) => Dress();
     }
 
@@ -42,23 +52,31 @@ public sealed class CardWindow : Window
     /// <summary>Shows the card under a point, kept inside the work area so it is never half off the screen.</summary>
     public void ShowAt(Control content, PixelPoint anchor, PixelRect area)
     {
+        Opacity = 0;
         Content = content;
-        if (!IsVisible) Show();
+
+        if (!primed)
+        {
+            primed = true;
+            // Far enough away that the first map cannot be seen wherever the server decides to put it.
+            Position = new PixelPoint(area.X - 4000, area.Y - 4000);
+            Show();
+        }
 
         // The card sizes itself to its content, which is not known until it has been measured once.
         // Window has a Dispatcher property of its own, which hides the type.
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            var width = (int)Math.Round(Bounds.Width * (Screens.Primary?.Scaling ?? 1));
-            var height = (int)Math.Round(Bounds.Height * (Screens.Primary?.Scaling ?? 1));
-            var x = Math.Clamp(anchor.X - width / 2, area.X + 8, area.X + area.Width - width - 8);
-            var y = Math.Min(anchor.Y, area.Y + area.Height - height - 8);
-            Position = new PixelPoint(x, y);
-        }, Avalonia.Threading.DispatcherPriority.Loaded);
+            var scale = Screens.Primary?.Scaling ?? 1;
+            var width = (int)Math.Round(Bounds.Width * scale);
+            var height = (int)Math.Round(Bounds.Height * scale);
+            Position = new PixelPoint(
+                Math.Clamp(anchor.X - width / 2, area.X + 8, area.X + area.Width - width - 8),
+                Math.Min(anchor.Y, area.Y + area.Height - height - 8));
+            // Visible only once it is where it belongs.
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => Opacity = 1, DispatcherPriority.Render);
+        }, DispatcherPriority.Loaded);
     }
 
-    public void HideCard()
-    {
-        if (IsVisible) Hide();
-    }
+    public void HideCard() => Opacity = 0;
 }
