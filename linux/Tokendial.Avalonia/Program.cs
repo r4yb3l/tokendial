@@ -8,6 +8,7 @@ using Tokendial.Core.Sessions;
 using Tokendial.Core.Settings;
 using Tokendial.Core.Store;
 using Tokendial.Linux.Panel;
+using Tokendial.Linux.Tray;
 
 namespace Tokendial.Linux;
 
@@ -30,6 +31,7 @@ public sealed class TokendialApp : Application
     private UsageStore? store;
     private ActivityHub? hub;
     private PanelWindow? panel;
+    private Tokendial.Linux.Tray.TrayIcon? tray;
     private DispatcherTimer? coalesce;
 
     public override void OnFrameworkInitializationCompleted()
@@ -53,6 +55,10 @@ public sealed class TokendialApp : Application
         panel = new PanelWindow(providers.Where(p => !settings.Disconnected.Contains(p.Id)).Select(p => p.Id).ToList());
         desktop.MainWindow = panel;
 
+        tray = new Tokendial.Linux.Tray.TrayIcon(this);
+        tray.RefreshRequested += () => store.PollNow();
+        tray.QuitRequested += () => desktop.Shutdown();
+
         // The store and the hub both change often and independently; rebuilding the model on a short timer
         // rather than on every event is what the Windows app does, for the same reason.
         coalesce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
@@ -61,7 +67,7 @@ public sealed class TokendialApp : Application
         hub.Changed += () => Dispatcher.UIThread.Post(() => coalesce!.Start(), DispatcherPriority.Background);
 
         desktop.Startup += (_, _) => { store.Start(); hub.Start(); };
-        desktop.ShutdownRequested += (_, _) => { store.Dispose(); hub.Dispose(); };
+        desktop.ShutdownRequested += (_, _) => { store.Dispose(); hub.Dispose(); tray.Dispose(); };
 
         base.OnFrameworkInitializationCompleted();
     }
@@ -88,6 +94,19 @@ public sealed class TokendialApp : Application
     private void Refresh()
     {
         if (store is null || hub is null || panel is null) return;
-        panel.Update(PanelModel.Build(store.Readings, store.Summaries, hub.Activities, store.InFlight, 0, store.Forecasts));
+        var model = PanelModel.Build(store.Readings, store.Summaries, hub.Activities, store.InFlight, 0, store.Forecasts);
+        panel.Update(model);
+
+        // The tray shows the worst reading, because one number in a panel can only answer one question and
+        // "how close am I to a limit" is the one worth answering.
+        var read = model.Tiles.Where(t => t.HasReading).Select(t => t.Fraction).ToList();
+        tray?.Update(read.Count > 0 ? read.Max() : null, Tooltip(model));
+    }
+
+    private static string Tooltip(PanelModel model)
+    {
+        if (model.Tiles.Count == 0) return Strings.T("tray.noProviders");
+        var lines = model.Tiles.Where(t => t.HasReading).Select(t => $"{t.Name} {Math.Round((t.Fraction ?? 0) * 100):0}%");
+        return string.Join('\n', ["Tokendial", .. lines]);
     }
 }
