@@ -62,7 +62,17 @@ public static class Copy
         (TimeZoneInfo.ConvertTime(to, zone).Date - TimeZoneInfo.ConvertTime(from, zone).Date).Days;
 
     /// <summary>The culture's short time: "12:00 AM" in US English, "00:00" in most others.</summary>
-    public static string ShortTime(DateTimeOffset local) => local.ToString(Strings.Culture.DateTimeFormat.ShortTimePattern, Strings.Culture);
+    /// <remarks>
+    /// The separator before AM/PM is normalised because the same culture does not agree with itself across
+    /// operating systems: .NET reads its patterns from ICU on Linux and macOS and from the OS on Windows,
+    /// and current CLDR puts a narrow no-break space (U+202F) in en-US where Windows puts a plain one. The
+    /// design contract is that every platform renders the same string, so the space is made plain here
+    /// rather than each caller comparing against two shapes of the same text.
+    /// </remarks>
+    public static string ShortTime(DateTimeOffset local) =>
+        local.ToString(Strings.Culture.DateTimeFormat.ShortTimePattern, Strings.Culture)
+             .Replace(' ', ' ')
+             .Replace(' ', ' ');
 
     /// <summary>"Sep 28" in English, "28 sept" where the day leads.</summary>
     public static string MonthDay(DateTimeOffset local)

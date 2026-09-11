@@ -4,6 +4,10 @@ windows/**/obj/
 windows/**/*.user
 windows/dist/
 macos/dist/
+linux/**/bin/
+linux/**/obj/
+linux/dist/
+linux/publish/
 windows/publish/
 .vs/
 # Xcode / SwiftPM
@@ -14,6 +18,7 @@ macos/**/xcuserdata/
 macos/build/
 # local
 tools/mac.local.ps1
+tools/linux.local.ps1
 *.log
 tools/shots/
 *.pen
