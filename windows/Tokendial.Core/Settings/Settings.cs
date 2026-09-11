@@ -87,7 +87,7 @@ public sealed class Settings
         DefaultIgnoreCondition = JsonIgnoreCondition.Never
     };
 
-    public static string DefaultFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial", "settings.json");
+    public static string DefaultFile => Paths.In("settings.json");
 
     public static Settings Load(string? file = null)
     {

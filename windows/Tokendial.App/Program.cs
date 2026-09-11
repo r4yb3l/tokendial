@@ -12,6 +12,9 @@ public static class Program
     public static int Main(string[] args)
     {
         VelopackApp.Build().SetAppUserModelId(AppUserModelId).Run();
+        // Runs after Velopack, so an install or update has finished writing its own directory, and before
+        // anything reads settings: versions up to 0.1.0 kept the user's state where the installer lives.
+        Tokendial.Core.Paths.CarryOverLegacyState();
         using var instance = SingleInstance.Claim();
         if (instance is null)
         {

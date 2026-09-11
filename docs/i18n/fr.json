@@ -116,6 +116,9 @@
     "settings.website": "Site web",
     "settings.source": "Code source et problèmes",
     "settings.dataFolder": "Ouvrir le dossier de données",
+    "settings.uninstall": "Désinstaller",
+    "settings.uninstall.ask": "Tokendial va se fermer et le programme d’installation le retirera de cet ordinateur.\n\nVoulez-vous aussi supprimer vos réglages, l’historique des relevés et les alertes mémorisées ? Si vous les gardez, une réinstallation reprend où vous en étiez.\n\nOui : tout supprimer.\nNon : retirer l’application et garder mes données.",
+    "settings.uninstall.portable": "Cette copie a été décompressée plutôt qu’installée : il n’y a rien à désinstaller, supprimez le dossier d’où elle s’exécute. Vos réglages se trouvent dans le dossier Tokendial sous AppData\\Roaming.",
 
     "welcome.title": "Bienvenue dans Tokendial",
     "welcome.intro": "Une capsule en haut de l'écran avec un cadran par assistant de programmation, qui montre la part de chaque limite d'utilisation déjà consommée, et une notification quand vous franchissez un seuil, quand une fenêtre va se réinitialiser, quand une limite est atteinte et quand un agent vous attend depuis un moment.",

@@ -116,6 +116,9 @@
     "settings.website": "Sitio web",
     "settings.source": "Código e incidencias",
     "settings.dataFolder": "Abrir la carpeta de datos",
+    "settings.uninstall": "Desinstalar",
+    "settings.uninstall.ask": "Tokendial se cerrará y el instalador lo quitará del equipo.\n\n¿Quieres borrar también tus ajustes, el historial de lecturas y las alertas que recuerda? Si los conservas, al reinstalar todo sigue donde lo dejaste.\n\nSí: borrarlo todo.\nNo: quitar la app y conservar mis datos.",
+    "settings.uninstall.portable": "Esta copia se descomprimió en vez de instalarse, así que no hay nada que desinstalar: borra la carpeta desde la que se ejecuta. Tus ajustes viven en la carpeta Tokendial dentro de AppData\\Roaming y pueden irse con ella.",
 
     "welcome.title": "Bienvenido a Tokendial",
     "welcome.intro": "Una cápsula en el borde superior de la pantalla con un dial por asistente de programación que muestra cuánto has gastado de cada límite de uso, y un aviso cuando cruzas un umbral, cuando una ventana está por reiniciarse, cuando llegas al límite y cuando un agente lleva un rato esperándote.",

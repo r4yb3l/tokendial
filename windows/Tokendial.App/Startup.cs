@@ -1,3 +1,4 @@
+using Tokendial.Core;
 using System.IO;
 using System.Diagnostics;
 using Microsoft.Win32;
@@ -80,7 +81,7 @@ public sealed class FileLog : IDisposable
 
     public FileLog(string? directory = null)
     {
-        directory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial", "logs");
+        directory ??= Paths.In("logs");
         Directory.CreateDirectory(directory);
         file = Path.Combine(directory, "tokendial.log");
         Rotate();

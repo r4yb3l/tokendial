@@ -12,7 +12,7 @@ namespace Tokendial.Core.Providers;
 /// </summary>
 public static class Sqlite
 {
-    private static readonly string CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial", "cache");
+    private static readonly string CacheDirectory = Paths.In("cache");
     private static int swept;
 
     /// <summary>A copy holds another tool's session token; one left behind by a crash must not outlive the next start.</summary>

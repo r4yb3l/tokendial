@@ -116,6 +116,9 @@
     "settings.website": "Website",
     "settings.source": "Source and issues",
     "settings.dataFolder": "Open data folder",
+    "settings.uninstall": "Uninstall",
+    "settings.uninstall.ask": "Tokendial will close and the installer will remove it.\n\nDo you also want to delete your settings, your reading history and the alerts it remembers? Keep them and a reinstall picks up where you left off.\n\nYes: remove everything.\nNo: remove the app, keep my data.",
+    "settings.uninstall.portable": "This copy was unzipped rather than installed, so there is nothing to uninstall: delete the folder it runs from. Your settings live in the Tokendial folder under AppData\\Roaming and can go with it.",
 
     "welcome.title": "Welcome to Tokendial",
     "welcome.intro": "A capsule at the top of the screen with one dial per coding assistant, showing how much of each usage limit you have spent, plus a notification when you cross a threshold, when a window is about to reset, when a limit is reached, and when an agent has been waiting on you.",

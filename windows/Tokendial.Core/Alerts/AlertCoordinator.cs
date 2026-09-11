@@ -31,7 +31,7 @@ public sealed class AlertCoordinator : IDisposable
         Apply(new AlertEvent.Restart(this.now()));
     }
 
-    public static string DefaultStateFile => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial", "alerts.json");
+    public static string DefaultStateFile => Paths.In("alerts.json");
 
     public IReadOnlyList<Alert> Delivered { get { lock (gate) return delivered.ToArray(); } }
     private readonly List<Alert> delivered = new();

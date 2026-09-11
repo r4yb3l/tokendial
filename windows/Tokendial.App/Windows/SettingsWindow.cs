@@ -1,3 +1,4 @@
+using Tokendial.Core;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -149,9 +150,11 @@ public sealed class SettingsWindow
         var links = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.app")));
         links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
-        var folder = Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial")));
-        folder.Margin = new Thickness(0);
+        var folder = Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Paths.Data));
         links.Children.Add(folder);
+        var remove = Chrome.Button(Strings.T("settings.uninstall"), () => Uninstall.Ask(window));
+        remove.Margin = new Thickness(0);
+        links.Children.Add(remove);
         Grid.SetColumn(links, 1);
         bar.Children.Add(links);
         return new Border

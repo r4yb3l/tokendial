@@ -22,7 +22,7 @@ public sealed class ReadingArchive
     private readonly Func<DateTimeOffset> now;
 
     public static string DefaultDirectory =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial");
+        Paths.Data;
 
     public ReadingArchive(string? directory = null, Func<DateTimeOffset>? now = null)
     {

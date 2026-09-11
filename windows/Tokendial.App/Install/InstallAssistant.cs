@@ -1,3 +1,4 @@
+using Tokendial.Core;
 using System.IO;
 using System.Windows.Threading;
 using Tokendial.Core.Diagnostics;
@@ -19,7 +20,7 @@ public sealed class InstallAssistant : IDisposable
     private readonly ToolLocator locator = new();
     private readonly Dictionary<string, InstallWatcher> watchers = new(StringComparer.Ordinal);
     private readonly Dictionary<string, InstallOutcome> outcomes = new(StringComparer.Ordinal);
-    private readonly string scripts = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial", "install");
+    private readonly string scripts = Paths.In("install");
 
     public InstallAssistant(IReadOnlyList<IUsageProvider> providers, Dispatcher dispatcher)
     {
