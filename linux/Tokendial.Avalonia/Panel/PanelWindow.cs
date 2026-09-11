@@ -51,6 +51,7 @@ public sealed class PanelWindow : Window
     private double compactAlong, expandedAlong;
     private bool expanded;
     private int hovered = -1;
+    private DateTimeOffset pinnedUntil = DateTimeOffset.MinValue;
 
     public PanelWindow(IReadOnlyList<string> providerIds)
     {
@@ -242,6 +243,16 @@ public sealed class PanelWindow : Window
         poll.Start();
     }
 
+    /// <summary>
+    /// Holds the dock open for a while with no pointer involved. The tray's Show does this rather than
+    /// moving the cursor, because moving someone's cursor is not a thing an application should do.
+    /// </summary>
+    public void Flash(TimeSpan? duration = null)
+    {
+        pinnedUntil = DateTimeOffset.UtcNow + (duration ?? TimeSpan.FromSeconds(6));
+        if (!expanded) Reconcile(true);
+    }
+
     private void Track()
     {
         var (x, y, sameScreen) = X11.Pointer();
@@ -258,7 +269,9 @@ public sealed class PanelWindow : Window
         // capsule for it to remain open.
         var inside = local.X >= left && local.X <= left + along && local.Y >= 0 && local.Y <= across + Tokens.HotZone;
 
-        if (inside != expanded) Reconcile(inside);
+        // A pinned dock stays open until its moment passes, whatever the pointer is doing.
+        var open = inside || DateTimeOffset.UtcNow < pinnedUntil;
+        if (open != expanded) Reconcile(open);
         Card(inside, local, left, origin, scale);
     }
 

@@ -61,6 +61,7 @@ public sealed class TokendialApp : Application
         panel.SettingsRequested += ShowSettings;
 
         tray = new Tokendial.Linux.Tray.TrayIcon(this);
+        tray.ShowRequested += () => panel.Flash(TimeSpan.FromSeconds(6));
         tray.RefreshRequested += () => store.PollNow();
         tray.SettingsRequested += ShowSettings;
         tray.QuitRequested += () => desktop.Shutdown();
