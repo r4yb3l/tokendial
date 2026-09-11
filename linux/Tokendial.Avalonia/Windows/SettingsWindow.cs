@@ -23,17 +23,19 @@ public sealed class SettingsWindow : Window
     private readonly IReadOnlyList<IUsageProvider> providers;
     private readonly Action save;
     private readonly Action quit;
+    private readonly Action testAlert;
     private readonly StackPanel providerList = new() { Spacing = 1 };
     private readonly TextBlock menuHint = Chrome.HintText("");
     private Button? menuButton;
 
-    public SettingsWindow(Settings settings, UsageStore store, IReadOnlyList<IUsageProvider> providers, Action save, Action quit)
+    public SettingsWindow(Settings settings, UsageStore store, IReadOnlyList<IUsageProvider> providers, Action save, Action quit, Action testAlert)
     {
         this.settings = settings;
         this.store = store;
         this.providers = providers;
         this.save = save;
         this.quit = quit;
+        this.testAlert = testAlert;
 
         Title = Strings.T("settings.title");
         Width = 1120;
@@ -51,6 +53,9 @@ public sealed class SettingsWindow : Window
     }
 
     public event Action? Changed;
+
+    /// <summary>The alert settings moved, so the running engine needs the new shape of them.</summary>
+    public event Action<Core.Alerts.AlertConfig>? AlertsChanged;
 
     private Control Build()
     {
@@ -204,15 +209,17 @@ public sealed class SettingsWindow : Window
             Children =
             {
                 Chrome.SwitchRow(Strings.T("settings.thresholds"), Strings.T("settings.thresholdsHint"),
-                    settings.AlertThresholds, on => { settings.AlertThresholds = on; save(); }),
+                    settings.AlertThresholds, on => { settings.AlertThresholds = on; Applied(); }),
                 thresholds,
                 Chrome.Rule(new Thickness(0, 10, 0, 10)),
                 Chrome.SwitchRow(Strings.T("settings.resetSoon"), null, settings.AlertResetSoon,
-                    on => { settings.AlertResetSoon = on; save(); }),
+                    on => { settings.AlertResetSoon = on; Applied(); }),
                 Chrome.SwitchRow(Strings.T("settings.afterWaiting"), null, settings.AlertWaiting,
-                    on => { settings.AlertWaiting = on; save(); }),
+                    on => { settings.AlertWaiting = on; Applied(); }),
                 Chrome.SwitchRow(Strings.T("settings.limit"), null, settings.AlertLimit,
-                    on => { settings.AlertLimit = on; save(); })
+                    on => { settings.AlertLimit = on; Applied(); }),
+                Chrome.Rule(new Thickness(0, 10, 0, 10)),
+                Delivery()
             }
         };
         return Chrome.Section(Strings.T("settings.alerts"), Strings.T("settings.alertsHint"), body);
@@ -223,7 +230,40 @@ public sealed class SettingsWindow : Window
         if (on) { if (!settings.Thresholds.Contains(value)) settings.Thresholds.Add(value); }
         else settings.Thresholds.Remove(value);
         settings.Thresholds.Sort();
+        Applied();
+    }
+
+    /// <summary>
+    /// Where an alert is drawn. The engine never sees this choice - it decided what to say - so changing it
+    /// only saves, and the router reads it again on the next delivery.
+    /// </summary>
+    private Control Delivery()
+    {
+        var title = Chrome.SmallTitle(Strings.T("settings.delivery"));
+        title.Margin = new Thickness(0, 4, 0, 6);
+
+        var choices = new StackPanel { Spacing = 6 };
+        foreach (var (key, hint, mode) in new (string, string?, AlertDelivery)[]
+                 {
+                     ("settings.delivery.banners", "settings.delivery.bannersHintPlain", AlertDelivery.TokendialBanners),
+                     ("settings.delivery.system", "settings.delivery.systemHint", AlertDelivery.WindowsToasts),
+                     ("settings.delivery.both", null, AlertDelivery.WindowsThenBanners)
+                 })
+            choices.Children.Add(Chrome.RadioCard("delivery", Strings.T(key), settings.Delivery == mode,
+                () => { settings.Delivery = mode; save(); }, hint is null ? null : Strings.T(hint)));
+
+        var test = Chrome.Button(Strings.T("settings.testAlert"), testAlert);
+        test.HorizontalAlignment = HorizontalAlignment.Left;
+        test.Margin = new Thickness(0, 12, 0, 0);
+
+        return new StackPanel { Children = { title, choices, test } };
+    }
+
+    /// <summary>Saves, and hands the running engine the settings it now has to work to.</summary>
+    private void Applied()
+    {
         save();
+        AlertsChanged?.Invoke(settings.AlertConfig);
     }
 
     // ---- general ------------------------------------------------------------------------------------

@@ -211,7 +211,9 @@
     "setup.step.launch": "Starts the installed copy and closes this one.",
     "setup.safe": "Everything is written inside your home folder. Nothing is installed system-wide, nothing asks for your password, and Settings has an Uninstall button that takes all of it back out.",
     "setup.install": "Install",
-    "setup.justRun": "Just run it"
+    "setup.justRun": "Just run it",
+
+    "settings.delivery.bannersHintPlain": "Top-right corner, in Tokendial's own colour. Shown even under Do not disturb."
   },
   "labels": {
     "Current session": "Current session",

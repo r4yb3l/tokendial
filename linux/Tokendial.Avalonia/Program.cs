@@ -2,12 +2,15 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
+using Tokendial.Core.Alerts;
 using Tokendial.Core.Diagnostics;
 using Tokendial.Core.I18n;
+using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Sessions;
 using Tokendial.Core.Settings;
 using Tokendial.Core.Store;
+using Tokendial.Linux.Alerts;
 using Tokendial.Linux.Install;
 using Tokendial.Linux.Panel;
 using Tokendial.Linux.Tray;
@@ -40,6 +43,10 @@ public sealed class TokendialApp : Application
 
     private UsageStore? store;
     private ActivityHub? hub;
+    private AlertCoordinator? alerts;
+    private NotifySink? notifications;
+    private BannerSink? banners;
+    private AlertRouter? router;
     private PanelWindow? panel;
     private Tokendial.Linux.Tray.TrayIcon? tray;
     private SettingsWindow? window;
@@ -80,6 +87,18 @@ public sealed class TokendialApp : Application
 
         panel = new PanelWindow(providers.Where(p => !settings.Disconnected.Contains(p.Id)).Select(p => p.Id).ToList());
         panel.SettingsRequested += ShowSettings;
+
+        // The engine decided what to say and when; these two only deliver it. The preference is read at
+        // delivery rather than wired once, so changing it in settings takes effect with no rewiring.
+        notifications = new NotifySink(Reading, hub.For);
+        banners = new BannerSink(Reading, hub.For);
+        banners.Opened += _ => panel.Flash(TimeSpan.FromSeconds(8));
+        router = new AlertRouter(notifications, banners, () => settings.Delivery);
+        alerts = new AlertCoordinator(router, settings.AlertConfig, AlertCoordinator.DefaultStateFile, wants: settings.Wants);
+
+        store.Changed += () => alerts.OnReadings(store.Readings);
+        hub.Changed += () => alerts.OnActivities(hub.Activities);
+        panel.HoverChanged += on => alerts.OnHover(on);
 
         // The store and the hub both change often and independently; rebuilding the model on a short timer
         // rather than on every event is what the Windows app does, for the same reason.
@@ -135,11 +154,21 @@ public sealed class TokendialApp : Application
         tray.ShowRequested += () => panel.Flash(TimeSpan.FromSeconds(6));
         tray.RefreshRequested += () => store.PollNow();
         tray.SettingsRequested += ShowSettings;
+        tray.TestAlertRequested += TestAlert;
         tray.QuitRequested += () => desktop.Shutdown();
 
-        desktop.ShutdownRequested += (_, _) => { store.Dispose(); hub.Dispose(); tray?.Dispose(); };
+        desktop.ShutdownRequested += (_, _) =>
+        {
+            store.Dispose();
+            hub.Dispose();
+            tray?.Dispose();
+            alerts?.Dispose();
+            notifications?.Dispose();
+            banners?.Close();
+        };
         store.Start();
         hub.Start();
+        alerts?.Start();
 
         // Just installed: open the dock for long enough to be seen, so pressing Install visibly produces the
         // application rather than a capsule at the top of a screen nobody was looking at.
@@ -171,9 +200,10 @@ public sealed class TokendialApp : Application
         if (store is null) return;
         if (window is null)
         {
-            window = new SettingsWindow(settings, store, catalogue, Save, Quit);
+            window = new SettingsWindow(settings, store, catalogue, Save, Quit, TestAlert);
             window.Closed += (_, _) => window = null;
             window.Changed += Refresh;
+            window.AlertsChanged += config => alerts?.Reconfigure(config, settings.Wants);
         }
         window.Show();
         window.Activate();
@@ -184,6 +214,20 @@ public sealed class TokendialApp : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.Shutdown();
     }
+
+    /// <summary>
+    /// One alert, delivered the way a real one would be, bypassing the engine entirely - the point is to
+    /// show the user what an alert looks like and where it appears, not to decide whether to send one.
+    /// </summary>
+    private void TestAlert()
+    {
+        if (store is null || router is null) return;
+        var reading = store.Readings.FirstOrDefault(r => r.HeadlineFraction is not null) ?? store.Readings.FirstOrDefault();
+        router.Deliver(new Alert(AlertKind.Threshold, reading?.ProviderId ?? "claude", reading?.Windows.FirstOrDefault()?.Id,
+            80, reading?.Windows.FirstOrDefault()?.ResetsAt ?? DateTimeOffset.Now.AddMinutes(51)));
+    }
+
+    private ProviderReading? Reading(string id) => store?.Readings.FirstOrDefault(r => r.ProviderId == id);
 
     private void Save()
     {

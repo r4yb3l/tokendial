@@ -25,6 +25,7 @@ public sealed class TrayIcon : IDisposable
     private readonly Avalonia.Controls.TrayIcon icon = new() { IsVisible = false, ToolTipText = "Tokendial" };
     private readonly NativeMenuItem showItem = new();
     private readonly NativeMenuItem refreshItem = new();
+    private readonly NativeMenuItem testItem = new();
     private readonly NativeMenuItem settingsItem = new();
     private readonly NativeMenuItem quitItem = new();
 
@@ -34,6 +35,7 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(showItem);
         menu.Items.Add(refreshItem);
         menu.Items.Add(new NativeMenuItemSeparator());
+        menu.Items.Add(testItem);
         menu.Items.Add(settingsItem);
         menu.Items.Add(new NativeMenuItemSeparator());
         menu.Items.Add(quitItem);
@@ -41,6 +43,7 @@ public sealed class TrayIcon : IDisposable
 
         showItem.Click += (_, _) => ShowRequested?.Invoke();
         refreshItem.Click += (_, _) => RefreshRequested?.Invoke();
+        testItem.Click += (_, _) => TestAlertRequested?.Invoke();
         settingsItem.Click += (_, _) => SettingsRequested?.Invoke();
         quitItem.Click += (_, _) => QuitRequested?.Invoke();
         icon.Clicked += (_, _) => ShowRequested?.Invoke();
@@ -53,6 +56,7 @@ public sealed class TrayIcon : IDisposable
 
     public event Action? ShowRequested;
     public event Action? RefreshRequested;
+    public event Action? TestAlertRequested;
     public event Action? SettingsRequested;
     public event Action? QuitRequested;
 
@@ -60,6 +64,7 @@ public sealed class TrayIcon : IDisposable
     {
         showItem.Header = Strings.T("tray.show");
         refreshItem.Header = Strings.T("tray.refresh");
+        testItem.Header = Strings.T("tray.testAlert");
         settingsItem.Header = Strings.T("tray.settings");
         quitItem.Header = Strings.T("tray.quit");
     }

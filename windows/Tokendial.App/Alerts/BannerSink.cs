@@ -42,7 +42,7 @@ public sealed class BannerSink : IAlertSink
     public void Deliver(Alert alert)
     {
         var current = reading(alert.Provider);
-        var (title, body) = ToastSink.Compose(alert, current, activity(alert.Provider), now());
+        var (title, body) = AlertCopy.Compose(alert, current, activity(alert.Provider), now());
         var fraction = alert.Pct is int pct ? pct / 100.0 : current?.HeadlineFraction;
         Log.Alerts.Info($"banner: {title} — {body}");
         dispatcher.BeginInvoke(() =>

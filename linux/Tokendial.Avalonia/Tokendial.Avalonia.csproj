@@ -22,6 +22,9 @@
     <!-- Not for the look: every built-in control gets its template from the theme, and without one a
          ScrollViewer reports a zero extent and never scrolls. Tokendial's own controls carry their own. -->
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.2" />
+    <!-- Already in the bundle: Avalonia.X11 speaks D-Bus for the tray. Named explicitly because the
+         notification sink depends on it directly, and an implicit transitive version is not a contract. -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.1" />
   </ItemGroup>
 
   <ItemGroup>

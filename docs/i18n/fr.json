@@ -211,7 +211,9 @@
     "setup.step.launch": "Lance la copie installée et ferme celle-ci.",
     "setup.safe": "Tout est écrit dans votre dossier personnel. Rien n’est installé pour tout le système, aucun mot de passe n’est demandé, et les Réglages comportent un bouton Désinstaller qui retire tout cela.",
     "setup.install": "Installer",
-    "setup.justRun": "Juste l’exécuter"
+    "setup.justRun": "Juste l’exécuter",
+
+    "settings.delivery.bannersHintPlain": "Coin supérieur droit, dans la couleur propre à Tokendial. Affichées même en mode Ne pas déranger."
   },
   "labels": {
     "Current session": "Session en cours",

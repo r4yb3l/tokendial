@@ -211,7 +211,9 @@
     "setup.step.launch": "Startet die installierte Kopie und schließt diese hier.",
     "setup.safe": "Alles wird in Ihrem persönlichen Ordner abgelegt. Es wird nichts systemweit installiert, nach keinem Passwort gefragt, und in den Einstellungen entfernt eine Schaltfläche „Deinstallieren“ all das wieder.",
     "setup.install": "Installieren",
-    "setup.justRun": "Nur ausführen"
+    "setup.justRun": "Nur ausführen",
+
+    "settings.delivery.bannersHintPlain": "Rechts oben, in Tokendials eigener Farbe. Werden auch bei „Nicht stören“ angezeigt."
   },
   "labels": {
     "Current session": "Aktuelle Sitzung",

@@ -211,7 +211,9 @@
     "setup.step.launch": "Arranca la copia instalada y cierra esta.",
     "setup.safe": "Todo se escribe dentro de tu carpeta personal. No se instala nada en todo el sistema, no se te pide la contraseña, y Ajustes tiene un botón de Desinstalar que lo quita todo.",
     "setup.install": "Instalar",
-    "setup.justRun": "Solo ejecutarlo"
+    "setup.justRun": "Solo ejecutarlo",
+
+    "settings.delivery.bannersHintPlain": "Esquina superior derecha, con el color propio de Tokendial. Se muestran incluso con No molestar."
   },
   "labels": {
     "Current session": "Sesión actual",

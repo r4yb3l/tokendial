@@ -85,9 +85,17 @@ public static unsafe class X11
     /// state atoms were deleted entirely and the stacking order did not change - but they are set anyway
     /// because other window managers are not Muffin.
     /// </summary>
-    public static void MakeDock(nint window)
+    public static void MakeDock(nint window) => MakeAlwaysOnTop(window, "_NET_WM_WINDOW_TYPE_DOCK");
+
+    /// <summary>
+    /// The window type a notification is supposed to declare. Window managers place and stack these above
+    /// everything, including a fullscreen window, which is what a banner has to do to be worth drawing.
+    /// </summary>
+    public static void MakeNotification(nint window) => MakeAlwaysOnTop(window, "_NET_WM_WINDOW_TYPE_NOTIFICATION");
+
+    private static void MakeAlwaysOnTop(nint window, string type)
     {
-        PutAtoms(window, "_NET_WM_WINDOW_TYPE", "_NET_WM_WINDOW_TYPE_DOCK");
+        PutAtoms(window, "_NET_WM_WINDOW_TYPE", type);
         PutAtoms(window, "_NET_WM_STATE", "_NET_WM_STATE_ABOVE", "_NET_WM_STATE_SKIP_TASKBAR", "_NET_WM_STATE_SKIP_PAGER");
         XFlush(Display);
     }

@@ -47,6 +47,12 @@ public sealed class PanelWindow : Window
 
     public event Action? SettingsRequested;
 
+    /// <summary>
+    /// The dock opened or closed. The alert engine silences thresholds while it is open, on the reasoning
+    /// that someone reading the numbers does not need to be told them.
+    /// </summary>
+    public event Action<bool>? HoverChanged;
+
     private DispatcherTimer? poll;
     private double compactAlong, expandedAlong;
     private bool expanded;
@@ -277,6 +283,7 @@ public sealed class PanelWindow : Window
 
     private void Reconcile(bool open)
     {
+        var changed = expanded != open;
         expanded = open;
         capsule.Width = open ? expandedAlong : compactAlong;
         capsule.Height = open ? Tokens.ExpandedHeight : Tokens.CompactHeight;
@@ -289,6 +296,7 @@ public sealed class PanelWindow : Window
         Layout();
         Shape();
         if (!open) { hovered = -1; card.HideCard(); }
+        if (changed) HoverChanged?.Invoke(open);
     }
 
     private void Card(bool inside, Point local, double left, PixelPoint origin, double scale)
