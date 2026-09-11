@@ -57,8 +57,14 @@ function Sync-Linux {
         # still worth syncing, because they are what proves the toolchain on the VM.
         $paths = @("docs", "windows/Tokendial.Core", "windows/Tokendial.Tests", "VERSION")
         if (Test-Path (Join-Path $root "linux")) { $paths += "linux" }
-        & tar -czf $bundle --exclude "bin" --exclude "obj" --exclude "linux/dist" --exclude "linux/publish" $paths
-        if ($LASTEXITCODE -ne 0) { throw "tar failed" }
+        # Windows' own tar, named absolutely. Git ships one too, and if that one is found first it reads
+        # "C:" as a remote host and fails - which once looked like a successful sync and cost a debugging
+        # round on stale sources.
+        $tar = Join-Path $env:SystemRoot "System32\tar.exe"
+        if (-not (Test-Path $tar)) { throw "no tar at $tar" }
+        & $tar -czf $bundle --exclude "bin" --exclude "obj" --exclude "linux/dist" --exclude "linux/publish" $paths
+        if ($LASTEXITCODE -ne 0) { throw "tar exited with $LASTEXITCODE" }
+        if (-not (Test-Path $bundle)) { throw "tar produced no archive" }
     } finally { Pop-Location }
     Invoke-Linux "mkdir -p $LinuxDir"
     & scp -q -o BatchMode=yes -P $LinuxPort -i $LinuxKey $bundle "${LinuxUser}@${LinuxHost}:$LinuxDir/sync.tgz"

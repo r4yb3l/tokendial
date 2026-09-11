@@ -171,3 +171,35 @@ user's Spotlight. Each was a legitimate build step; together they made their own
 they noticed before I did.
 Rule: build output on a machine that is not mine is litter until it is removed. Clean the intermediates in
 the same breath as the build, and keep the tree that only exists to be compiled out of the search index.
+
+## The dock's window behaviour is X11's to grant, and Cinnamon grants all of it (2026-09-11)
+Before writing a line of Linux UI, a throwaway Avalonia window was made to prove on a Mint 22.3 Cinnamon VM
+that it could do what the Windows dock does. All seven properties hold, and each was measured rather than
+looked at: per-pixel alpha renders over the wallpaper; `_NET_ACTIVE_WINDOW` is identical before and after the
+window maps, so it steals no focus; `_NET_CLIENT_LIST_STACKING` puts it above a maximised terminal; a cursor
+moved to four points is reported over the window inside the capsule and over the desktop in the slant, the
+hot zone and the open desktop; `XQueryPointer` returns `same_screen=true`; and the tray icon registers with
+`org.kde.StatusNotifierWatcher` and renders a bitmap drawn at runtime.
+Rule: a platform question with a yes/no answer is a spike, not a discussion. Two hundred lines and an
+afternoon replaced a week of arguing from documentation - and three of the answers contradicted what the
+documentation implied.
+
+## Four beliefs the spike corrected, all of which would have cost days (2026-09-11)
+- **Avalonia's `Position` getter lies on X11.** It reported `0,0` for a window `xwininfo` showed at `460,0`.
+  Read back from X, or from a screenshot, never from the property that was just set.
+- **`_NET_WM_WINDOW_TYPE_DOCK` alone keeps a window above.** `_NET_WM_STATE_ABOVE` was deleted entirely and
+  the stacking order did not change.
+- **Avalonia's TrayIcon works on Mint Cinnamon**, despite an open issue titled otherwise, and it does
+  transmit a runtime-rendered icon rather than only a theme name.
+- **`gnome-terminal` returned in 357 ms for a six-second job.** Anything that wires "the terminal exited" to
+  "the install finished" would end every install instantly.
+Rule: write down which beliefs a spike is meant to test, then record which ones it broke. The ones that
+break are the plan's real content.
+
+## Run the remote tooling from the shell it was written for (2026-09-11)
+`tools\linux.ps1 sync` was invoked through the Bash tool, which put Git's `tar` ahead of Windows' on PATH.
+Git's tar reads `C:\...` as a remote host, so the archive was never written - and the failure surfaced only
+later, as a build that succeeded against sources from two edits ago. Half an hour went into debugging code
+that was never on the machine.
+Rule: a PowerShell tool gets the PowerShell tool. And a script that shells out to a common command name
+should name the binary absolutely, which `Sync-Linux` now does.
