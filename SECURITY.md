@@ -61,7 +61,19 @@ runs that command and, for a command-line tool, the tool's own sign-in right aft
 - Tokens live in process memory while a request is in flight. Any process running as the same
   user can read that memory, exactly as it can read the source files themselves. Tokendial does
   not change that model.
-- The binaries are not yet signed. Verify `SHA256SUMS` on a release before running it.
+- **The binaries are not signed, and will not be.** A code-signing certificate and an Apple
+  Developer ID cost more each year than this project earns, which is nothing, so Windows shows
+  SmartScreen and macOS reports the app as damaged. What stands in place of a signature is a
+  checksum: each release publishes `Tokendial-win.sha256` and `Tokendial-<version>-macos.sha256`
+  over the files offered for download. Check one before running it:
+
+  ```sh
+  sha256sum -c Tokendial-win.sha256
+  ```
+
+  That tells you the download matches what the public build produced. It cannot tell you the build
+  itself is honest - for that, the workflow that made it and the source it was made from are both
+  in this repository.
 - The settings window and hover card show the account label a tool reports (a plan name, or for
   Codex the account email). Nothing else about the account is displayed.
 
