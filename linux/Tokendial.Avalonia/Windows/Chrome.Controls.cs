@@ -135,7 +135,18 @@ public static partial class Chrome
     public static RadioButton Tile(string group, Control diagram, string label, bool value, Action changed)
     {
         var radio = Bare(group, value, changed);
-        radio.Content = new StackPanel { Spacing = 8, Children = { diagram, Label(label) } };
+        // The label wraps so a long one does not stretch its tile past its neighbours; a row of tiles that
+        // are different widths reads as a mistake rather than as a choice.
+        var caption = Label(label);
+        caption.TextWrapping = TextWrapping.Wrap;
+        caption.TextTrimming = TextTrimming.None;
+        caption.TextAlignment = TextAlignment.Center;
+        radio.Content = new StackPanel
+        {
+            Spacing = 8,
+            Children = { diagram, caption },
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
         return Dress(radio, dot: false, radius: 12, padding: new Thickness(12));
     }
 

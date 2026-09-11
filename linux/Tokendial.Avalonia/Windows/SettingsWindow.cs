@@ -133,15 +133,24 @@ public sealed class SettingsWindow : Window
 
     private Control PanelBehaviour()
     {
+        // Equal widths: three choices of the same weight should not be three different sizes.
+        const double modeWidth = 150;
         var modes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        modes.Children.Add(Chrome.Tile("panelMode", Chrome.CompactDiagram(false), Strings.T("settings.panel.hover"),
-            settings.Panel == PanelMode.ExpandOnHover, () => SetPanel(PanelMode.ExpandOnHover)));
-        modes.Children.Add(Chrome.Tile("panelMode", Chrome.CompactDiagram(true), Strings.T("settings.panel.always"),
-            settings.Panel == PanelMode.AlwaysExpanded, () => SetPanel(PanelMode.AlwaysExpanded)));
-        modes.Children.Add(Chrome.Tile("panelMode", Chrome.TrayDiagram(), Strings.T("settings.panel.hidden"),
-            settings.Panel == PanelMode.Hidden, () => SetPanel(PanelMode.Hidden)));
+        foreach (var (diagram, key, mode) in new (Control, string, PanelMode)[]
+                 {
+                     (Chrome.CompactDiagram(false), "settings.panel.hover", PanelMode.ExpandOnHover),
+                     (Chrome.CompactDiagram(true), "settings.panel.always", PanelMode.AlwaysExpanded),
+                     (Chrome.TrayDiagram(), "settings.panel.hidden", PanelMode.Hidden)
+                 })
+        {
+            var tile = Chrome.Tile("panelMode", diagram, Strings.T(key), settings.Panel == mode, () => SetPanel(mode));
+            tile.Width = modeWidth;
+            // Stretch, so a label that wraps to three lines does not leave its neighbours short.
+            tile.VerticalAlignment = VerticalAlignment.Stretch;
+            modes.Children.Add(tile);
+        }
 
-        var edges = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Margin = new Thickness(0, 12, 0, 0) };
+        var edges = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         foreach (var (edge, key, vertical, far) in new[]
                  {
                      (DockEdge.Top, "settings.position.top", false, false),
@@ -151,14 +160,18 @@ public sealed class SettingsWindow : Window
                  })
         {
             var chosen = settings.Edge == edge;
-            edges.Children.Add(Chrome.Tile("panelEdge", Chrome.EdgeDiagram(vertical, far, chosen), Strings.T(key), chosen,
-                () => { settings.Edge = edge; save(); Changed?.Invoke(); }));
+            var tile = Chrome.Tile("panelEdge", Chrome.EdgeDiagram(vertical, far, chosen), Strings.T(key), chosen,
+                () => { settings.Edge = edge; save(); Changed?.Invoke(); });
+            tile.Width = 96;
+            edges.Children.Add(tile);
         }
 
-        var body = new StackPanel
-        {
-            Children = { modes, Chrome.SmallTitle(Strings.T("settings.position")), edges }
-        };
+        // The heading needs room above it and a smaller gap below, or it reads as belonging to the tiles it
+        // sits on rather than the ones it names.
+        var position = Chrome.SmallTitle(Strings.T("settings.position"));
+        position.Margin = new Thickness(0, 18, 0, 8);
+
+        var body = new StackPanel { Children = { modes, position, edges } };
         return Chrome.Section(Strings.T("settings.panel"), Strings.T("settings.panelSub"), body);
     }
 
