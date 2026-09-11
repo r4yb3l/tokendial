@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Spike;
+namespace Tokendial.Linux.Interop;
 
 /// <summary>
 /// The parts of X11 the dock needs and Avalonia does not expose. Deliberately a separate connection from
@@ -79,14 +79,15 @@ public static unsafe class X11
     private static void PutCardinal(nint window, string property, long value) =>
         XChangeProperty(Display, window, Atom(property), XA_CARDINAL, 32, PropModeReplace, BitConverter.GetBytes(value), 1);
 
-    /// <summary>Ask the window manager to treat this as furniture: above everything, in no task list, in no switcher.</summary>
-    public static void MakeDock(nint window, bool asDock)
+    /// <summary>
+    /// Ask the window manager to treat this as furniture: above everything, in no task list, in no switcher.
+    /// Measured on Cinnamon: the DOCK type alone is enough to hold the window above a maximised one - the
+    /// state atoms were deleted entirely and the stacking order did not change - but they are set anyway
+    /// because other window managers are not Muffin.
+    /// </summary>
+    public static void MakeDock(nint window)
     {
-        if (asDock)
-            PutAtoms(window, "_NET_WM_WINDOW_TYPE", "_NET_WM_WINDOW_TYPE_DOCK");
-        else
-            PutAtoms(window, "_NET_WM_WINDOW_TYPE", "_NET_WM_WINDOW_TYPE_UTILITY");
-
+        PutAtoms(window, "_NET_WM_WINDOW_TYPE", "_NET_WM_WINDOW_TYPE_DOCK");
         PutAtoms(window, "_NET_WM_STATE", "_NET_WM_STATE_ABOVE", "_NET_WM_STATE_SKIP_TASKBAR", "_NET_WM_STATE_SKIP_PAGER");
         XFlush(Display);
     }
