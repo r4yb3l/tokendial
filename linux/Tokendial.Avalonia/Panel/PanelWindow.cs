@@ -5,9 +5,6 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Tokendial.Core.Model;
-using Tokendial.Core.Providers;
-using Tokendial.Core.Settings;
-using Tokendial.Core.Store;
 using Tokendial.Linux.Interop;
 
 // Avalonia's StyledElement already has a Theme property, which shadows the token class inside any
@@ -40,23 +37,22 @@ public sealed class PanelWindow : Window
     private readonly StackPanel compactRow = new() { Orientation = Orientation.Horizontal, Spacing = Tokens.CompactSpacing };
     private readonly StackPanel expandedRow = new() { Orientation = Orientation.Horizontal, IsVisible = false };
 
-    private readonly ReadingArchive archive = new();
-    private readonly Settings settings = Settings.Load();
     private readonly CardWindow card = new();
+    private readonly IReadOnlyList<string> providerIds;
 
     private readonly List<Dial> dials = [];
     private readonly List<MarkView> marks = [];
     private readonly List<Cell> cells = [];
     private readonly List<Tile> tiles = [];
-    private IReadOnlyList<IUsageProvider> providers = [];
 
     private DispatcherTimer? poll;
     private double compactAlong, expandedAlong;
     private bool expanded;
     private int hovered = -1;
 
-    public PanelWindow()
+    public PanelWindow(IReadOnlyList<string> providerIds)
     {
+        this.providerIds = providerIds;
         Title = "Tokendial";
         WindowDecorations = WindowDecorations.None;
         Topmost = true;
@@ -80,9 +76,8 @@ public sealed class PanelWindow : Window
         Opened += OnOpened;
     }
 
-    private async void OnOpened(object? sender, EventArgs e)
+    private void OnOpened(object? sender, EventArgs e)
     {
-        providers = Adopt(ProviderCatalog.Providers(archive));
         Build();
 
         var handle = TryGetPlatformHandle();
@@ -95,34 +90,12 @@ public sealed class PanelWindow : Window
         }
 
         StartPolling();
-        await Read();
     }
 
-    /// <summary>
-    /// The dock shows the tools the user actually uses, not the nine that exist. The rule is the one
-    /// windows/Tokendial.App/App.cs:124 already applies: a provider met for the first time whose
-    /// <c>Account()</c> is null - no credential, so not signed in or not installed - is recorded as
-    /// disconnected, and disconnected providers are not shown. Connecting one later is a settings
-    /// decision the user makes, never something discovered behind their back.
-    /// </summary>
-    private IReadOnlyList<IUsageProvider> Adopt(IReadOnlyList<IUsageProvider> all)
-    {
-        var fresh = all.Where(p => !settings.Known.Contains(p.Id)).ToList();
-        if (fresh.Count > 0)
-        {
-            foreach (var provider in fresh)
-            {
-                settings.Known.Add(provider.Id);
-                if (provider.Account() is null) settings.Disconnected.Add(provider.Id);
-            }
-            try { settings.Save(); } catch (IOException) { }
-        }
-        return all.Where(p => !settings.Disconnected.Contains(p.Id)).ToList();
-    }
 
     private void Build()
     {
-        var count = providers.Count;
+        var count = providerIds.Count;
         compactAlong = 2 * Tokens.DockSlant + 2 * Tokens.CompactPadding + count * Tokens.CompactDial + (count - 1) * Tokens.CompactSpacing;
         expandedAlong = 2 * Tokens.DockSlant + Math.Max(2 * Tokens.ExpandedPadding + count * Tokens.CellWidth,
                                                         Tokens.CardWidth + 2 * Tokens.ExpandedPadding);
@@ -130,10 +103,10 @@ public sealed class PanelWindow : Window
         Width = expandedAlong;
         Height = Tokens.ExpandedHeight + Tokens.HotZone;
 
-        foreach (var provider in providers)
+        foreach (var id in providerIds)
         {
             var dial = new Dial(Tokens.CompactDial, Tokens.CompactStroke) { Hollow = true };
-            var mark = new MarkView(provider.Id, Tokens.CompactMark)
+            var mark = new MarkView(id, Tokens.CompactMark)
             {
                 Fill = Tokens.TextDisabled,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -148,7 +121,7 @@ public sealed class PanelWindow : Window
                 Width = Tokens.CompactDial, Height = Tokens.CompactDial, Children = { dial, mark }
             });
 
-            var cell = new Cell(provider.Id);
+            var cell = new Cell(id);
             cells.Add(cell);
             expandedRow.Children.Add(cell.Root);
         }
@@ -188,7 +161,7 @@ public sealed class PanelWindow : Window
         Canvas.SetLeft(compactRow, (along - compactWidth) / 2);
         Canvas.SetTop(compactRow, (Tokens.CompactHeight - Tokens.CompactDial) / 2);
 
-        Canvas.SetLeft(expandedRow, (along - providers.Count * Tokens.CellWidth) / 2);
+        Canvas.SetLeft(expandedRow, (along - providerIds.Count * Tokens.CellWidth) / 2);
         Canvas.SetTop(expandedRow, Tokens.ExpandedPadding);
     }
 
@@ -221,40 +194,32 @@ public sealed class PanelWindow : Window
         });
     }
 
-    private async Task Read()
+
+
+    /// <summary>
+    /// Applies a snapshot. The window keeps no readings of its own and asks no provider anything; it is
+    /// handed a model built off the store and the hub, exactly as the Windows dock is.
+    /// </summary>
+    public void Update(PanelModel model)
     {
-        for (var i = 0; i < providers.Count; i++)
+        for (var i = 0; i < tiles.Count && i < model.Tiles.Count; i++)
         {
-            var index = i;
-            var provider = providers[index];
-            ProviderReading reading;
-            try { reading = await provider.ReadAsync(); }
-            catch (Exception ex)
-            {
-                // A provider that cannot be read still has something to say - "not signed in", "nothing
-                // metered here", an HTTP code - and the card says it. UsageStore.StatusFor is the one
-                // translation from exception to status, and is reused rather than rewritten.
-                reading = new ProviderReading(provider.Id, provider.DisplayName, Fidelity.Official,
-                    UsageStore.StatusFor(ex), []);
-            }
-            var account = provider.Account();
-            await Dispatcher.UIThread.InvokeAsync(() => Apply(index, reading, account));
-            Console.WriteLine($"{provider.Id,-12} {reading.Status,-26} {reading.HeadlineText}");
+            var tile = model.Tiles.FirstOrDefault(t => t.Id == providerIds[i]);
+            if (tile is null) continue;
+            tiles[i] = tile;
+
+            var dial = dials[i];
+            dial.Hollow = !tile.HasReading;
+            dial.Fill = Tokens.Of(tile.Band);
+            dial.Fraction = tile.HasReading ? Math.Clamp(tile.Fraction ?? 0, 0, 1) : 0;
+            marks[i].Fill = tile.HasReading ? Tokens.TextPrimary : Tokens.TextDisabled;
+            cells[i].Apply(tile);
         }
-    }
 
-    private void Apply(int index, ProviderReading reading, ProviderAccount? account)
-    {
-        var tile = new Tile(reading.ProviderId, reading.DisplayName, Tile.MarkFor(reading.ProviderId),
-            reading, account, null, false);
-        tiles[index] = tile;
-
-        var dial = dials[index];
-        dial.Hollow = !tile.HasReading;
-        dial.Fill = Tokens.Of(tile.Band);
-        dial.Fraction = tile.HasReading ? Math.Clamp(tile.Fraction ?? 0, 0, 1) : 0;
-        marks[index].Fill = tile.HasReading ? Tokens.TextPrimary : Tokens.TextDisabled;
-        cells[index].Apply(tile);
+        // A card already open should follow the numbers behind it rather than go stale until the pointer
+        // moves; rebuilding it in place is cheap and is what keeps a reset countdown honest.
+        if (hovered >= 0 && hovered < tiles.Count && tiles[hovered] is Tile shown)
+            card.Replace(HoverCard.Build(shown, DateTimeOffset.Now));
     }
 
     /// <summary>
@@ -318,7 +283,7 @@ public sealed class PanelWindow : Window
 
         if (index < 0 || tiles.Count <= index || tiles[index] is null) { card.HideCard(); return; }
 
-        var cellLeft = (expandedAlong - providers.Count * Tokens.CellWidth) / 2 + index * Tokens.CellWidth;
+        var cellLeft = (expandedAlong - providerIds.Count * Tokens.CellWidth) / 2 + index * Tokens.CellWidth;
         var anchor = new PixelPoint(
             origin.X + (int)Math.Round((left + cellLeft + Tokens.CellWidth / 2) * scale),
             origin.Y + (int)Math.Round((Tokens.ExpandedHeight + 6) * scale));
@@ -329,7 +294,7 @@ public sealed class PanelWindow : Window
     /// <summary>Which expanded cell a position within the capsule falls in.</summary>
     private int CellAt(double x)
     {
-        var first = (expandedAlong - providers.Count * Tokens.CellWidth) / 2;
+        var first = (expandedAlong - providerIds.Count * Tokens.CellWidth) / 2;
         var index = (int)Math.Floor((x - first) / Tokens.CellWidth);
         return index >= 0 && index < cells.Count ? index : -1;
     }

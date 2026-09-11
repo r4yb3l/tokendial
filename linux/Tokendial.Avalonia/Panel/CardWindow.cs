@@ -78,5 +78,11 @@ public sealed class CardWindow : Window
         }, DispatcherPriority.Loaded);
     }
 
+    /// <summary>Swaps the contents of a card that is already up, without moving or re-showing it.</summary>
+    public void Replace(Control content)
+    {
+        if (Opacity > 0) Content = content;
+    }
+
     public void HideCard() => Opacity = 0;
 }
