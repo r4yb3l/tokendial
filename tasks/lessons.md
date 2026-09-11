@@ -246,3 +246,20 @@ scroll. Everything else looked right because every control Tokendial draws carri
 Rule: when a control does nothing rather than doing the wrong thing, ask it what it thinks its own state is
 before theorising about layout. And an Avalonia app needs a theme in its Styles even when it templates
 everything it draws itself - the built-ins still expect one.
+
+## A probe that fakes a home directory must fake it for the process, not for the script (2026-09-11)
+The install probe was meant to write into `/tmp/tokendial-probe` and prove nothing touched the real session.
+It set `HOME` on the ssh command, then the script restored `HOME=/home/raybel` so the SDK could find its own
+directory - so the probe process inherited the real home and installed Tokendial into the user's actual menu,
+autostart and `~/.local/bin`, pointing at a 25-byte stub. Harmless on a throwaway VM, uninvited anywhere else.
+Rule: build as the real user, run the probe under `env -i HOME=<fake>`. The isolation belongs on the process
+being tested, not on the wrapper. And when a probe writes to the filesystem, list what landed and where before
+believing the summary it prints about itself.
+
+## Let the platform's own validator grade the file (2026-09-11)
+The first `.desktop` entry looked right and was accepted by the desktop. `desktop-file-validate` still had
+something to say: two main categories can list an application twice in the menu. One run, one real defect that
+no amount of reading the file would have shown, because the file was valid - just wrong. The same run surfaced
+the second bug by printing the entry: the autostart `Exec=` named the AppImage in the user's download folder
+rather than the installed copy, which breaks the first time they empty it.
+Rule: when writing a file a specification defines, run the specification's validator, and print the file.
