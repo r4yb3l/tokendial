@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
+using Tokendial.Core.Settings;
 using Tokendial.Core.Store;
 using Tokendial.Linux.Interop;
 
@@ -28,6 +29,7 @@ public sealed class PanelWindow : Window
     private readonly Avalonia.Controls.Shapes.Path dockEdge = new();
     private readonly StackPanel row = new() { Orientation = Orientation.Horizontal, Spacing = Tokens.CompactSpacing };
     private readonly ReadingArchive archive = new();
+    private readonly Settings settings = Settings.Load();
     private readonly CardWindow card = new();
 
     private readonly List<Dial> dials = [];
@@ -64,7 +66,7 @@ public sealed class PanelWindow : Window
 
     private async void OnOpened(object? sender, EventArgs e)
     {
-        providers = ProviderCatalog.Providers(archive);
+        providers = Adopt(ProviderCatalog.Providers(archive));
         Build();
 
         var handle = TryGetPlatformHandle();
@@ -86,6 +88,28 @@ public sealed class PanelWindow : Window
 
         StartPolling();
         await Read();
+    }
+
+    /// <summary>
+    /// The dock shows the tools you actually use, not the nine that exist. The rule is the one
+    /// windows/Tokendial.App/App.cs:124 already applies: a provider met for the first time whose
+    /// <c>Account()</c> is null - no credential, so not signed in or not installed - is recorded as
+    /// disconnected, and disconnected providers are not shown. Connecting one later is a settings
+    /// decision the user makes, never something discovered behind their back.
+    /// </summary>
+    private IReadOnlyList<IUsageProvider> Adopt(IReadOnlyList<IUsageProvider> all)
+    {
+        var fresh = all.Where(p => !settings.Known.Contains(p.Id)).ToList();
+        if (fresh.Count > 0)
+        {
+            foreach (var provider in fresh)
+            {
+                settings.Known.Add(provider.Id);
+                if (provider.Account() is null) settings.Disconnected.Add(provider.Id);
+            }
+            try { settings.Save(); } catch (IOException) { }
+        }
+        return all.Where(p => !settings.Disconnected.Contains(p.Id)).ToList();
     }
 
     private void Build()
