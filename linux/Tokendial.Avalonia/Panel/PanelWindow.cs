@@ -45,6 +45,8 @@ public sealed class PanelWindow : Window
     private readonly List<Cell> cells = [];
     private readonly List<Tile> tiles = [];
 
+    public event Action? SettingsRequested;
+
     private DispatcherTimer? poll;
     private double compactAlong, expandedAlong;
     private bool expanded;
@@ -72,6 +74,13 @@ public sealed class PanelWindow : Window
         capsule.Children.Add(expandedRow);
         root.Children.Add(capsule);
         Content = root;
+
+        // Right-click anywhere on the capsule reaches settings, as it does on Windows - the dock is the
+        // only part of Tokendial that is always where you left it.
+        capsule.PointerReleased += (_, e) =>
+        {
+            if (e.InitialPressMouseButton == Avalonia.Input.MouseButton.Right) SettingsRequested?.Invoke();
+        };
 
         Opened += OnOpened;
     }

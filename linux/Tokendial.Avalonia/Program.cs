@@ -9,6 +9,7 @@ using Tokendial.Core.Settings;
 using Tokendial.Core.Store;
 using Tokendial.Linux.Panel;
 using Tokendial.Linux.Tray;
+using Tokendial.Linux.Windows;
 
 namespace Tokendial.Linux;
 
@@ -32,6 +33,8 @@ public sealed class TokendialApp : Application
     private ActivityHub? hub;
     private PanelWindow? panel;
     private Tokendial.Linux.Tray.TrayIcon? tray;
+    private SettingsWindow? window;
+    private IReadOnlyList<IUsageProvider> catalogue = [];
     private DispatcherTimer? coalesce;
 
     public override void OnFrameworkInitializationCompleted()
@@ -46,6 +49,7 @@ public sealed class TokendialApp : Application
         Sqlite.SweepCache();
 
         var providers = ProviderCatalog.Providers(archive);
+        catalogue = providers;
         Adopt(providers);
 
         store = new UsageStore(providers, archive, settings.Disconnected);
@@ -54,9 +58,11 @@ public sealed class TokendialApp : Application
 
         panel = new PanelWindow(providers.Where(p => !settings.Disconnected.Contains(p.Id)).Select(p => p.Id).ToList());
         desktop.MainWindow = panel;
+        panel.SettingsRequested += ShowSettings;
 
         tray = new Tokendial.Linux.Tray.TrayIcon(this);
         tray.RefreshRequested += () => store.PollNow();
+        tray.SettingsRequested += ShowSettings;
         tray.QuitRequested += () => desktop.Shutdown();
 
         // The store and the hub both change often and independently; rebuilding the model on a short timer
@@ -88,6 +94,25 @@ public sealed class TokendialApp : Application
             settings.Known.Add(provider.Id);
             if (provider.Account() is null) settings.Disconnected.Add(provider.Id);
         }
+        try { settings.Save(); } catch (IOException) { }
+    }
+
+    /// <summary>One settings window, raised again rather than opened twice.</summary>
+    private void ShowSettings()
+    {
+        if (store is null) return;
+        if (window is null)
+        {
+            window = new SettingsWindow(settings, store, catalogue, Save);
+            window.Closed += (_, _) => window = null;
+            window.Changed += Refresh;
+        }
+        window.Show();
+        window.Activate();
+    }
+
+    private void Save()
+    {
         try { settings.Save(); } catch (IOException) { }
     }
 

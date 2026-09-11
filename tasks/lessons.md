@@ -217,3 +217,22 @@ growing over its own clip is now the whole transition.
 Rule: when a fix does not work, stop adding fixes. Each of the three earlier changes was defensible and
 none was tested against the symptom before the next was written. And treat an opacity animation over text
 as a layer hand-off with a visible end, not as a free fade.
+
+## A control's own Styles do not reach that control (2026-09-11)
+The settings window drew every switch as off - including the provider that was connected and the three
+alerts that default to on - because each toggle carried its own `:checked` styles in `control.Styles`. That
+collection applies to a control's descendants, not to the control, so the selectors never matched. Two
+earlier attempts failed for neighbouring reasons: `Nesting()` throws outright when there is no parent style
+to nest inside, and a `ContentPresenter` built inside a template that returns an instance created outside it
+re-parents a control that already has a parent.
+Rule: when a framework's styling has to be driven from code, set the properties. Chrome now paints state in
+the handler that changes it, which is fewer moving parts than templates plus selectors plus a name scope,
+and it is visible in the same place the state lives.
+
+## Verify after the change, against the thing that broke (2026-09-11)
+Having replaced a set of invented catalogue keys with real ones, a script confirmed "every key used exists".
+It did - because it ran after the replacement, and one of the replacements was itself wrong: settings.website
+existed all along and had been swapped for settings.open, which renders as "Open {name}". The check proved
+the new state consistent with itself and said nothing about whether the change was right.
+Rule: a check written to confirm a fix must be able to fail on the fix. Run it before and after, or assert
+the property that was broken, not the one just written.
