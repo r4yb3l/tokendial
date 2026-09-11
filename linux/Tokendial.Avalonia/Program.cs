@@ -37,6 +37,16 @@ public sealed class TokendialApp : Application
     private IReadOnlyList<IUsageProvider> catalogue = [];
     private DispatcherTimer? coalesce;
 
+    public override void Initialize()
+    {
+        // Built-in controls have no template without a theme: a ScrollViewer with no template reports an
+        // extent of zero, shows no bar and ignores the wheel, which is why settings would not scroll.
+        // Tokendial's own controls template themselves, so this decides nothing about how they look.
+        Styles.Add(new Avalonia.Themes.Fluent.FluentTheme());
+        RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+        base.Initialize();
+    }
+
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)

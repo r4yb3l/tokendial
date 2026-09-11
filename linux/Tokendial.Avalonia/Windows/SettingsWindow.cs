@@ -34,11 +34,16 @@ public sealed class SettingsWindow : Window
         Title = Strings.T("settings.title");
         Width = 1120;
         Height = 860;
+        // Two columns of cards stop being two columns below this; narrower than that the tiles overlap
+        // rather than reflow, so the window refuses to be squeezed into a shape it cannot draw.
+        MinWidth = 900;
+        MinHeight = 520;
         Background = Chrome.WindowBackground;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 
         Content = Build();
+
     }
 
     public event Action? Changed;

@@ -236,3 +236,13 @@ existed all along and had been swapped for settings.open, which renders as "Open
 the new state consistent with itself and said nothing about whether the change was right.
 Rule: a check written to confirm a fix must be able to fail on the fix. Run it before and after, or assert
 the property that was broken, not the one just written.
+
+## An Avalonia application with no theme has untemplated built-in controls (2026-09-11)
+Settings would not scroll. The first guess - a Stretch-aligned child inside a ScrollViewer never overflows -
+is a real bug and was worth fixing, but it was not this one. Asking the control itself settled it in one
+build: `bounds = 530 x 785` but `extent = 0,0`, which is not a layout problem at all. The application never
+added a theme, so ScrollViewer had no template, no ScrollContentPresenter, and therefore no extent to
+scroll. Everything else looked right because every control Tokendial draws carries its own template.
+Rule: when a control does nothing rather than doing the wrong thing, ask it what it thinks its own state is
+before theorising about layout. And an Avalonia app needs a theme in its Styles even when it templates
+everything it draws itself - the built-ins still expect one.

@@ -19,6 +19,9 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.2" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.2" />
+    <!-- Not for the look: every built-in control gets its template from the theme, and without one a
+         ScrollViewer reports a zero extent and never scrolls. Tokendial's own controls carry their own. -->
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.2" />
   </ItemGroup>
 
   <ItemGroup>

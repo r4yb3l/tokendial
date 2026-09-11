@@ -129,13 +129,20 @@ public static partial class Chrome
 
     // ---- containers -------------------------------------------------------------------------------
 
-    public static ScrollViewer Scroll(Control content) => new()
+    public static ScrollViewer Scroll(Control content)
     {
-        Content = content,
-        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        Padding = new Thickness(0, 0, 8, 0)
-    };
+        // Top, not the default Stretch. A stretched child takes the viewport's height rather than its own,
+        // so the extent equals the viewport, the scroll bar never appears and the wheel does nothing - the
+        // content is simply clipped. This is the whole reason settings would not scroll.
+        content.VerticalAlignment = VerticalAlignment.Top;
+        return new ScrollViewer
+        {
+            Content = content,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Padding = new Thickness(0, 0, 8, 0)
+        };
+    }
 
     public static Border Card(Control body, IBrush background, IBrush border, double padding = 14, double radius = 12) =>
         new() { Child = body, Background = background, BorderBrush = border, BorderThickness = new Thickness(1),
