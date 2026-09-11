@@ -22,6 +22,14 @@ public static class Theme
     public static readonly IBrush TextPrimary = Rgb(0xF5, 0xF5, 0xF7);
     public static readonly IBrush TextSecondary = Rgb(0x9A, 0x9D, 0xA6);
     public static readonly IBrush TextDisabled = Rgb(0x5C, 0x5F, 0x68);
+    public static readonly IBrush CardSurface = Rgba(16, 17, 20, 235);
+    public static readonly IBrush Hairline = Rgba(255, 255, 255, 28);
+    public static readonly IBrush Working = Rgb(0xF5, 0xF5, 0xF7);
+    public static readonly IBrush Waiting = Watch;
+
+    // Segoe UI Variable and Cascadia do not exist here. Inter is Mint's closest metric match among the
+    // fonts it ships; embedding the real ones is on the plan, and until then this is the honest stand-in.
+    public static readonly FontFamily Font = new("Inter, Ubuntu, DejaVu Sans, sans-serif");
 
     public const double CompactHeight = 34;
     public const double CompactPadding = 14;
@@ -31,6 +39,19 @@ public static class Theme
     public const double CompactRadius = 17;
     public const double HotZone = 24;
     public const double DockSlant = 14;
+    public const double CompactMark = 11;
+    public const double ExpandedHeight = 132;
+    public const double ExpandedPadding = 20;
+    public const double ExpandedMark = 13;
+    public const double ExpandedDial = 56;
+    public const double ExpandedStroke = 6;
+    public const double ExpandedRadius = 20;
+    public const double CellWidth = 96;
+    public const double CellHeight = 96;
+    public const double CellGap = 14;
+    public const double CardWidth = 280;
+    public const double CardRadius = 16;
+    public const double CardPadding = 14;
 
     /// <summary>Ample below the first threshold, watch between, critical above - the colour is the reading.</summary>
     public static IBrush Of(Band? band) => band switch

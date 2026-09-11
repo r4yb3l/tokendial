@@ -1,8 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
+using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Platform;
 using Avalonia.Threading;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
@@ -17,9 +16,9 @@ using Tokens = Tokendial.Linux.Panel.Theme;
 namespace Tokendial.Linux.Panel;
 
 /// <summary>
-/// The dock: a trapezoid hanging from the top edge with one dial per provider. Every window-manager
-/// concession it needs was measured on Cinnamon before this was written - see tasks/lessons.md - so the
-/// X11 calls here are the ones that were proven, not the ones that looked plausible.
+/// The dock: a trapezoid hanging from the top edge with one cell per provider, each a dial with the
+/// provider's mark inside it. Every window-manager concession it needs was measured on Cinnamon before this
+/// was written - see tasks/lessons.md - so the X11 calls here are the ones that were proven.
 /// </summary>
 public sealed class PanelWindow : Window
 {
@@ -27,11 +26,18 @@ public sealed class PanelWindow : Window
     // Fully qualified: implicit usings bring System.IO.Path into scope alongside the shape.
     private readonly Avalonia.Controls.Shapes.Path dockFill = new();
     private readonly Avalonia.Controls.Shapes.Path dockEdge = new();
-    private readonly StackPanel row = new() { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = Tokens.CompactSpacing };
+    private readonly StackPanel row = new() { Orientation = Orientation.Horizontal, Spacing = Tokens.CompactSpacing };
     private readonly ReadingArchive archive = new();
-    private readonly List<Dial> dials = [];
+    private readonly CardWindow card = new();
 
+    private readonly List<Dial> dials = [];
+    private readonly List<MarkView> marks = [];
+    private readonly List<Tile> tiles = [];
+    private IReadOnlyList<IUsageProvider> providers = [];
+
+    private DispatcherTimer? poll;
     private double along;
+    private int hovered = -1;
 
     public PanelWindow()
     {
@@ -47,7 +53,6 @@ public sealed class PanelWindow : Window
         dockFill.Fill = Tokens.Surface;
         dockEdge.Stroke = Tokens.SurfaceEdge;
         dockEdge.StrokeThickness = 1;
-        row.Margin = new Thickness(0);
 
         root.Children.Add(dockFill);
         root.Children.Add(dockEdge);
@@ -59,8 +64,8 @@ public sealed class PanelWindow : Window
 
     private async void OnOpened(object? sender, EventArgs e)
     {
-        var providers = ProviderCatalog.Providers(archive);
-        Build(providers.Count);
+        providers = ProviderCatalog.Providers(archive);
+        Build();
 
         var handle = TryGetPlatformHandle();
         if (handle is not null && X11.Open())
@@ -68,21 +73,24 @@ public sealed class PanelWindow : Window
             X11.MakeDock(handle.Handle);
             X11.RefuseFocus(handle.Handle);
             Place();
-            // Only the trapezoid takes clicks; the hot-zone strip below it stays outside the input region so
-            // it can be polled for hover while a click there reaches whatever is behind.
+            var scale = Screens.Primary?.Scaling ?? 1;
+            // Only the trapezoid takes clicks. The hot-zone strip below stays outside the input region, so a
+            // click there reaches the desktop while the cursor poll still sees the pointer in it.
             X11.InputShape(handle.Handle, new X11.XRectangle
             {
                 X = 0, Y = 0,
-                Width = (ushort)Math.Round(along * (Screens.Primary?.Scaling ?? 1)),
-                Height = (ushort)Math.Round(Tokens.CompactHeight * (Screens.Primary?.Scaling ?? 1))
+                Width = (ushort)Math.Round(along * scale),
+                Height = (ushort)Math.Round(Tokens.CompactHeight * scale)
             });
         }
 
-        await Read(providers);
+        StartPolling();
+        await Read();
     }
 
-    private void Build(int count)
+    private void Build()
     {
+        var count = providers.Count;
         along = 2 * Tokens.CompactPadding + count * Tokens.CompactDial + (count - 1) * Tokens.CompactSpacing + 2 * Tokens.DockSlant;
         Width = along;
         Height = Tokens.CompactHeight + Tokens.HotZone;
@@ -90,17 +98,27 @@ public sealed class PanelWindow : Window
         dockFill.Data = DockShape.Fill(along, Tokens.CompactHeight, Tokens.DockSlant, Tokens.CompactRadius);
         dockEdge.Data = DockShape.Edge(along, Tokens.CompactHeight, Tokens.DockSlant, Tokens.CompactRadius);
 
-        for (var i = 0; i < count; i++)
+        foreach (var provider in providers)
         {
             var dial = new Dial(Tokens.CompactDial, Tokens.CompactStroke) { Hollow = true };
+            var mark = new MarkView(provider.Id, Tokens.CompactMark)
+            {
+                Fill = Tokens.TextDisabled,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
             dials.Add(dial);
-            row.Children.Add(dial);
+            marks.Add(mark);
+            tiles.Add(null!);
+            // The mark sits inside the ring, which is why the dial is hollow in the middle.
+            row.Children.Add(new Avalonia.Controls.Panel { Width = Tokens.CompactDial, Height = Tokens.CompactDial, Children = { dial, mark } });
         }
+
         Canvas.SetLeft(row, Tokens.DockSlant + Tokens.CompactPadding);
         Canvas.SetTop(row, (Tokens.CompactHeight - Tokens.CompactDial) / 2);
     }
 
-    /// <summary>Centred on the top edge of the work area, so the panel below is never covered.</summary>
+    /// <summary>Centred on the top edge of the work area, so the desktop panel is never covered.</summary>
     private void Place()
     {
         var area = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
@@ -108,37 +126,91 @@ public sealed class PanelWindow : Window
         Position = new PixelPoint(area.X + (area.Width - (int)Math.Round(along * scale)) / 2, area.Y);
     }
 
-    /// <summary>
-    /// Reads every provider once. Off the UI thread by virtue of being async; each result is applied as it
-    /// arrives so a slow provider never holds up the ones that answered.
-    /// </summary>
-    private async Task Read(IReadOnlyList<IUsageProvider> providers)
+    private async Task Read()
     {
         for (var i = 0; i < providers.Count; i++)
         {
             var index = i;
-            try
-            {
-                var reading = await providers[index].ReadAsync();
-                await Dispatcher.UIThread.InvokeAsync(() => Apply(index, reading));
-                Console.WriteLine($"{providers[index].Id,-12} {reading.Status,-24} {reading.HeadlineText}");
-            }
+            var provider = providers[index];
+            ProviderReading reading;
+            try { reading = await provider.ReadAsync(); }
             catch (Exception ex)
             {
-                Console.WriteLine($"{providers[index].Id,-12} failed: {ex.GetType().Name}");
+                // A provider that cannot be read still has something to say - "not signed in", "nothing
+                // metered here", an HTTP code - and the card says it. UsageStore.StatusFor is the one
+                // translation from exception to status, and is reused rather than rewritten.
+                reading = new ProviderReading(provider.Id, provider.DisplayName, Fidelity.Official,
+                    UsageStore.StatusFor(ex), []);
             }
+            var account = provider.Account();
+            await Dispatcher.UIThread.InvokeAsync(() => Apply(index, reading, account));
+            Console.WriteLine($"{provider.Id,-12} {reading.Status,-26} {reading.HeadlineText}");
         }
     }
 
-    private void Apply(int index, ProviderReading reading)
+    private void Apply(int index, ProviderReading reading, ProviderAccount? account)
     {
+        tiles[index] = new Tile(reading.ProviderId, reading.DisplayName, Tile.MarkFor(reading.ProviderId),
+            reading, account, null, false);
+
         var dial = dials[index];
         if (reading.HeadlineFraction is double fraction)
         {
             dial.Hollow = false;
             dial.Fill = Tokens.Of(reading.Band);
             dial.Fraction = fraction;
+            marks[index].Fill = Tokens.TextPrimary;
         }
-        else dial.Hollow = true;
+        else
+        {
+            dial.Hollow = true;
+            marks[index].Fill = Tokens.TextDisabled;
+        }
+    }
+
+    /// <summary>
+    /// Polled, not evented, for the reason the Windows dock polls: a transparent window whose input region
+    /// excludes the hot zone never receives enter or leave for the part that matters most.
+    /// </summary>
+    private void StartPolling()
+    {
+        poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        poll.Tick += (_, _) => Track();
+        poll.Start();
+    }
+
+    private void Track()
+    {
+        var (x, y, sameScreen) = X11.Pointer();
+        if (!sameScreen) return;
+
+        var scale = Screens.Primary?.Scaling ?? 1.0;
+        var origin = Position;
+        var local = new Point((x - origin.X) / scale, (y - origin.Y) / scale);
+
+        // The strip below the capsule counts as hovering it, so the pointer does not have to land on the
+        // ring itself for the card to stay open.
+        var within = local.X >= 0 && local.X <= along && local.Y >= 0 && local.Y <= Tokens.CompactHeight + Tokens.HotZone;
+        var index = within ? CellAt(local.X) : -1;
+        if (index == hovered) return;
+
+        hovered = index;
+        if (index < 0 || tiles.Count <= index || tiles[index] is null) { card.HideCard(); return; }
+
+        var left = Tokens.DockSlant + Tokens.CompactPadding + index * (Tokens.CompactDial + Tokens.CompactSpacing);
+        var anchor = new PixelPoint(
+            origin.X + (int)Math.Round((left + Tokens.CompactDial / 2) * scale),
+            origin.Y + (int)Math.Round((Tokens.CompactHeight + 6) * scale));
+        card.ShowAt(HoverCard.Build(tiles[index], DateTimeOffset.Now), anchor,
+            Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080));
+    }
+
+    /// <summary>Which cell a horizontal position falls in, with the gaps counted to the nearer cell.</summary>
+    private int CellAt(double x)
+    {
+        var first = Tokens.DockSlant + Tokens.CompactPadding;
+        var pitch = Tokens.CompactDial + Tokens.CompactSpacing;
+        var index = (int)Math.Floor((x - first + Tokens.CompactSpacing / 2) / pitch);
+        return index >= 0 && index < dials.Count ? index : -1;
     }
 }

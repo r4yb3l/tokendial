@@ -25,4 +25,10 @@
     <ProjectReference Include="../../windows/Tokendial.Core/Tokendial.Core.csproj" />
   </ItemGroup>
 
+  <!-- The same two resources under the same logical names the Windows app uses, so Marks.Load ports unchanged. -->
+  <ItemGroup>
+    <EmbeddedResource Include="../../docs/design/marks/normalized/marks.json" LogicalName="marks.json" />
+    <EmbeddedResource Include="../../docs/design/marks/normalized/opencode.png" LogicalName="opencode.png" />
+  </ItemGroup>
+
 </Project>
