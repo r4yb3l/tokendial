@@ -188,7 +188,22 @@
     "settings.position.top": "Top",
     "settings.position.bottom": "Bottom",
     "settings.position.left": "Left",
-    "settings.position.right": "Right"
+    "settings.position.right": "Right",
+
+    "dialog.yes": "Yes",
+    "dialog.no": "No",
+    "dialog.cancel": "Cancel",
+    "dialog.ok": "OK",
+    "settings.addToMenu": "Add to the menu",
+    "settings.addToMenu.hint": "Copies Tokendial to your home folder and adds it to the applications menu.",
+    "settings.addToMenu.confirm": "Add",
+    "settings.addToMenu.ask": "Tokendial will copy itself to ~/.local/bin and add an entry to your applications menu, with its icon.\n\nNothing is installed system-wide and nothing asks for your password. Uninstall, in this same window, takes all of it back out.",
+    "settings.addToMenu.done": "Tokendial is in your applications menu. If it does not appear yet, it will after you log out and back in.",
+    "settings.addToMenu.failed": "Tokendial could not write to your home folder, so the menu entry was not added. The log in the data folder says why.",
+    "settings.addToMenu.loose": "This copy is not an AppImage, so there is no single file to add to the menu: it was built or unpacked rather than downloaded. Run the AppImage from the releases page to add Tokendial to your menu.",
+    "settings.addToMenu.inMenu": "Tokendial is in your applications menu.",
+    "settings.uninstall.appimage": "Tokendial will close and remove its menu entry, its icon, its autostart entry and the copy in ~/.local/bin.\n\nDo you also want to delete your settings, your reading history and the alerts it remembers? Keep them and reinstalling picks up where you left off.\n\nYes: remove everything.\nNo: remove the app, keep my data.",
+    "settings.uninstall.loose": "This copy was not added to the menu, so there is nothing to uninstall: delete the file it runs from. Your settings live in the Tokendial folder under ~/.config and can go with it."
   },
   "labels": {
     "Current session": "Current session",

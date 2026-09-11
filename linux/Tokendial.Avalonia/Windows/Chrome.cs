@@ -175,11 +175,20 @@ public static partial class Chrome
         Width = size, Height = size, Stretch = Stretch.Uniform
     };
 
+    /// <summary>The second line of a row: a size below the body text, as windows/Tokendial.App/Windows/Chrome.cs:568 sets it.</summary>
+    public static TextBlock HintText(string text)
+    {
+        var block = Body(text);
+        block.FontSize = 11;
+        return block;
+    }
+
     public static Grid Row(string label, Control control, string? hint = null)
     {
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 6, 0, 6) };
-        var left = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { Label(label) } };
-        if (hint is not null) left.Children.Add(Body(hint));
+        // A gutter, so a hint that wraps stops short of the control instead of touching it.
+        var left = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0), Children = { Label(label) } };
+        if (hint is not null) left.Children.Add(HintText(hint));
         grid.Children.Add(left);
         Grid.SetColumn(control, 1);
         control.VerticalAlignment = VerticalAlignment.Center;

@@ -34,4 +34,11 @@
     <EmbeddedResource Include="../../docs/design/marks/normalized/opencode.png" LogicalName="opencode.png" />
   </ItemGroup>
 
+  <!-- The application icon, written into the icon theme when Tokendial is added to the menu. Carried here in
+       the two sizes a menu and a HiDPI menu ask for, the way Windows carries its .ico and macOS its catalogue. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/tokendial-256.png" LogicalName="tokendial-256.png" />
+    <EmbeddedResource Include="Assets/tokendial-512.png" LogicalName="tokendial-512.png" />
+  </ItemGroup>
+
 </Project>

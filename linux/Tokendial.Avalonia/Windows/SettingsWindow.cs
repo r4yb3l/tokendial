@@ -22,14 +22,18 @@ public sealed class SettingsWindow : Window
     private readonly UsageStore store;
     private readonly IReadOnlyList<IUsageProvider> providers;
     private readonly Action save;
+    private readonly Action quit;
     private readonly StackPanel providerList = new() { Spacing = 1 };
+    private readonly TextBlock menuHint = Chrome.HintText("");
+    private Button? menuButton;
 
-    public SettingsWindow(Settings settings, UsageStore store, IReadOnlyList<IUsageProvider> providers, Action save)
+    public SettingsWindow(Settings settings, UsageStore store, IReadOnlyList<IUsageProvider> providers, Action save, Action quit)
     {
         this.settings = settings;
         this.store = store;
         this.providers = providers;
         this.save = save;
+        this.quit = quit;
 
         Title = Strings.T("settings.title");
         Width = 1120;
@@ -224,6 +228,38 @@ public sealed class SettingsWindow : Window
 
     // ---- general ------------------------------------------------------------------------------------
 
+    /// <summary>
+    /// Adding Tokendial to the applications menu, which is what installing means on a desktop that has no
+    /// installer. Painted by hand once it has happened rather than rebuilt, the same rule every other piece
+    /// of state in this window follows.
+    /// </summary>
+    private Control MenuEntry()
+    {
+        menuButton = Chrome.Button(Strings.T("settings.addToMenu.confirm"), () => _ = Uninstall.Offer(this, PaintMenu));
+        menuButton.VerticalAlignment = VerticalAlignment.Center;
+
+        var text = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 14, 0),
+            Children = { Chrome.Label(Strings.T("settings.addToMenu")), menuHint }
+        };
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 6, 0, 6) };
+        grid.Children.Add(text);
+        Grid.SetColumn(menuButton, 1);
+        grid.Children.Add(menuButton);
+
+        PaintMenu();
+        return grid;
+    }
+
+    private void PaintMenu()
+    {
+        var installed = Install.Desktop.InMenu;
+        menuHint.Text = Strings.T(installed ? "settings.addToMenu.inMenu" : "settings.addToMenu.hint");
+        if (menuButton is not null) menuButton.IsEnabled = !installed;
+    }
+
     private Control General()
     {
         var languages = new WrapPanel();
@@ -245,9 +281,10 @@ public sealed class SettingsWindow : Window
             Children =
             {
                 Chrome.SwitchRow(Strings.T("settings.launchAtLogin"), Strings.T("settings.launchAtLoginHint"), settings.LaunchAtLogin,
-                    on => { settings.LaunchAtLogin = on; save(); }),
+                    on => { settings.LaunchAtLogin = on; Install.Desktop.SetAutostart(on); save(); }),
                 Chrome.SwitchRow(Strings.T("settings.checkForUpdates"), Strings.T("settings.checkForUpdatesHint"),
                     settings.CheckForUpdates, on => { settings.CheckForUpdates = on; save(); }),
+                MenuEntry(),
                 Chrome.Rule(new Thickness(0, 10, 0, 10)),
                 Chrome.SmallTitle(Strings.T("settings.language")),
                 languages
@@ -264,6 +301,7 @@ public sealed class SettingsWindow : Window
         links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.vercel.app")));
         links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
         links.Children.Add(Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Core.Paths.Data)));
+        links.Children.Add(Chrome.Button(Strings.T("settings.uninstall"), () => _ = Uninstall.Ask(this, quit)));
 
         var about = new StackPanel
         {

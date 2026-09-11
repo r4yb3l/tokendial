@@ -188,7 +188,22 @@
     "settings.position.top": "Arriba",
     "settings.position.bottom": "Abajo",
     "settings.position.left": "Izquierda",
-    "settings.position.right": "Derecha"
+    "settings.position.right": "Derecha",
+
+    "dialog.yes": "Sí",
+    "dialog.no": "No",
+    "dialog.cancel": "Cancelar",
+    "dialog.ok": "Aceptar",
+    "settings.addToMenu": "Añadir al menú",
+    "settings.addToMenu.hint": "Copia Tokendial a tu carpeta personal y lo añade al menú de aplicaciones.",
+    "settings.addToMenu.confirm": "Añadir",
+    "settings.addToMenu.ask": "Tokendial se copiará a ~/.local/bin y añadirá una entrada al menú de aplicaciones, con su icono.\n\nNo se instala nada en todo el sistema ni se te pide la contraseña. Desinstalar, en esta misma ventana, lo quita todo.",
+    "settings.addToMenu.done": "Tokendial ya está en tu menú de aplicaciones. Si todavía no aparece, aparecerá al cerrar y volver a iniciar sesión.",
+    "settings.addToMenu.failed": "Tokendial no pudo escribir en tu carpeta personal, así que no se añadió la entrada del menú. El registro de la carpeta de datos dice por qué.",
+    "settings.addToMenu.loose": "Esta copia no es un AppImage, así que no hay un único archivo que añadir al menú: se compiló o se descomprimió en vez de descargarse. Ejecuta el AppImage de la página de versiones para añadir Tokendial a tu menú.",
+    "settings.addToMenu.inMenu": "Tokendial está en tu menú de aplicaciones.",
+    "settings.uninstall.appimage": "Tokendial se cerrará y quitará su entrada del menú, su icono, su entrada de inicio automático y la copia en ~/.local/bin.\n\n¿Quieres borrar también tus ajustes, el historial de lecturas y las alertas que recuerda? Si los conservas, al reinstalar todo sigue donde lo dejaste.\n\nSí: borrarlo todo.\nNo: quitar la app y conservar mis datos.",
+    "settings.uninstall.loose": "Esta copia no se añadió al menú, así que no hay nada que desinstalar: borra el archivo desde el que se ejecuta. Tus ajustes viven en la carpeta Tokendial dentro de ~/.config y pueden irse con él."
   },
   "labels": {
     "Current session": "Sesión actual",

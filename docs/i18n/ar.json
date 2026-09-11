@@ -188,7 +188,22 @@
     "settings.position.top": "أعلى",
     "settings.position.bottom": "أسفل",
     "settings.position.left": "يسار",
-    "settings.position.right": "يمين"
+    "settings.position.right": "يمين",
+
+    "dialog.yes": "نعم",
+    "dialog.no": "لا",
+    "dialog.cancel": "إلغاء",
+    "dialog.ok": "موافق",
+    "settings.addToMenu": "أضِف إلى القائمة",
+    "settings.addToMenu.hint": "ينسخ Tokendial إلى مجلد المنزل ويضيفه إلى قائمة التطبيقات.",
+    "settings.addToMenu.confirm": "أضِف",
+    "settings.addToMenu.ask": "سينسخ Tokendial نفسه إلى ‎~/.local/bin ويضيف مدخلًا في قائمة التطبيقات، مع أيقونته.\n\nلا يُثبَّت شيء على مستوى النظام ولا تُطلب منك كلمة المرور. وإلغاء التثبيت، من هذه النافذة نفسها، يزيل ذلك كله.",
+    "settings.addToMenu.done": "أصبح Tokendial في قائمة تطبيقاتك. وإن لم يظهر بعد، فسيظهر بعد تسجيل الخروج ثم الدخول.",
+    "settings.addToMenu.failed": "تعذّرت الكتابة في مجلد المنزل، فلم يُضَف مدخل القائمة. السجل داخل مجلد البيانات يوضّح السبب.",
+    "settings.addToMenu.loose": "هذه النسخة ليست AppImage، فلا يوجد ملف واحد يُضاف إلى القائمة: فقد بُنيت أو فُكَّت بدل أن تُنزَّل. شغّل ملف AppImage من صفحة الإصدارات لإضافة Tokendial إلى قائمتك.",
+    "settings.addToMenu.inMenu": "‏Tokendial موجود في قائمة تطبيقاتك.",
+    "settings.uninstall.appimage": "سيُغلق Tokendial ويزيل مدخله في القائمة، وأيقونته، ومدخل بدء التشغيل التلقائي، والنسخة الموجودة في ‎~/.local/bin.\n\nهل تريد أيضًا حذف إعداداتك وسجل القراءات والتنبيهات المحفوظة؟ إذا أبقيتها، فستتابع إعادة التثبيت من حيث توقفت.\n\nنعم: احذف كل شيء.\nلا: أزل التطبيق واحتفظ ببياناتي.",
+    "settings.uninstall.loose": "لم تُضَف هذه النسخة إلى القائمة، فلا شيء لإلغائه: احذف الملف الذي تعمل منه. إعداداتك في مجلد Tokendial داخل ‎~/.config ويمكن أن تذهب معه."
   },
   "labels": {
     "Current session": "الجلسة الحالية",

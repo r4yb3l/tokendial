@@ -7,6 +7,7 @@ using Tokendial.Core.Providers;
 using Tokendial.Core.Sessions;
 using Tokendial.Core.Settings;
 using Tokendial.Core.Store;
+using Tokendial.Linux.Install;
 using Tokendial.Linux.Panel;
 using Tokendial.Linux.Tray;
 using Tokendial.Linux.Windows;
@@ -57,6 +58,9 @@ public sealed class TokendialApp : Application
 
         Strings.Use(settings.Language);
         Sqlite.SweepCache();
+
+        // An update changes the path the autostart entry holds, so it is written again on every launch.
+        Desktop.SyncAutostart(settings.LaunchAtLogin);
 
         var providers = ProviderCatalog.Providers(archive);
         catalogue = providers;
@@ -114,12 +118,18 @@ public sealed class TokendialApp : Application
         if (store is null) return;
         if (window is null)
         {
-            window = new SettingsWindow(settings, store, catalogue, Save);
+            window = new SettingsWindow(settings, store, catalogue, Save, Quit);
             window.Closed += (_, _) => window = null;
             window.Changed += Refresh;
         }
         window.Show();
         window.Activate();
+    }
+
+    /// <summary>Uninstalling removes the app from under itself, so it ends the session rather than lingering.</summary>
+    private void Quit()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.Shutdown();
     }
 
     private void Save()

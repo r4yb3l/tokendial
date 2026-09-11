@@ -188,7 +188,22 @@
     "settings.position.top": "Oben",
     "settings.position.bottom": "Unten",
     "settings.position.left": "Links",
-    "settings.position.right": "Rechts"
+    "settings.position.right": "Rechts",
+
+    "dialog.yes": "Ja",
+    "dialog.no": "Nein",
+    "dialog.cancel": "Abbrechen",
+    "dialog.ok": "OK",
+    "settings.addToMenu": "Zum Menü hinzufügen",
+    "settings.addToMenu.hint": "Kopiert Tokendial in Ihren persönlichen Ordner und nimmt es ins Anwendungsmenü auf.",
+    "settings.addToMenu.confirm": "Hinzufügen",
+    "settings.addToMenu.ask": "Tokendial kopiert sich nach ~/.local/bin und legt einen Eintrag im Anwendungsmenü an, mit seinem Symbol.\n\nEs wird nichts systemweit installiert und nach keinem Passwort gefragt. Die Deinstallation, in diesem Fenster, entfernt all das wieder.",
+    "settings.addToMenu.done": "Tokendial steht jetzt in Ihrem Anwendungsmenü. Falls es noch nicht erscheint, tut es das nach dem nächsten Ab- und Anmelden.",
+    "settings.addToMenu.failed": "Tokendial konnte nicht in Ihren persönlichen Ordner schreiben, der Menüeintrag wurde deshalb nicht angelegt. Warum, steht im Protokoll im Datenordner.",
+    "settings.addToMenu.loose": "Diese Kopie ist kein AppImage, es gibt also keine einzelne Datei fürs Menü: sie wurde gebaut oder entpackt statt heruntergeladen. Starten Sie das AppImage von der Releases-Seite, um Tokendial ins Menü aufzunehmen.",
+    "settings.addToMenu.inMenu": "Tokendial steht in Ihrem Anwendungsmenü.",
+    "settings.uninstall.appimage": "Tokendial wird geschlossen und entfernt seinen Menüeintrag, sein Symbol, seinen Autostart-Eintrag und die Kopie in ~/.local/bin.\n\nSollen auch Ihre Einstellungen, der Verlauf der Messwerte und die gemerkten Warnungen gelöscht werden? Bleiben sie erhalten, macht eine Neuinstallation dort weiter, wo Sie aufgehört haben.\n\nJa: alles entfernen.\nNein: die App entfernen, meine Daten behalten.",
+    "settings.uninstall.loose": "Diese Kopie wurde nicht ins Menü aufgenommen, es gibt also nichts zu deinstallieren: löschen Sie die Datei, aus der sie läuft. Ihre Einstellungen liegen im Ordner Tokendial unter ~/.config und können mit ihr gehen."
   },
   "labels": {
     "Current session": "Aktuelle Sitzung",

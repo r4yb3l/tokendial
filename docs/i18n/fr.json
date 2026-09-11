@@ -188,7 +188,22 @@
     "settings.position.top": "Haut",
     "settings.position.bottom": "Bas",
     "settings.position.left": "Gauche",
-    "settings.position.right": "Droite"
+    "settings.position.right": "Droite",
+
+    "dialog.yes": "Oui",
+    "dialog.no": "Non",
+    "dialog.cancel": "Annuler",
+    "dialog.ok": "OK",
+    "settings.addToMenu": "Ajouter au menu",
+    "settings.addToMenu.hint": "Copie Tokendial dans votre dossier personnel et l’ajoute au menu des applications.",
+    "settings.addToMenu.confirm": "Ajouter",
+    "settings.addToMenu.ask": "Tokendial va se copier dans ~/.local/bin et ajouter une entrée au menu des applications, avec son icône.\n\nRien n’est installé pour tout le système et aucun mot de passe n’est demandé. La désinstallation, depuis cette même fenêtre, retire tout cela.",
+    "settings.addToMenu.done": "Tokendial est dans votre menu des applications. S’il n’y apparaît pas encore, ce sera le cas après une déconnexion puis reconnexion.",
+    "settings.addToMenu.failed": "Tokendial n’a pas pu écrire dans votre dossier personnel : l’entrée du menu n’a pas été ajoutée. Le journal, dans le dossier de données, en donne la raison.",
+    "settings.addToMenu.loose": "Cette copie n’est pas une AppImage : il n’y a donc pas de fichier unique à ajouter au menu, elle a été compilée ou décompressée plutôt que téléchargée. Lancez l’AppImage de la page des versions pour ajouter Tokendial à votre menu.",
+    "settings.addToMenu.inMenu": "Tokendial est dans votre menu des applications.",
+    "settings.uninstall.appimage": "Tokendial va se fermer et retirer son entrée de menu, son icône, son entrée de démarrage automatique et la copie dans ~/.local/bin.\n\nVoulez-vous aussi supprimer vos réglages, l’historique des relevés et les alertes mémorisées ? Si vous les gardez, une réinstallation reprend où vous en étiez.\n\nOui : tout supprimer.\nNon : retirer l’application et garder mes données.",
+    "settings.uninstall.loose": "Cette copie n’a pas été ajoutée au menu : il n’y a rien à désinstaller, supprimez le fichier d’où elle s’exécute. Vos réglages se trouvent dans le dossier Tokendial sous ~/.config et peuvent partir avec lui."
   },
   "labels": {
     "Current session": "Session en cours",
