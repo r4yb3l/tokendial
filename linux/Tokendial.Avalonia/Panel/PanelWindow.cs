@@ -38,7 +38,7 @@ public sealed class PanelWindow : Window
     private readonly Avalonia.Controls.Shapes.Path dockFill = new();
     private readonly Avalonia.Controls.Shapes.Path dockEdge = new();
     private readonly StackPanel compactRow = new() { Orientation = Orientation.Horizontal, Spacing = Tokens.CompactSpacing };
-    private readonly StackPanel expandedRow = new() { Orientation = Orientation.Horizontal, Opacity = 0, IsHitTestVisible = false };
+    private readonly StackPanel expandedRow = new() { Orientation = Orientation.Horizontal, IsVisible = false };
 
     private readonly ReadingArchive archive = new();
     private readonly Settings settings = Settings.Load();
@@ -160,8 +160,6 @@ public sealed class PanelWindow : Window
             new DoubleTransition { Property = WidthProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand },
             new DoubleTransition { Property = HeightProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand }
         ];
-        compactRow.Transitions = [Fade()];
-        expandedRow.Transitions = [Fade()];
         capsule.PropertyChanged += (_, e) =>
         {
             if (e.Property == WidthProperty || e.Property == HeightProperty) Layout();
@@ -171,9 +169,6 @@ public sealed class PanelWindow : Window
         capsule.Height = Tokens.CompactHeight;
         Layout();
     }
-
-    private static DoubleTransition Fade() =>
-        new() { Property = OpacityProperty, Duration = Spring.Contents.SettleTime, Easing = Spring.Contents };
 
     /// <summary>Redraws the trapezoid at the capsule's current size and re-centres what it carries.</summary>
     private void Layout()
@@ -298,10 +293,12 @@ public sealed class PanelWindow : Window
         expanded = open;
         capsule.Width = open ? expandedAlong : compactAlong;
         capsule.Height = open ? Tokens.ExpandedHeight : Tokens.CompactHeight;
-        compactRow.Opacity = open ? 0 : 1;
-        expandedRow.Opacity = open ? 1 : 0;
-        compactRow.IsHitTestVisible = !open;
-        expandedRow.IsHitTestVisible = open;
+        // Swapped outright rather than cross-faded. Animating a container's opacity makes the renderer
+        // compose it through a layer for the duration and then draw it straight to the surface at the end,
+        // and that hand-off is visible as a flash - the text appears to repaint. With no layer there is
+        // nothing to hand off, and the capsule growing over its own clip is the whole transition.
+        compactRow.IsVisible = !open;
+        expandedRow.IsVisible = open;
         Layout();
         Shape();
         if (!open) { hovered = -1; card.HideCard(); }

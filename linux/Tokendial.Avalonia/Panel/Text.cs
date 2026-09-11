@@ -12,7 +12,8 @@ public static class Text
 {
     public static TextBlock Make(string text, double size, IBrush brush, FontWeight weight = FontWeight.Normal,
         TextAlignment align = TextAlignment.Left)
-        => new()
+    {
+        var block = new TextBlock
         {
             Text = text,
             FontSize = size,
@@ -23,6 +24,15 @@ public static class Text
             TextTrimming = TextTrimming.CharacterEllipsis,
             TextWrapping = TextWrapping.NoWrap
         };
+        // Pinned, for the same reason the WPF version pins TextFormattingMode and TextRenderingMode. While a
+        // parent's opacity is animating, the renderer composes it through a layer and antialiases glyphs in
+        // grey; the moment opacity reaches one it draws them straight to the surface and may pick subpixel
+        // antialiasing instead. The text is identical and looks repainted. Choosing one mode for good means
+        // there is nothing to switch to - and on a per-pixel transparent window, grey is the correct one.
+        TextOptions.SetTextRenderingMode(block, TextRenderingMode.Antialias);
+        RenderOptions.SetEdgeMode(block, EdgeMode.Antialias);
+        return block;
+    }
 
     public static TextBlock Primary(string text, double size = 12, FontWeight weight = FontWeight.Normal, TextAlignment align = TextAlignment.Left)
         => Make(text, size, Tokens.TextPrimary, weight, align);

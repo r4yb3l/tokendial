@@ -203,3 +203,17 @@ later, as a build that succeeded against sources from two edits ago. Half an hou
 that was never on the machine.
 Rule: a PowerShell tool gets the PowerShell tool. And a script that shells out to a common command name
 should name the binary absolutely, which `Sync-Linux` now does.
+
+## Animating a container's opacity is what made the dock flash (2026-09-11)
+Opening the dock produced a visible flash the user described as the text repainting, which Windows does not
+do. Three plausible causes were fixed first and none of them was it: the capsule was not clipping its
+contents, the hover card was anchored to a height the dock had not reached, and the card was a fresh X11
+window each time - real bugs, all worth fixing, none the flash. Pinning the text rendering mode, which is
+exactly what the WPF version does explicitly, did not fix it either.
+The cause was the cross-fade itself. A compositing renderer draws a subtree with animated opacity into its
+own layer for the duration and then, at opacity one, draws it straight to the surface instead. That
+hand-off re-renders every glyph, and it is visible. Removing the cross-fade removed the flash; the capsule
+growing over its own clip is now the whole transition.
+Rule: when a fix does not work, stop adding fixes. Each of the three earlier changes was defensible and
+none was tested against the symptom before the next was written. And treat an opacity animation over text
+as a layer hand-off with a visible end, not as a free fade.
