@@ -203,7 +203,15 @@
     "settings.addToMenu.loose": "Esta copia no es un AppImage, así que no hay un único archivo que añadir al menú: se compiló o se descomprimió en vez de descargarse. Ejecuta el AppImage de la página de versiones para añadir Tokendial a tu menú.",
     "settings.addToMenu.inMenu": "Tokendial está en tu menú de aplicaciones.",
     "settings.uninstall.appimage": "Tokendial se cerrará y quitará su entrada del menú, su icono, su entrada de inicio automático y la copia en ~/.local/bin.\n\n¿Quieres borrar también tus ajustes, el historial de lecturas y las alertas que recuerda? Si los conservas, al reinstalar todo sigue donde lo dejaste.\n\nSí: borrarlo todo.\nNo: quitar la app y conservar mis datos.",
-    "settings.uninstall.loose": "Esta copia no se añadió al menú, así que no hay nada que desinstalar: borra el archivo desde el que se ejecuta. Tus ajustes viven en la carpeta Tokendial dentro de ~/.config y pueden irse con él."
+    "settings.uninstall.loose": "Esta copia no se añadió al menú, así que no hay nada que desinstalar: borra el archivo desde el que se ejecuta. Tus ajustes viven en la carpeta Tokendial dentro de ~/.config y pueden irse con él.",
+
+    "setup.title": "Instalar Tokendial",
+    "setup.step.copy": "Copia este archivo a ~/.local/bin, para que Tokendial siga funcionando cuando vacíes las descargas.",
+    "setup.step.menu": "Añade Tokendial al menú de aplicaciones, con su icono.",
+    "setup.step.launch": "Arranca la copia instalada y cierra esta.",
+    "setup.safe": "Todo se escribe dentro de tu carpeta personal. No se instala nada en todo el sistema, no se te pide la contraseña, y Ajustes tiene un botón de Desinstalar que lo quita todo.",
+    "setup.install": "Instalar",
+    "setup.justRun": "Solo ejecutarlo"
   },
   "labels": {
     "Current session": "Sesión actual",

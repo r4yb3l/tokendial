@@ -203,7 +203,15 @@
     "settings.addToMenu.loose": "Diese Kopie ist kein AppImage, es gibt also keine einzelne Datei fürs Menü: sie wurde gebaut oder entpackt statt heruntergeladen. Starten Sie das AppImage von der Releases-Seite, um Tokendial ins Menü aufzunehmen.",
     "settings.addToMenu.inMenu": "Tokendial steht in Ihrem Anwendungsmenü.",
     "settings.uninstall.appimage": "Tokendial wird geschlossen und entfernt seinen Menüeintrag, sein Symbol, seinen Autostart-Eintrag und die Kopie in ~/.local/bin.\n\nSollen auch Ihre Einstellungen, der Verlauf der Messwerte und die gemerkten Warnungen gelöscht werden? Bleiben sie erhalten, macht eine Neuinstallation dort weiter, wo Sie aufgehört haben.\n\nJa: alles entfernen.\nNein: die App entfernen, meine Daten behalten.",
-    "settings.uninstall.loose": "Diese Kopie wurde nicht ins Menü aufgenommen, es gibt also nichts zu deinstallieren: löschen Sie die Datei, aus der sie läuft. Ihre Einstellungen liegen im Ordner Tokendial unter ~/.config und können mit ihr gehen."
+    "settings.uninstall.loose": "Diese Kopie wurde nicht ins Menü aufgenommen, es gibt also nichts zu deinstallieren: löschen Sie die Datei, aus der sie läuft. Ihre Einstellungen liegen im Ordner Tokendial unter ~/.config und können mit ihr gehen.",
+
+    "setup.title": "Tokendial installieren",
+    "setup.step.copy": "Kopiert diese Datei nach ~/.local/bin, damit Tokendial auch nach dem Leeren der Downloads läuft.",
+    "setup.step.menu": "Nimmt Tokendial ins Anwendungsmenü auf, mit seinem Symbol.",
+    "setup.step.launch": "Startet die installierte Kopie und schließt diese hier.",
+    "setup.safe": "Alles wird in Ihrem persönlichen Ordner abgelegt. Es wird nichts systemweit installiert, nach keinem Passwort gefragt, und in den Einstellungen entfernt eine Schaltfläche „Deinstallieren“ all das wieder.",
+    "setup.install": "Installieren",
+    "setup.justRun": "Nur ausführen"
   },
   "labels": {
     "Current session": "Aktuelle Sitzung",

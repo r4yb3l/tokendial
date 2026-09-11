@@ -38,6 +38,13 @@ public static class Desktop
     private static string AutostartEntry => Path.Combine(ConfigHome, "autostart", $"{Id}.desktop");
     private static string InstalledCopy => Path.Combine(Binaries, "Tokendial.AppImage");
 
+    /// <summary>
+    /// Told to the copy it starts, so the first thing the user sees after pressing Install is the dock
+    /// opening by itself. Without it the window simply closes and a capsule appears at the top of a screen
+    /// the user was not looking at, which reads as nothing having happened.
+    /// </summary>
+    public const string JustInstalled = "--just-installed";
+
     /// <summary>The AppImage the user ran, or null when this is a loose build rather than a packaged one.</summary>
     public static string? Image => Env("APPIMAGE");
 
@@ -54,6 +61,43 @@ public static class Desktop
 
     /// <summary>Whether Tokendial is in the menu, which is the whole of being installed here.</summary>
     public static bool InMenu => File.Exists(Entry);
+
+    /// <summary>
+    /// Whether the first run should offer to install. True only for a downloaded AppImage that is not in the
+    /// menu and whose user has not already said they want to keep it portable.
+    /// </summary>
+    public static bool ShouldOffer => CanInstall && !InMenu && !Declined;
+
+    private static string Marker => Path.Combine(Paths.Data, "portable");
+
+    private static bool Declined => File.Exists(Marker);
+
+    /// <summary>Remembers that the user chose to run this copy without installing it, so it stops asking.</summary>
+    public static void Decline()
+    {
+        try
+        {
+            Directory.CreateDirectory(Paths.Data);
+            File.WriteAllText(Marker, "");
+        }
+        catch (Exception error) { Log.Ui.Error($"decline: {error.Message}"); }
+    }
+
+    /// <summary>
+    /// Starts the copy that was just installed and leaves it running on its own, so what the user ends up
+    /// with is the installed application rather than the file they downloaded.
+    /// </summary>
+    public static void Launch()
+    {
+        var start = new ProcessStartInfo(InstalledCopy) { UseShellExecute = false, WorkingDirectory = Home };
+        start.ArgumentList.Add(JustInstalled);
+
+        // Started from the home directory on purpose. A child inherits the working directory, and inside an
+        // AppImage that is the squashfs mount the parent is about to release - holding it open leaves the
+        // mount and its fuse process behind for as long as the new copy runs.
+        try { Process.Start(start); }
+        catch (Exception error) { Log.Ui.Error($"launch: {error.Message}"); }
+    }
 
     public static bool AutostartIsSet => File.Exists(AutostartEntry);
 
@@ -104,6 +148,7 @@ public static class Desktop
         Delete(Path.Combine(Icons, "256x256", "apps", $"{Id}.png"));
         Delete(Path.Combine(Icons, "512x512", "apps", $"{Id}.png"));
         Delete(InstalledCopy);
+        Delete(Marker);
         if (alsoData)
         {
             try { if (Directory.Exists(Paths.Data)) Directory.Delete(Paths.Data, recursive: true); }

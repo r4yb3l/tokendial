@@ -16,8 +16,11 @@ namespace Tokendial.Linux;
 
 public static class Program
 {
-    public static int Main(string[] args) =>
-        AppBuilder.Configure<TokendialApp>().UsePlatformDetect().StartWithClassicDesktopLifetime(args);
+    public static int Main(string[] args)
+    {
+        if (!SingleInstance.Claim()) return 0;
+        return AppBuilder.Configure<TokendialApp>().UsePlatformDetect().StartWithClassicDesktopLifetime(args);
+    }
 }
 
 /// <summary>
@@ -71,8 +74,24 @@ public sealed class TokendialApp : Application
         store.IsBusy = () => hub.AnyWorking;
 
         panel = new PanelWindow(providers.Where(p => !settings.Disconnected.Contains(p.Id)).Select(p => p.Id).ToList());
-        desktop.MainWindow = panel;
         panel.SettingsRequested += ShowSettings;
+
+        // A downloaded AppImage asks before it becomes an installed application, and the dock waits for the
+        // answer: an app that simply appears, having written nothing the user saw, is the shape of something
+        // that let itself in.
+        if (Desktop.ShouldOffer)
+        {
+            var setup = new SetupWindow();
+            setup.Decided += install => Decide(desktop, install);
+            desktop.MainWindow = setup;
+        }
+        else
+        {
+            desktop.MainWindow = panel;
+            // Just installed: open the dock for long enough to be seen, so pressing Install visibly produces
+            // the application rather than a capsule the user has to go looking for.
+            if (desktop.Args?.Contains(Desktop.JustInstalled) == true) panel.Flash(TimeSpan.FromSeconds(8));
+        }
 
         tray = new Tokendial.Linux.Tray.TrayIcon(this);
         tray.ShowRequested += () => panel.Flash(TimeSpan.FromSeconds(6));
@@ -124,6 +143,26 @@ public sealed class TokendialApp : Application
         }
         window.Show();
         window.Activate();
+    }
+
+    /// <summary>
+    /// What the first run decides. Installing hands over to the copy it just made and ends this process, so
+    /// the user is left with the installed application rather than the file they downloaded.
+    /// </summary>
+    private void Decide(IClassicDesktopStyleApplicationLifetime desktop, bool install)
+    {
+        if (install && Desktop.Install())
+        {
+            SingleInstance.Release();
+            Desktop.Launch();
+            desktop.Shutdown();
+            return;
+        }
+
+        if (!install) Desktop.Decline();
+        if (panel is null) return;
+        desktop.MainWindow = panel;
+        panel.Show();
     }
 
     /// <summary>Uninstalling removes the app from under itself, so it ends the session rather than lingering.</summary>
