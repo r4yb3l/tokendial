@@ -11,7 +11,14 @@ public sealed record CodexProfile(string? Slug, string Directory)
     public string StateFile => Path.Combine(Directory, "state_5.sqlite");
     /// <summary>The desktop app keeps one database whatever CODEX_HOME says, so only the default profile reads it.</summary>
     public string? DesktopFile => Slug is null ? Path.Combine(Directory, "sqlite", "codex-dev.db") : null;
-    public string SignInCommand => Slug is null ? "codex login" : $"$env:CODEX_HOME='~/.codex-{Slug}'; codex login";
+    public string SignInCommand => SignInFor(Roots.Current);
+
+    /// <summary>See ClaudeProfile.SignInFor: the same environment variable, written for the shell that will run it.</summary>
+    public string SignInFor(Desktop desktop) => Slug is null
+        ? "codex login"
+        : desktop == Desktop.Windows
+            ? $"$env:CODEX_HOME='~/.codex-{Slug}'; codex login"
+            : $"CODEX_HOME=\"$HOME/.codex-{Slug}\" codex login";
 
     public static CodexProfile Default(string? home = null) => new(null, Path.Combine(home ?? Http.Home, ".codex"));
 

@@ -102,11 +102,7 @@
       },
       "requires": [],
       "install": "",
-      "downloadUrl": "https://antigravity.google/download",
-      "signIn": {
-        "command": "antigravity",
-        "hint": "install.hint.app"
-      }
+      "downloadUrl": "https://antigravity.google/download"
     }
   }
 }

@@ -15,7 +15,19 @@ public sealed record ClaudeProfile(string? Slug, string Directory)
     public string DisplayName => Slug is null ? "Claude Code" : $"Claude Code ({Slug})";
     public string CredentialsFile => Path.Combine(Directory, ".credentials.json");
     public string SessionsDirectory => Path.Combine(Directory, "sessions");
-    public string SignInCommand => Slug is null ? "claude" : $"$env:CLAUDE_CONFIG_DIR='~/.claude-{Slug}'; claude";
+    public string SignInCommand => SignInFor(Roots.Current);
+
+    /// <summary>
+    /// A profile signs in with its own directory named in the environment, which is written differently
+    /// per shell: PowerShell assigns $env:NAME, a POSIX shell prefixes the command. And ~ does not expand
+    /// inside quotes in sh, so there it has to be $HOME - a line that is a syntax error in the other shell
+    /// either way, which is why this is not one string.
+    /// </summary>
+    public string SignInFor(Desktop desktop) => Slug is null
+        ? "claude"
+        : desktop == Desktop.Windows
+            ? $"$env:CLAUDE_CONFIG_DIR='~/.claude-{Slug}'; claude"
+            : $"CLAUDE_CONFIG_DIR=\"$HOME/.claude-{Slug}\" claude";
 
     public static ClaudeProfile Default(string? home = null) => new(null, Path.Combine(home ?? Http.Home, ".claude"));
 

@@ -1,4 +1,5 @@
 using Tokendial.Core.Providers;
+using Tokendial.Core;
 using Tokendial.Core.Providers.Claude;
 using Tokendial.Core.Providers.Codex;
 using Tokendial.Core.Sessions;
@@ -40,7 +41,9 @@ public class ProfileTests : IDisposable
         Assert.Equal(Path.Combine(home, ".codex-work", "auth.json"), profiles[1].AuthFile);
         Assert.NotNull(profiles[0].DesktopFile);
         Assert.Null(profiles[1].DesktopFile);
-        Assert.Equal("$env:CODEX_HOME='~/.codex-work'; codex login", profiles[1].SignInCommand);
+        // Named per shell rather than through SignInCommand, which follows whatever is running this.
+        Assert.Equal("$env:CODEX_HOME='~/.codex-work'; codex login", profiles[1].SignInFor(Desktop.Windows));
+        Assert.Equal("CODEX_HOME=\"$HOME/.codex-work\" codex login", profiles[1].SignInFor(Desktop.Linux));
         Assert.Equal("codex login", profiles[0].SignInCommand);
     }
 

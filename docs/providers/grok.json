@@ -83,7 +83,7 @@
       "requires": [],
       "install": "curl -fsSL https://x.ai/cli/install.sh | bash",
       "signIn": {
-        "command": "grok",
+        "command": "grok login",
         "hint": "install.hint.grok"
       }
     }

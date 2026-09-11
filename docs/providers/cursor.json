@@ -84,11 +84,7 @@
       },
       "requires": [],
       "install": "",
-      "downloadUrl": "https://cursor.com/downloads",
-      "signIn": {
-        "command": "cursor",
-        "hint": "install.hint.app"
-      }
+      "downloadUrl": "https://cursor.com/downloads"
     }
   }
 }
