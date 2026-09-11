@@ -65,6 +65,14 @@ runs that command and, for a command-line tool, the tool's own sign-in right aft
 - The settings window and hover card show the account label a tool reports (a plan name, or for
   Codex the account email). Nothing else about the account is displayed.
 
+## The website
+
+The app sends nothing. The website counts page views with Vercel Web Analytics, which sets no cookies,
+builds no cross-site identity and serves both its script and its beacon from tokendial's own origin -
+which is why the site's content security policy allows `connect-src 'self'` and no third party at all.
+What it answers is whether anyone arrived and which page they read. If that is one promise too many for
+you, blocking `/_vercel/insights` changes nothing about the site.
+
 ## Reporting
 
 Open an issue at https://github.com/r4yb3l-qa/tokendial or write to the address on the profile.

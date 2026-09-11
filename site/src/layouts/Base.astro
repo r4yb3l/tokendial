@@ -87,6 +87,13 @@ const ogImage = image ?? new URL('/og.png', site).href;
       <slot />
     </main>
     <Footer locale={locale} />
+    {
+      /* Vercel Web Analytics. Counted page views, no cookies, no cross-site identity, and both the
+         script and the beacon come from this origin, so the only concession the content security
+         policy makes is connect-src 'self' instead of 'none'. Production only: the path does not
+         exist off Vercel. */
+      import.meta.env.PROD && <script is:inline defer src="/_vercel/insights/script.js"></script>
+    }
     <script>
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       let fired = false;
