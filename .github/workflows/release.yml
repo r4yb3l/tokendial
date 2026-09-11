@@ -54,6 +54,25 @@ jobs:
         run: >
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
           --outputDir windows/dist --publish --releaseName "Tokendial ${{ env.VERSION }}" --tag ${{ github.ref_name }}
+      # Nothing here is signed, so a checksum is the only way to tell a download apart from something that
+      # is merely named like it. Only the three files a person actually downloads: the hashes of the
+      # packages the updater fetches are already inside RELEASES and releases.win.json.
+      - name: Checksums
+        working-directory: windows/dist
+        run: |
+          $names = 'Tokendial-win-Setup.exe', 'Tokendial-win-Portable.zip', 'Tokendial-win.msi'
+          $lines = foreach ($n in $names) {
+            if (-not (Test-Path $n)) { throw "the release is missing $n" }
+            '{0}  {1}' -f (Get-FileHash $n -Algorithm SHA256).Hash.ToLower(), $n
+          }
+          # Set-Content would end each line with CRLF, and `sha256sum -c` reads the carriage return as
+          # part of the file name and fails to open it - the exact command the README tells people to run.
+          [IO.File]::WriteAllText("$pwd/Tokendial-win.sha256", ($lines -join "`n") + "`n")
+          Get-Content Tokendial-win.sha256
+      - name: Attach the checksums
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ github.ref_name }} windows/dist/Tokendial-win.sha256 --clobber
 
   macos:
     name: macOS package

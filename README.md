@@ -46,7 +46,7 @@ Download the [latest release](https://github.com/r4yb3l/tokendial/releases/lates
 
 | Platform | File | Requirement |
 |---|---|---|
-| Windows | `Tokendial-win-Setup.exe`, or the portable zip | Windows 10 1809 or later |
+| Windows | `Tokendial-win-Setup.exe`, or the portable zip. `Tokendial-win.msi` installs for every account and needs an administrator, for machines managed by policy | Windows 10 1809 or later |
 | macOS | `Tokendial-<version>-macos.dmg`, or the zip | macOS 14 or later, Intel and Apple Silicon in one universal binary |
 
 **Neither build is signed with a paid certificate, and both systems will say so.** Windows shows
@@ -58,8 +58,18 @@ Open again under System Settings → Privacy & Security, or clear the flag yours
 xattr -dr com.apple.quarantine /Applications/Tokendial.app
 ```
 
-Signing properly means a code-signing certificate on Windows and an Apple Developer ID with notarisation
-on macOS. Until then, every release publishes checksums.
+This will not change. A Windows code-signing certificate and an Apple Developer ID cost more every year
+than this project will ever earn, which is nothing. What each release publishes instead is a SHA-256
+checksum for every file a person downloads — `Tokendial-win.sha256` and `Tokendial-<version>-macos.sha256`
+— so the download can be checked against what the build produced:
+
+```sh
+sha256sum -c Tokendial-win.sha256                       # Linux, macOS, Git Bash
+```
+
+```powershell
+Get-FileHash Tokendial-win-Setup.exe -Algorithm SHA256  # PowerShell
+```
 
 ## What it reads
 

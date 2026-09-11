@@ -216,5 +216,21 @@ const languageNames: Record<string, string> = {
         ))}
       </ul>
     </div>
+
+    <div class="card reveal mt-4 p-6">
+      <h3 class="font-semibold text-slate-100">{t('unsigned.title')}</h3>
+      <p class="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">{t('unsigned.lead')}</p>
+      <div class="mt-5 grid gap-5 sm:grid-cols-2">
+        <div>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Windows</h4>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">{t('unsigned.windows')}</p>
+        </div>
+        <div>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-500">macOS</h4>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">{t('unsigned.macos')}</p>
+          <p class="ltr mt-2 overflow-x-auto rounded-lg border border-ink-700/60 bg-ink-950 px-3 py-2 font-mono text-[12px] leading-relaxed text-slate-300">xattr -dr com.apple.quarantine /Applications/Tokendial.app</p>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
