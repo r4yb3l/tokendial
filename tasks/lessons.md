@@ -145,3 +145,29 @@ supported here.
 Rule: opening a pane is mine to do; putting characters in it is not. Create the surface, then hand the user
 the command to paste. If input ever has to be driven, read the screen of the intended surface first and
 confirm it is what you think it is - an `ok` from the focus call is not that confirmation.
+
+## A fix that is committed is not a fix that shipped (2026-09-11)
+I fixed the installer collision, committed it, pushed it, said it was resolved, and moved on to the next
+task. The tag was never created, so for nineteen hours the only thing a visitor could download was the
+broken v0.1.0 - and the user found that out by looking at the releases page themselves and asking me
+whether I had published it. The work was real; the delivery was not, and I had already used the word done.
+Rule: for anything a user downloads, the definition of done is the published artifact, not the commit.
+Finish the chain - tag, watch the release, fetch what was published and open it - or say plainly that it is
+committed but unreleased. Never let "fixed" stand for "fixed and available".
+
+## The window is the installer (2026-09-11)
+I produced a disk image, confirmed the app and the `/Applications` symlink were both inside, and presented
+it. The user's reply: "that is a folder open in the Finder". They were right. A disk image that people
+recognise as an installer has no toolbar or sidebar, large icons, the app on the left, the link on the
+right and an arrow between them - none of which lives in the image's contents, all of which lives in a
+`.DS_Store` that only the Finder will write, through Apple Events, onto a read-write image before it is
+converted.
+Rule: for anything whose whole purpose is to be looked at, the acceptance test is the screenshot, not the
+listing. `ls` proving the right files are present says nothing about whether the thing reads as what it is.
+
+## Leave no copies on someone else's machine (2026-09-11)
+Debug builds, an export directory, a dmg staging folder and a mounted volume left four Tokendials in the
+user's Spotlight. Each was a legitimate build step; together they made their own machine look broken, and
+they noticed before I did.
+Rule: build output on a machine that is not mine is litter until it is removed. Clean the intermediates in
+the same breath as the build, and keep the tree that only exists to be compiled out of the search index.

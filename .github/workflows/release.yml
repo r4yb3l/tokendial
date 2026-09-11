@@ -41,12 +41,15 @@ jobs:
       - name: Fetch the previous release for deltas
         run: vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} --outputDir windows/dist
         continue-on-error: true
+      # The MSI is a wrapper around the same Setup.exe, for machines where software arrives by policy
+      # rather than by download. It installs per machine, so it needs an administrator and cannot update
+      # itself without one: the Setup.exe remains the route a person should take.
       - name: Pack
         run: >
           vpk pack --packId Tokendial --packVersion ${{ env.VERSION }} --packDir windows/publish
           --mainExe Tokendial.exe --packTitle Tokendial --packAuthors "Raybel Hernández"
           --icon windows/Tokendial.App/Assets/tokendial.ico --aumid Tokendial.Desktop
-          --shortcuts Desktop,StartMenuRoot --outputDir windows/dist
+          --shortcuts Desktop,StartMenuRoot --outputDir windows/dist --msi
       - name: Upload to the GitHub release
         run: >
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
