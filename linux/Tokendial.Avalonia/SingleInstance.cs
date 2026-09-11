@@ -42,14 +42,4 @@ public static class SingleInstance
             return false;
         }
     }
-
-    /// <summary>
-    /// Hands the claim over. Installing starts the copy it just made and then ends this process; without
-    /// letting go first, the copy would find the claim still held by its own parent and quit on the spot.
-    /// </summary>
-    public static void Release()
-    {
-        held?.Dispose();
-        held = null;
-    }
 }

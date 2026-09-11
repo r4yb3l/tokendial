@@ -38,13 +38,6 @@ public static class Desktop
     private static string AutostartEntry => Path.Combine(ConfigHome, "autostart", $"{Id}.desktop");
     private static string InstalledCopy => Path.Combine(Binaries, "Tokendial.AppImage");
 
-    /// <summary>
-    /// Told to the copy it starts, so the first thing the user sees after pressing Install is the dock
-    /// opening by itself. Without it the window simply closes and a capsule appears at the top of a screen
-    /// the user was not looking at, which reads as nothing having happened.
-    /// </summary>
-    public const string JustInstalled = "--just-installed";
-
     /// <summary>The AppImage the user ran, or null when this is a loose build rather than a packaged one.</summary>
     public static string? Image => Env("APPIMAGE");
 
@@ -81,22 +74,6 @@ public static class Desktop
             File.WriteAllText(Marker, "");
         }
         catch (Exception error) { Log.Ui.Error($"decline: {error.Message}"); }
-    }
-
-    /// <summary>
-    /// Starts the copy that was just installed and leaves it running on its own, so what the user ends up
-    /// with is the installed application rather than the file they downloaded.
-    /// </summary>
-    public static void Launch()
-    {
-        var start = new ProcessStartInfo(InstalledCopy) { UseShellExecute = false, WorkingDirectory = Home };
-        start.ArgumentList.Add(JustInstalled);
-
-        // Started from the home directory on purpose. A child inherits the working directory, and inside an
-        // AppImage that is the squashfs mount the parent is about to release - holding it open leaves the
-        // mount and its fuse process behind for as long as the new copy runs.
-        try { Process.Start(start); }
-        catch (Exception error) { Log.Ui.Error($"launch: {error.Message}"); }
     }
 
     public static bool AutostartIsSet => File.Exists(AutostartEntry);
