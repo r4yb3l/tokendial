@@ -250,10 +250,16 @@ public sealed class TokendialApp : Application
         tray?.Update(read.Count > 0 ? read.Max() : null, Tooltip(model));
     }
 
+    /// <summary>
+    /// One line, joined with the dot the rest of Tokendial uses. The Windows tray stacks these on separate
+    /// lines, but Avalonia's StatusNotifierItem backend publishes the tooltip as the item's Id as well, and
+    /// an Id carrying a newline is not an identifier: Cinnamon's watcher accepts the registration and then
+    /// draws nothing at all.
+    /// </summary>
     private static string Tooltip(PanelModel model)
     {
         if (model.Tiles.Count == 0) return Strings.T("tray.noProviders");
-        var lines = model.Tiles.Where(t => t.HasReading).Select(t => $"{t.Name} {Math.Round((t.Fraction ?? 0) * 100):0}%");
-        return string.Join('\n', ["Tokendial", .. lines]);
+        var parts = model.Tiles.Where(t => t.HasReading).Select(t => $"{t.Name} {Math.Round((t.Fraction ?? 0) * 100):0}%");
+        return string.Join(" · ", ["Tokendial", .. parts]);
     }
 }
