@@ -217,7 +217,11 @@
 
     "install.requires.node": "Node 22 or later was not found. Install it from your distribution's packages or from nodejs.org, then try again.",
 
-    "status.notOnThisSystem": "Not readable on this system yet"
+    "status.notOnThisSystem": "Not readable on this system yet",
+
+    "settings.screen": "Screen",
+    "settings.screen.automatic": "Primary",
+    "settings.screen.absent": "{name} is not connected right now, so the dock is on the primary screen until it is."
   },
   "labels": {
     "Current session": "Current session",

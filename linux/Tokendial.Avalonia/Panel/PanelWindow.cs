@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Tokendial.Core.Model;
+using Tokendial.Core.Settings;
 using Tokendial.Linux.Interop;
 
 // Avalonia's StyledElement already has a Theme property, which shadows the token class inside any
@@ -58,10 +59,12 @@ public sealed class PanelWindow : Window
     private bool expanded;
     private int hovered = -1;
     private DateTimeOffset pinnedUntil = DateTimeOffset.MinValue;
+    private string? display;
 
-    public PanelWindow(IReadOnlyList<string> providerIds)
+    public PanelWindow(IReadOnlyList<string> providerIds, string? display = null)
     {
         this.providerIds = providerIds;
+        this.display = display;
         Title = "Tokendial";
         WindowDecorations = WindowDecorations.None;
         Topmost = true;
@@ -104,6 +107,10 @@ public sealed class PanelWindow : Window
             Place();
             Shape();
         }
+
+        // Fires on XRandR reconfiguration and when the work area changes, already on the UI thread. Without
+        // it the dock stays where it was when a monitor arrives, leaves or a panel appears.
+        Screens.Changed += (_, _) => Reposition();
 
         StartPolling();
     }
@@ -167,8 +174,8 @@ public sealed class PanelWindow : Window
         if (double.IsNaN(along) || double.IsNaN(across)) return;
 
         var radius = expanded ? Tokens.ExpandedRadius : Tokens.CompactRadius;
-        dockFill.Data = DockShape.Fill(along, across, Tokens.DockSlant, radius);
-        dockEdge.Data = DockShape.Edge(along, across, Tokens.DockSlant, radius);
+        dockFill.Data = DockShape.Fill(along, across, Tokens.DockSlant, radius, DockEdge.Top);
+        dockEdge.Data = DockShape.Edge(along, across, Tokens.DockSlant, radius, DockEdge.Top);
 
         Canvas.SetLeft(capsule, (Width - along) / 2);
         Canvas.SetTop(capsule, 0);
@@ -181,11 +188,33 @@ public sealed class PanelWindow : Window
         Canvas.SetTop(expandedRow, Tokens.ExpandedPadding);
     }
 
+    /// <summary>The monitor the dock belongs on: the chosen one, or the primary one.</summary>
+    private Tokendial.Core.Model.ScreenInfo? Target() => ScreenChoice.Target(Screens, display);
+
+    /// <summary>
+    /// Which monitor to live on. Re-read on every placement, so unplugging the chosen one moves the dock to
+    /// the primary monitor and plugging it back in brings the dock home without anything being asked.
+    /// </summary>
+    public void SetDisplay(string? name)
+    {
+        display = name;
+        Reposition();
+    }
+
+    /// <summary>The monitor, its work area or the screen layout changed: put the dock where it now belongs.</summary>
+    public void Reposition()
+    {
+        if (TryGetPlatformHandle() is null) return;
+        Place();
+        Shape();
+    }
+
     /// <summary>Centred on the top edge of the work area, so the desktop panel is never covered.</summary>
     private void Place()
     {
-        var area = Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080);
-        var scale = Screens.Primary?.Scaling ?? 1.0;
+        var screen = Target();
+        var area = ScreenChoice.WorkingArea(screen);
+        var scale = ScreenChoice.Scaling(screen);
         Position = new PixelPoint(area.X + (area.Width - (int)Math.Round(Width * scale)) / 2, area.Y);
     }
 
@@ -198,7 +227,7 @@ public sealed class PanelWindow : Window
     {
         var handle = TryGetPlatformHandle();
         if (handle is null) return;
-        var scale = Screens.Primary?.Scaling ?? 1.0;
+        var scale = ScreenChoice.Scaling(Target());
         var along = expanded ? expandedAlong : compactAlong;
         var across = expanded ? Tokens.ExpandedHeight : Tokens.CompactHeight;
         X11.InputShape(handle.Handle, new X11.XRectangle
@@ -264,7 +293,7 @@ public sealed class PanelWindow : Window
         var (x, y, sameScreen) = X11.Pointer();
         if (!sameScreen) return;
 
-        var scale = Screens.Primary?.Scaling ?? 1.0;
+        var scale = ScreenChoice.Scaling(Target());
         var origin = Position;
         var local = new Point((x - origin.X) / scale, (y - origin.Y) / scale);
 
@@ -317,8 +346,9 @@ public sealed class PanelWindow : Window
         var anchor = new PixelPoint(
             origin.X + (int)Math.Round((left + cellLeft + Tokens.CellWidth / 2) * scale),
             origin.Y + (int)Math.Round((Tokens.ExpandedHeight + 6) * scale));
-        card.ShowAt(HoverCard.Build(tiles[index], DateTimeOffset.Now), anchor,
-            Screens.Primary?.WorkingArea ?? new PixelRect(0, 0, 1920, 1080));
+        // The chosen monitor's work area, not the primary one's: clamping to the primary screen would drag
+        // the card off the dock and back onto another monitor entirely.
+        card.ShowAt(HoverCard.Build(tiles[index], DateTimeOffset.Now), anchor, ScreenChoice.WorkingArea(Target()), scale);
     }
 
     /// <summary>Which expanded cell a position within the capsule falls in.</summary>

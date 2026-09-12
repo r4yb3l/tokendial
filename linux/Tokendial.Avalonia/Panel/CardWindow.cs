@@ -50,7 +50,7 @@ public sealed class CardWindow : Window
     }
 
     /// <summary>Shows the card under a point, kept inside the work area so it is never half off the screen.</summary>
-    public void ShowAt(Control content, PixelPoint anchor, PixelRect area)
+    public void ShowAt(Control content, PixelPoint anchor, PixelRect area, double scale)
     {
         Opacity = 0;
         Content = content;
@@ -67,11 +67,14 @@ public sealed class CardWindow : Window
         // Window has a Dispatcher property of its own, which hides the type.
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
-            var scale = Screens.Primary?.Scaling ?? 1;
             var width = (int)Math.Round(Bounds.Width * scale);
             var height = (int)Math.Round(Bounds.Height * scale);
+            // Clamped into the work area, with the low bound never allowed above the high one: a screen
+            // narrower than the card would otherwise make Math.Clamp throw rather than place it badly.
+            var low = area.X + 8;
+            var high = Math.Max(low, area.X + area.Width - width - 8);
             Position = new PixelPoint(
-                Math.Clamp(anchor.X - width / 2, area.X + 8, area.X + area.Width - width - 8),
+                Math.Clamp(anchor.X - width / 2, low, high),
                 Math.Min(anchor.Y, area.Y + area.Height - height - 8));
             // Visible only once it is where it belongs.
             Avalonia.Threading.Dispatcher.UIThread.Post(() => Opacity = 1, DispatcherPriority.Render);

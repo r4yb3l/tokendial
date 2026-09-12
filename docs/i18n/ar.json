@@ -217,7 +217,11 @@
 
     "install.requires.node": "لم يُعثر على Node 22 أو أحدث. ثبّته من حزم توزيعتك أو من nodejs.org ثم أعد المحاولة.",
 
-    "status.notOnThisSystem": "لا يمكن قراءته على هذا النظام بعد"
+    "status.notOnThisSystem": "لا يمكن قراءته على هذا النظام بعد",
+
+    "settings.screen": "الشاشة",
+    "settings.screen.automatic": "الرئيسية",
+    "settings.screen.absent": "‏{name} غير متصلة الآن، لذا يبقى الشريط على الشاشة الرئيسية حتى تتصل."
   },
   "labels": {
     "Current session": "الجلسة الحالية",

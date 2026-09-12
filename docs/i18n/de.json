@@ -217,7 +217,11 @@
 
     "install.requires.node": "Node 22 oder neuer wurde nicht gefunden. Installieren Sie es aus den Paketen Ihrer Distribution oder von nodejs.org und versuchen Sie es erneut.",
 
-    "status.notOnThisSystem": "Auf diesem System noch nicht lesbar"
+    "status.notOnThisSystem": "Auf diesem System noch nicht lesbar",
+
+    "settings.screen": "Bildschirm",
+    "settings.screen.automatic": "Hauptbildschirm",
+    "settings.screen.absent": "{name} ist gerade nicht angeschlossen, daher bleibt das Dock so lange auf dem Hauptbildschirm."
   },
   "labels": {
     "Current session": "Aktuelle Sitzung",

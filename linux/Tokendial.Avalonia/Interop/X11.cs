@@ -145,18 +145,5 @@ public static unsafe class X11
     /// <summary>Whether a compositing manager owns the screen. Without one there is no per-pixel alpha at all.</summary>
     public static bool Composited() => XGetSelectionOwner(Display, Atom("_NET_WM_CM_S0")) != 0;
 
-    /// <summary>The work area the window manager publishes: the screen minus panels. Four cardinals per desktop.</summary>
-    public static (int X, int Y, int W, int H)? WorkArea()
-    {
-        var root = XDefaultRootWindow(Display);
-        if (XGetWindowProperty(Display, root, Atom("_NET_WORKAREA"), 0, 4, false, XA_CARDINAL,
-                out _, out _, out var items, out _, out var data) != 0 || data == 0 || (long)items < 4)
-            return null;
-        var p = (long*)data;
-        var area = ((int)p[0], (int)p[1], (int)p[2], (int)p[3]);
-        XFree(data);
-        return area;
-    }
-
     public static void Sync() => XSync(Display, false);
 }

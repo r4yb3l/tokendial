@@ -217,7 +217,11 @@
 
     "install.requires.node": "Node 22 ou plus récent est introuvable. Installez-le depuis les paquets de votre distribution ou depuis nodejs.org, puis réessayez.",
 
-    "status.notOnThisSystem": "Pas encore lisible sur ce système"
+    "status.notOnThisSystem": "Pas encore lisible sur ce système",
+
+    "settings.screen": "Écran",
+    "settings.screen.automatic": "Principal",
+    "settings.screen.absent": "{name} n’est pas connecté pour le moment : le dock reste sur l’écran principal jusqu’à ce qu’il le soit."
   },
   "labels": {
     "Current session": "Session en cours",

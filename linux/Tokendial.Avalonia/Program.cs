@@ -88,13 +88,14 @@ public sealed class TokendialApp : Application
         hub = new ActivityHub(ProviderCatalog.Monitors());
         store.IsBusy = () => hub.AnyWorking;
 
-        panel = new PanelWindow(providers.Where(p => !settings.Disconnected.Contains(p.Id)).Select(p => p.Id).ToList());
+        panel = new PanelWindow(providers.Where(p => !settings.Disconnected.Contains(p.Id)).Select(p => p.Id).ToList(),
+            settings.Display);
         panel.SettingsRequested += ShowSettings;
 
         // The engine decided what to say and when; these two only deliver it. The preference is read at
         // delivery rather than wired once, so changing it in settings takes effect with no rewiring.
         notifications = new NotifySink(Reading, hub.For);
-        banners = new BannerSink(Reading, hub.For);
+        banners = new BannerSink(Reading, hub.For) { Display = settings.Display };
         banners.Opened += _ => panel.Flash(TimeSpan.FromSeconds(8));
         router = new AlertRouter(notifications, banners, () => settings.Delivery);
         alerts = new AlertCoordinator(router, settings.AlertConfig, AlertCoordinator.DefaultStateFile, wants: settings.Wants);
@@ -207,6 +208,7 @@ public sealed class TokendialApp : Application
             window = new SettingsWindow(settings, store, catalogue, Save, Quit, TestAlert, assistant!);
             window.Closed += (_, _) => window = null;
             window.Changed += Refresh;
+            window.Changed += ApplyDisplay;
             window.AlertsChanged += config => alerts?.Reconfigure(config, settings.Wants);
         }
         window.Show();
@@ -232,6 +234,13 @@ public sealed class TokendialApp : Application
     }
 
     private ProviderReading? Reading(string id) => store?.Readings.FirstOrDefault(r => r.ProviderId == id);
+
+    /// <summary>The chosen monitor reaches the dock and the banners together, so they never disagree.</summary>
+    private void ApplyDisplay()
+    {
+        panel?.SetDisplay(settings.Display);
+        if (banners is not null) banners.Display = settings.Display;
+    }
 
     private void Save()
     {

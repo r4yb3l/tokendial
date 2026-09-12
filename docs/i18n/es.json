@@ -217,7 +217,11 @@
 
     "install.requires.node": "No se encontró Node 22 o posterior. Instálalo desde los paquetes de tu distribución o desde nodejs.org y vuelve a intentarlo.",
 
-    "status.notOnThisSystem": "Todavía no se puede leer en este sistema"
+    "status.notOnThisSystem": "Todavía no se puede leer en este sistema",
+
+    "settings.screen": "Pantalla",
+    "settings.screen.automatic": "Principal",
+    "settings.screen.absent": "{name} no está conectada ahora mismo, así que el dock está en la pantalla principal hasta que lo esté."
   },
   "labels": {
     "Current session": "Sesión actual",

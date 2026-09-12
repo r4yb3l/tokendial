@@ -41,6 +41,9 @@ public sealed class BannerSink : IAlertSink
         this.now = now ?? (() => DateTimeOffset.UtcNow);
     }
 
+    /// <summary>The monitor the banners share with the dock. Null follows the primary one.</summary>
+    public string? Display { get; set; }
+
     /// <summary>The user clicked a banner's body.</summary>
     public event Action<Alert>? Opened;
 
@@ -53,6 +56,7 @@ public sealed class BannerSink : IAlertSink
         Dispatcher.UIThread.Post(() =>
         {
             host ??= new BannerHost();
+            host.Display = Display;
             host.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
             host.Add(new Banner(title, body, fraction, alert.Kind, alert.Provider, () => Opened?.Invoke(alert)));
         });
@@ -127,6 +131,8 @@ public sealed class BannerHost : Window
             X11.RefuseFocus(handle);
             Place();
         };
+
+        Screens.Changed += (_, _) => Place();
     }
 
     public void Add(Banner banner)
@@ -143,13 +149,23 @@ public sealed class BannerHost : Window
         banner.Enter();
     }
 
+    /// <summary>The monitor to hug the corner of, shared with the dock.</summary>
+    public string? Display { get; set; }
+
+    /// <summary>
+    /// The top-right of the chosen monitor's work area. This used to read _NET_WORKAREA directly, which
+    /// EWMH defines per virtual desktop rather than per monitor: on a dual-head desktop that is the union
+    /// of both screens, so banners appeared at the right-hand edge of the rightmost monitor while the dock
+    /// sat on another one.
+    /// </summary>
     private void Place()
     {
-        var scale = Screens.Primary?.Scaling ?? 1.0;
-        var work = X11.WorkArea() ?? (0, 0, (int)(Screens.Primary?.Bounds.Width ?? 1920), (int)(Screens.Primary?.Bounds.Height ?? 1080));
+        var screen = ScreenChoice.Target(Screens, Display);
+        var work = ScreenChoice.WorkingArea(screen);
+        var scale = ScreenChoice.Scaling(screen);
         var width = (int)Math.Round(CardWidth * scale);
         var gap = (int)Math.Round(EdgeGap * scale);
-        Position = new PixelPoint(work.Item1 + work.Item3 - width - gap, work.Item2 + gap);
+        Position = new PixelPoint(work.X + work.Width - width - gap, work.Y + gap);
     }
 }
 

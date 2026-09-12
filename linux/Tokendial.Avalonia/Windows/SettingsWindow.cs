@@ -208,7 +208,50 @@ public sealed class SettingsWindow : Window
         position.Margin = new Thickness(0, 18, 0, 8);
 
         var body = new StackPanel { Children = { modes, position, edges } };
+        foreach (var control in Screen()) body.Children.Add(control);
         return Chrome.Section(Strings.T("settings.panel"), Strings.T("settings.panelSub"), body);
+    }
+
+    /// <summary>
+    /// Which monitor the dock lives on. A chip per attached screen plus one for "the primary one", because
+    /// the number of monitors is not known in advance - the four position tiles can be a fixed row, this
+    /// cannot. Only shown when there is more than one screen: a choice of one is not a choice.
+    /// </summary>
+    private IEnumerable<Control> Screen()
+    {
+        var attached = ScreenChoice.All(Screens);
+        if (attached.Count < 2) yield break;
+
+        var title = Chrome.SmallTitle(Strings.T("settings.screen"));
+        title.Margin = new Thickness(0, 18, 0, 8);
+        yield return title;
+
+        var chips = new WrapPanel();
+        void Chip(string label, string? value)
+        {
+            var chip = Chrome.Chip("panelScreen", label, settings.Display == value, () =>
+            {
+                settings.Display = value;
+                save();
+                Changed?.Invoke();
+            });
+            chip.Margin = new Thickness(0, 0, 8, 8);
+            chips.Children.Add(chip);
+        }
+
+        Chip(Strings.T("settings.screen.automatic"), null);
+        foreach (var screen in attached) Chip(screen.Name, screen.Name);
+        yield return chips;
+
+        // A monitor that was chosen and then unplugged keeps its preference; saying so is better than a
+        // chooser that silently disagrees with where the dock actually is.
+        if (Displays.Missing(attached, settings.Display))
+        {
+            var absent = Chrome.Body(Strings.T("settings.screen.absent", ("name", settings.Display ?? "")));
+            absent.FontSize = 11;
+            absent.Foreground = Panel.Theme.TextDisabled;
+            yield return absent;
+        }
     }
 
     private void SetPanel(PanelMode mode)
