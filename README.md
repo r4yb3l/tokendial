@@ -149,6 +149,10 @@ links against the runner's glibc and that is what keeps it running on Mint 21 an
 | `site/` | the website and the guides (Astro, six languages) |
 | `tools/` | the helpers that build and test macOS and Linux over SSH from a Windows machine |
 
+[`AGENTS.md`](AGENTS.md) is the one page to read before changing anything, whether you are a person or an
+agent: the house rules, the traps that have already cost somebody an afternoon, and what is true of Linux
+in particular. [`tasks/lessons.md`](tasks/lessons.md) is the long version.
+
 All three apps read `docs/` at runtime and the test suites read it too, so a provider or a string is
 changed once. See [`docs/design/tokens.md`](docs/design/tokens.md) for the design system and
 [`SECURITY.md`](SECURITY.md) for what leaves your machine, which is as little as we could manage.
