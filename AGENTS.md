@@ -21,6 +21,8 @@ purpose. Do not propose extracting a cross-platform UI library.
 | `windows/Tokendial.App/` | the WPF app |
 | `macos/` | the AppKit app and `TokendialCore`, its Swift package |
 | `linux/Tokendial.Avalonia/` | the Avalonia app, referencing `windows/Tokendial.Core` directly |
+| `site/` | the Astro site at tokendial.app — its own npm project, its own locales, its own CI job |
+| `tools/` | PowerShell helpers that drive a remote build over SSH. `mac.ps1` works; **`linux.ps1` points at a VM that no longer exists** |
 | `tasks/lessons.md` | **read this before a second attempt at anything.** Every entry is a mistake that reached a user or burned an afternoon |
 
 ## Build and test
@@ -99,6 +101,60 @@ Current state:
 - Packaged as a self-updating AppImage by Velopack, built on ubuntu-22.04 so it runs on Mint 21 and
   Debian 12. An AppImage has no installer, so the app carries its own — first run asks before it writes
   anything, and Settings has an Uninstall that removes all of it.
+
+## The site
+
+`site/` is an Astro project with its own toolchain, and CI grades it separately from the apps:
+
+```sh
+cd site && npm ci && npm run check-posts && npm run check-locales && npm run build
+```
+
+`check-locales` exists because a missing key there is **silent** — `t()` falls back to English and the page
+renders in the wrong language instead of breaking. `check-posts` asserts what the frontmatter schema
+cannot: both languages present, sources filled in, no font the content security policy would refuse. The
+site's locales are its own, separate from `docs/i18n/`; adding a string to one does not add it to the other.
+
+## Shipping a release
+
+Releases are cut by **pushing a tag `vX.Y.Z` that matches the `VERSION` file at the repo root**. All three
+platform jobs re-read `VERSION` and fail the build if the tag disagrees, so bump `VERSION` in a commit
+first, then tag that commit. There is no other trigger and no manual upload step.
+
+What each job produces: Windows a `Setup.exe`, a portable zip and an MSI, macOS a universal `.zip`
+and `.dmg`, Linux a self-updating AppImage on the `linux` channel built on **ubuntu-22.04** so it
+runs on glibc 2.35 and later. The Windows job creates the GitHub release; macOS and Linux attach to it with `gh release
+upload`, because `vpk upload` would try to create a release of its own.
+
+Four gates run on Linux before anything is attached, each of which is a bug that already shipped once:
+
+- the tag must match `VERSION`;
+- the published bundle must actually carry `libcoreclr.so` and `libe_sqlite3` — without the SQLite native,
+  Cursor's credential and Codex's sessions return null **in silence**, which is the entire class of bug the
+  port exists to kill;
+- the AppImage's `.desktop` entry must name an icon the AppImage actually contains, or the menu draws a
+  blank square;
+- the AppImage keeps the name Velopack gave it. `releases.linux.json` references it by that name and
+  renaming it to the house convention breaks self-update. Only the checksum file gets our naming.
+
+Release notes are written by hand — nothing generates them. And **a green release run is not a verified
+release**: download the artifact from the release page, check the sum, run it. v0.1.0 shipped an
+arm64-only macOS binary past a green build.
+
+## What is knowingly unfinished
+
+Not bugs to be discovered — decisions already taken and not yet acted on:
+
+- **The display chooser exists on Linux only.** `windows/Tokendial.Core/Model/Displays.cs` and
+  `DockPlacement` are shared and tested, but Windows still resolves `MonitorFromPoint(0,0)` in
+  `Interop/Native.cs` and macOS still takes `NSScreen.screens.first`. Both need the same wiring Linux
+  already has: a named-screen lookup, the settings chips, and a re-place on the display-change event.
+- **The Linux dock hangs from the top only.** `DockShape` is already edge-aware; `PanelWindow` passes
+  `DockEdge.Top` unconditionally. The open question is layout, not plumbing — the dials are laid out for a
+  horizontal bar and a side edge needs either one column or the wrapping Windows does.
+- **The display chooser has never been seen on mixed DPI**, nor with the chosen monitor unplugged
+  mid-session. It is meant to fall back to primary and return on its own; that path is covered by tests in
+  Core and by nothing on a real machine.
 
 ## Before you say it is done
 
