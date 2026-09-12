@@ -123,8 +123,8 @@ first, then tag that commit. There is no other trigger and no manual upload step
 
 What each job produces: Windows a `Setup.exe`, a portable zip and an MSI, macOS a universal `.zip`
 and `.dmg`, Linux a self-updating AppImage on the `linux` channel built on **ubuntu-22.04** so it
-runs on glibc 2.35 and later. The Windows job creates the GitHub release; macOS and Linux attach to it with `gh release
-upload`, because `vpk upload` would try to create a release of its own.
+runs on glibc 2.35 and later. The Windows job creates the GitHub release; macOS and Linux attach to
+it with `gh release upload`, because `vpk upload` would try to create a release of its own.
 
 Four gates run on Linux before anything is attached, each of which is a bug that already shipped once:
 
