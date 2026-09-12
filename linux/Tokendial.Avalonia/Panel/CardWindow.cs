@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Tokendial.Core.Model;
+using Tokendial.Core.Settings;
 using Tokendial.Linux.Interop;
 
 namespace Tokendial.Linux.Panel;
@@ -22,6 +24,9 @@ namespace Tokendial.Linux.Panel;
 public sealed class CardWindow : Window
 {
     private bool primed;
+    private long generation;
+    private Placement? placement;
+    private sealed record Placement(PixelPoint Anchor, PixelRect Area, double Scale, DockEdge Edge);
 
     public CardWindow()
     {
@@ -36,12 +41,14 @@ public sealed class CardWindow : Window
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         Opacity = 0;
         Opened += (_, _) => Dress();
+        ScalingChanged += (_, _) => QueuePlacement();
+        SizeChanged += (_, _) => QueuePlacement();
     }
 
     private void Dress()
     {
         var handle = TryGetPlatformHandle();
-        if (handle is null || !X11.Open()) return;
+        if (handle is not { HandleDescriptor: "XID", Handle: not 0 } || !X11.Open()) return;
         X11.MakeDock(handle.Handle);
         X11.RefuseFocus(handle.Handle);
         // The card is something to read, not something to press: an empty input region means every click
@@ -49,35 +56,43 @@ public sealed class CardWindow : Window
         X11.InputShape(handle.Handle);
     }
 
-    /// <summary>Shows the card under a point, kept inside the work area so it is never half off the screen.</summary>
-    public void ShowAt(Control content, PixelPoint anchor, PixelRect area, double scale)
+    /// <summary>
+    /// Shows the card off an anchor on its outer side, kept inside the work area on both axes so it is
+    /// never half off the screen - including a work area smaller than the card, or one at a negative
+    /// origin. The card opens toward the interior on every edge: below a top dock, above a bottom one,
+    /// beside a column.
+    /// </summary>
+    public void ShowAt(Control content, PixelPoint anchor, PixelRect area, double scale, DockEdge edge = DockEdge.Top)
     {
+        generation++;
         Opacity = 0;
         Content = content;
-
+        placement = new Placement(anchor, area, scale, edge);
+        // Move invisibly onto the destination monitor before measuring at that window's render scale.
+        Position = anchor;
         if (!primed)
         {
             primed = true;
-            // Far enough away that the first map cannot be seen wherever the server decides to put it.
-            Position = new PixelPoint(area.X - 4000, area.Y - 4000);
             Show();
         }
+        QueuePlacement();
+    }
 
-        // The card sizes itself to its content, which is not known until it has been measured once.
-        // Window has a Dispatcher property of its own, which hides the type.
+    private void QueuePlacement()
+    {
+        if (placement is not { } request) return;
+        var seen = generation;
         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
+            if (seen != generation || placement is null) return;
+            var scale = RenderScaling > 0 ? RenderScaling : request.Scale;
             var width = (int)Math.Round(Bounds.Width * scale);
             var height = (int)Math.Round(Bounds.Height * scale);
-            // Clamped into the work area, with the low bound never allowed above the high one: a screen
-            // narrower than the card would otherwise make Math.Clamp throw rather than place it badly.
-            var low = area.X + 8;
-            var high = Math.Max(low, area.X + area.Width - width - 8);
-            Position = new PixelPoint(
-                Math.Clamp(anchor.X - width / 2, low, high),
-                Math.Min(anchor.Y, area.Y + area.Height - height - 8));
-            // Visible only once it is where it belongs.
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => Opacity = 1, DispatcherPriority.Render);
+            Position = DockGeometry.ClampCard(request.Edge, width, height, request.Anchor, ScreenChoice.Box(request.Area));
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (seen == generation && placement is not null) Opacity = 1;
+            }, DispatcherPriority.Render);
         }, DispatcherPriority.Loaded);
     }
 
@@ -87,5 +102,21 @@ public sealed class CardWindow : Window
         if (Opacity > 0) Content = content;
     }
 
-    public void HideCard() => Opacity = 0;
+    /// <summary>
+    /// Dismisses the card and invalidates any measure queued by a ShowAt still in flight, so it cannot
+    /// place - and thereby re-show - a card that is already gone.
+    /// </summary>
+    public void HideCard()
+    {
+        generation++;
+        placement = null;
+        Opacity = 0;
+    }
+
+    /// <summary>What the dock calls on its way out: hide, and unmap the window if it was ever mapped.</summary>
+    public void Shutdown()
+    {
+        HideCard();
+        if (primed) Close();
+    }
 }

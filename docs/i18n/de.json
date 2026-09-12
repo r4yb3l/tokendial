@@ -5,6 +5,10 @@
   "strings": {
     "app.name": "Tokendial",
 
+    "linux.session.title": "X11-Sitzung erforderlich",
+    "linux.session.wayland": "Diese Version von Tokendial benötigt eine X11-Sitzung. Das Dock öffnet sich, wenn sich der Zeiger nähert, und Wayland teilt einer Anwendung die Zeigerposition nur mit, solange er über ihren eigenen Fenstern ist, auch über XWayland. Wähle auf dem Anmeldebildschirm eine Xorg/X11-Sitzung.",
+    "linux.session.noDisplay": "Tokendial findet keine X11-Anzeige. Starte es aus einer Xorg/X11-Desktopsitzung.",
+
     "panel.noProviders": "Kein Anbieter verbunden. Rechtsklick für die Einstellungen.",
     "panel.noAgents": "Kein Agent aktiv",
     "panel.waiting": "{name} wartet auf dich ({elapsed})",

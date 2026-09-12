@@ -22,14 +22,16 @@ purpose. Do not propose extracting a cross-platform UI library.
 | `macos/` | the AppKit app and `TokendialCore`, its Swift package |
 | `linux/Tokendial.Avalonia/` | the Avalonia app, referencing `windows/Tokendial.Core` directly |
 | `site/` | the Astro site at tokendial.app — its own npm project, its own locales, its own CI job |
-| `tools/` | PowerShell helpers that drive a remote build over SSH. `mac.ps1` works; **`linux.ps1` points at a VM that no longer exists** |
+| `tools/` | PowerShell helpers that drive a remote build over SSH. `mac.ps1` works; **`linux.ps1` points at a VM that no longer exists**. `LinuxDisplayProbe/` opens the real dock with fixture readings; its `nested-checks.sh` runs hotplug, scale, hover-card and Wayland-notice checks on a nested X server |
 | `tasks/lessons.md` | **read this before a second attempt at anything.** Every entry is a mistake that reached a user or burned an afternoon |
 
 ## Build and test
 
 ```sh
-dotnet test windows/Tokendial.Tests/Tokendial.Tests.csproj   # the whole suite, any OS
+dotnet test windows/Tokendial.Tests/Tokendial.Tests.csproj   # the Core suite, any OS
+dotnet test linux/Tokendial.Linux.Tests/Tokendial.Linux.Tests.csproj # Linux UI and geometry, headless
 dotnet run --project linux/Tokendial.Avalonia                # the Linux app
+tools/LinuxDisplayProbe/nested-checks.sh hotplug Left 1 2    # Linux display checks, nested X server
 dotnet run --project windows/Tokendial.App                   # Windows only
 swift test --package-path macos/TokendialCore                # macOS core
 ```
@@ -93,10 +95,13 @@ for exactly that reason.
 
 Current state:
 
-- X11 only. The dock has to place itself and no Wayland protocol lets a client do that, so a Wayland session
-  is refused with an explanation rather than degraded silently.
-- The dock hangs from the top only. Settings offers four positions and the other three do nothing on this
-  platform — either implement them or hide them; a control that lies is worse than one that is absent.
+- X11 only, by decision. Wayland, XWayland included, is refused before providers or the installer start:
+  the dock opens by polling the global pointer, which Wayland does not expose. The way forward is a
+  layer-shell backend, and Mutter (GNOME) does not implement layer-shell. `linux/README.md` has the
+  reasoning and what would change it.
+- All four dock edges work. Side docks are upright columns that wrap into more columns, as on Windows.
+- **Do not replace `UsePlatformDetect()` with `UseX11()`** in `Program.Builder`. It drops the renderer and
+  text shaper and every start aborts, which the headless tests cannot see. CI's Xvfb probe step can.
 - Antigravity's usage cannot be read: its token lives behind Secret Service. Its sessions work.
 - Packaged as a self-updating AppImage by Velopack, built on ubuntu-22.04 so it runs on Mint 21 and
   Debian 12. An AppImage has no installer, so the app carries its own — first run asks before it writes
@@ -149,12 +154,10 @@ Not bugs to be discovered — decisions already taken and not yet acted on:
   `DockPlacement` are shared and tested, but Windows still resolves `MonitorFromPoint(0,0)` in
   `Interop/Native.cs` and macOS still takes `NSScreen.screens.first`. Both need the same wiring Linux
   already has: a named-screen lookup, the settings chips, and a re-place on the display-change event.
-- **The Linux dock hangs from the top only.** `DockShape` is already edge-aware; `PanelWindow` passes
-  `DockEdge.Top` unconditionally. The open question is layout, not plumbing — the dials are laid out for a
-  horizontal bar and a side edge needs either one column or the wrapping Windows does.
-- **The display chooser has never been seen on mixed DPI**, nor with the chosen monitor unplugged
-  mid-session. It is meant to fall back to primary and return on its own; that path is covered by tests in
-  Core and by nothing on a real machine.
+- **Physical unplug and physical mixed-DPI panels are still unseen on Linux.** Fallback, return and
+  per-monitor scale pass on a nested X server (`nested-checks.sh`), and the four edges were checked on real
+  hardware, but a real driver's RandR events and a real HiDPI panel were not. `linux/README.md` lists the
+  record and what would settle each gap.
 
 ## Before you say it is done
 
