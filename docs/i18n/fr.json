@@ -215,7 +215,9 @@
 
     "settings.delivery.bannersHintPlain": "Coin supérieur droit, dans la couleur propre à Tokendial. Affichées même en mode Ne pas déranger.",
 
-    "install.requires.node": "Node 22 ou plus récent est introuvable. Installez-le depuis les paquets de votre distribution ou depuis nodejs.org, puis réessayez."
+    "install.requires.node": "Node 22 ou plus récent est introuvable. Installez-le depuis les paquets de votre distribution ou depuis nodejs.org, puis réessayez.",
+
+    "status.notOnThisSystem": "Pas encore lisible sur ce système"
   },
   "labels": {
     "Current session": "Session en cours",

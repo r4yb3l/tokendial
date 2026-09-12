@@ -215,7 +215,9 @@
 
     "settings.delivery.bannersHintPlain": "Top-right corner, in Tokendial's own colour. Shown even under Do not disturb.",
 
-    "install.requires.node": "Node 22 or later was not found. Install it from your distribution's packages or from nodejs.org, then try again."
+    "install.requires.node": "Node 22 or later was not found. Install it from your distribution's packages or from nodejs.org, then try again.",
+
+    "status.notOnThisSystem": "Not readable on this system yet"
   },
   "labels": {
     "Current session": "Current session",

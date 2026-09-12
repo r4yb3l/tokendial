@@ -215,7 +215,9 @@
 
     "settings.delivery.bannersHintPlain": "الزاوية العليا اليمنى، بلون Tokendial نفسه. تظهر حتى مع تفعيل «عدم الإزعاج».",
 
-    "install.requires.node": "لم يُعثر على Node 22 أو أحدث. ثبّته من حزم توزيعتك أو من nodejs.org ثم أعد المحاولة."
+    "install.requires.node": "لم يُعثر على Node 22 أو أحدث. ثبّته من حزم توزيعتك أو من nodejs.org ثم أعد المحاولة.",
+
+    "status.notOnThisSystem": "لا يمكن قراءته على هذا النظام بعد"
   },
   "labels": {
     "Current session": "الجلسة الحالية",

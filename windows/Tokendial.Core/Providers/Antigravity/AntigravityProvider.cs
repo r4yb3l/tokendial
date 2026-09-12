@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Tokendial.Core.Diagnostics;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers.Google;
 using Tokendial.Core.Store;
@@ -302,6 +303,7 @@ public sealed class AntigravityProvider : IUsageProvider, IDisposable
 
     public ProviderAccount? Account()
     {
+        if (!Platforms.SupportedHere(Id)) return null;
         try
         {
             var c = held ?? read();
@@ -312,6 +314,12 @@ public sealed class AntigravityProvider : IUsageProvider, IDisposable
 
     public async Task<ProviderReading> ReadAsync(CancellationToken cancellationToken = default)
     {
+        // The spec declares where a reading is possible. On Linux the token lives in the session keyring
+        // behind org.freedesktop.secrets and nothing here reads one, so the credential would simply come back
+        // empty and this would report "sign in" to somebody who is signed in. Sessions still work: they are
+        // plain files, and AntigravitySessions reads them whatever this says.
+        if (!Platforms.SupportedHere(Id)) throw UsageError.NothingMetered(Strings.T("status.notOnThisSystem"));
+
         var credential = held ??= read();
         if (credential.Expired(now())) { held = null; throw UsageError.CredentialExpired(); }
         await PassGate(credential, cancellationToken).ConfigureAwait(false);

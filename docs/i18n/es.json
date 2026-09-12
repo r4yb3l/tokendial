@@ -215,7 +215,9 @@
 
     "settings.delivery.bannersHintPlain": "Esquina superior derecha, con el color propio de Tokendial. Se muestran incluso con No molestar.",
 
-    "install.requires.node": "No se encontró Node 22 o posterior. Instálalo desde los paquetes de tu distribución o desde nodejs.org y vuelve a intentarlo."
+    "install.requires.node": "No se encontró Node 22 o posterior. Instálalo desde los paquetes de tu distribución o desde nodejs.org y vuelve a intentarlo.",
+
+    "status.notOnThisSystem": "Todavía no se puede leer en este sistema"
   },
   "labels": {
     "Current session": "Sesión actual",

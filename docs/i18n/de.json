@@ -215,7 +215,9 @@
 
     "settings.delivery.bannersHintPlain": "Rechts oben, in Tokendials eigener Farbe. Werden auch bei „Nicht stören“ angezeigt.",
 
-    "install.requires.node": "Node 22 oder neuer wurde nicht gefunden. Installieren Sie es aus den Paketen Ihrer Distribution oder von nodejs.org und versuchen Sie es erneut."
+    "install.requires.node": "Node 22 oder neuer wurde nicht gefunden. Installieren Sie es aus den Paketen Ihrer Distribution oder von nodejs.org und versuchen Sie es erneut.",
+
+    "status.notOnThisSystem": "Auf diesem System noch nicht lesbar"
   },
   "labels": {
     "Current session": "Aktuelle Sitzung",
