@@ -263,3 +263,14 @@ no amount of reading the file would have shown, because the file was valid - jus
 the second bug by printing the entry: the autostart `Exec=` named the AppImage in the user's download folder
 rather than the installed copy, which breaks the first time they empty it.
 Rule: when writing a file a specification defines, run the specification's validator, and print the file.
+
+## Before touching global state in a test, look for how the repo already handles it (2026-09-12)
+A new test called `Strings.Use("en")` to make its assertion readable. It passed here and on the VM, and
+failed on a two-core CI runner: xUnit runs test classes in parallel, the language is global, and the
+catalogue test asserting Spanish read English instead. The convention was already in the file it collided
+with - `I18nTests` carries `[Collection("language")]` precisely so nothing runs beside it - and I added a
+second mutator without looking for it.
+Rule: global state in a test is a scheduling bet, and CI has different cores from the machine it was written
+on. Before writing one, grep for the same mutation elsewhere; the answer is usually already in the repo. And
+prefer not to need it: this test was about the *kind* of answer, and the wording belongs to the catalogue
+tests anyway.

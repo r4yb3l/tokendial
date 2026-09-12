@@ -1,5 +1,4 @@
 using Tokendial.Core;
-using Tokendial.Core.I18n;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
 
@@ -43,15 +42,21 @@ public class PlatformsTests
     /// The behaviour, not just the table: on Linux the provider answers with a reason instead of asking for
     /// a sign-in. Only meaningful where it applies, so it says which platform it means.
     /// </summary>
+    /// <remarks>
+    /// The language is deliberately left alone. Strings.Use is global, xUnit runs test classes in parallel,
+    /// and setting it here raced the catalogue tests into reading English where they expected Spanish - on a
+    /// two-core runner, not on either machine it was written on. What this test is about is the kind of
+    /// answer, not its wording, and the wording is the catalogue tests' business anyway.
+    /// </remarks>
     [Fact]
     public async Task OnLinuxAntigravityGivesAreasonRatherThanAskingForASignIn()
     {
         if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()) return;
-        Strings.Use("en");
         var provider = new AntigravityProvider();
         Assert.Null(provider.Account());
         var error = await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync());
         Assert.Equal(UsageErrorKind.NothingMetered, error.Kind);
-        Assert.Equal(Strings.T("status.notOnThisSystem"), error.Message);
+        Assert.NotEqual(UsageErrorKind.NeedsSignIn, error.Kind);
+        Assert.False(string.IsNullOrWhiteSpace(error.Message));
     }
 }
