@@ -41,6 +41,14 @@ public sealed class Settings
     public int Schema { get; set; } = CurrentSchema;
     public PanelMode Panel { get; set; } = PanelMode.ExpandOnHover;
     public DockEdge Edge { get; set; } = DockEdge.Top;
+
+    /// <summary>
+    /// Which monitor the dock lives on, by the platform's own name for it - an XRandR output on Linux,
+    /// a device path on Windows, the localized name on macOS. Null follows the primary monitor, which is
+    /// what every installation keeps on upgrade. A name that is no longer attached falls back to the
+    /// primary one and is honoured again as soon as that display returns.
+    /// </summary>
+    public string? Display { get; set; }
     public HashSet<string> Disconnected { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Provider ids this install has seen. A provider added by an update joins connected only when its tool is signed in.</summary>
     public HashSet<string> Known { get; set; } = new(StringComparer.Ordinal);

@@ -126,13 +126,15 @@ public class CoordinatorTests
         var file = Path.Combine(Path.GetTempPath(), $"tokendial-settings-{Guid.NewGuid():N}.json");
         try
         {
-            var settings = new Settings { Panel = PanelMode.AlwaysExpanded, Thresholds = [60, 90], LaunchAtLogin = true };
+            var settings = new Settings { Panel = PanelMode.AlwaysExpanded, Thresholds = [60, 90], LaunchAtLogin = true, Display = "HDMI-1" };
             settings.Disconnected.Add("grok");
             settings.Save(file);
             var loaded = Settings.Load(file);
             Assert.Equal(PanelMode.AlwaysExpanded, loaded.Panel);
             Assert.Equal([60, 90], loaded.AlertConfig.Thresholds);
             Assert.True(loaded.LaunchAtLogin);
+            Assert.Equal("HDMI-1", loaded.Display);
+            Assert.Null(new Settings().Display);
             Assert.Contains("grok", loaded.Disconnected);
             Assert.Equal(new Settings().AlertConfig.ResetLead, loaded.AlertConfig.ResetLead);
         }
