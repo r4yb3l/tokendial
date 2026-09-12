@@ -77,6 +77,35 @@ jobs:
             macos/build/smoke.png
             macos/build/Build/Products/Debug/Tokendial.app
 
+  linux:
+    name: Linux
+    # Not ubuntu-latest: the binary links against the runner's glibc, and 22.04 is what keeps it running
+    # on Mint 21, Mint 22 and Debian 12 as well as on newer distributions.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      # The solution includes the WPF app, which cannot build here, so the tests are named directly. The
+      # same 240 tests as the Windows job: the ones that differ by platform say which platform they mean.
+      - name: Core tests
+        if: hashFiles('windows/Tokendial.Tests/Tokendial.Tests.csproj') != ''
+        run: dotnet test windows/Tokendial.Tests/Tokendial.Tests.csproj --configuration Release
+      - name: Publish
+        if: hashFiles('linux/Tokendial.Avalonia/Tokendial.Avalonia.csproj') != ''
+        run: >
+          dotnet publish linux/Tokendial.Avalonia/Tokendial.Avalonia.csproj --configuration Release
+          -r linux-x64 --self-contained true -o linux/dist
+      # Without the runtime's natives the app does not start; without the SQLite one Cursor's credential
+      # and Codex's sessions return null in silence.
+      - name: The bundle must carry its natives
+        if: hashFiles('linux/Tokendial.Avalonia/Tokendial.Avalonia.csproj') != ''
+        run: |
+          test -f linux/dist/libcoreclr.so || { echo "no libcoreclr.so"; exit 1; }
+          ls linux/dist | grep -q 'libe_sqlite3' || { echo "no libe_sqlite3"; exit 1; }
+          file linux/dist/Tokendial | grep -q 'ELF 64-bit.*x86-64' || { echo "not an x86-64 ELF"; exit 1; }
+
   site:
     name: Site
     runs-on: ubuntu-latest

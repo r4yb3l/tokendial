@@ -155,3 +155,82 @@ jobs:
           macos/dist/Tokendial-${{ env.VERSION }}-macos.zip
           macos/dist/Tokendial-${{ env.VERSION }}-macos.dmg
           macos/dist/Tokendial-${{ env.VERSION }}-macos.sha256
+
+  linux:
+    name: Linux package
+    # Same reasoning as macOS: on a tag push the release is created by the Windows job, so this one waits
+    # rather than racing it. On a manual run the Windows job is skipped, which is not a failure.
+    needs: windows
+    if: always() && needs.windows.result != 'failure' && needs.windows.result != 'cancelled'
+    # Not ubuntu-latest. The binary links against the runner's glibc, and 22.04 is what makes it run on
+    # Mint 21, Mint 22 and Debian 12 as well as on newer distributions.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: The tag must match VERSION
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          [ "${TAG}" = "v${VERSION}" ] || { echo "tag ${TAG} but VERSION is ${VERSION}"; exit 1; }
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+      # The solution includes the WPF app, which does not build here; the tests are their own project.
+      - name: Test
+        run: dotnet test windows/Tokendial.Tests/Tokendial.Tests.csproj --configuration Release
+      - name: Publish
+        run: >
+          dotnet publish linux/Tokendial.Avalonia/Tokendial.Avalonia.csproj --configuration Release
+          -r linux-x64 --self-contained true -o linux/publish
+      # Without the runtime's own natives the app does not start, and without the SQLite one Cursor's
+      # credential and Codex's sessions return null in silence - the class of bug this port exists to kill.
+      - name: The bundle must carry its natives
+        run: |
+          test -f linux/publish/libcoreclr.so || { echo "no libcoreclr.so"; exit 1; }
+          ls linux/publish | grep -q 'libe_sqlite3' || { echo "no libe_sqlite3"; exit 1; }
+          file linux/publish/Tokendial | grep -q 'ELF 64-bit.*x86-64' || { echo "not an x86-64 ELF"; exit 1; }
+      - name: Install Velopack
+        run: dotnet tool install -g vpk
+      - name: Pack
+        run: >
+          vpk pack --packId Tokendial --packVersion ${{ env.VERSION }} --packDir linux/publish
+          --mainExe Tokendial --packTitle Tokendial --packAuthors "Raybel Hernández"
+          --icon linux/Tokendial.Avalonia/Assets/tokendial-512.png --categories "Utility;"
+          --channel linux --outputDir linux/dist
+      # The AppImage transposition of "the bundle claimed an icon it did not carry": the entry inside must
+      # name an icon that is actually in there, or the menu shows a blank square.
+      - name: The AppImage must carry a usable entry
+        working-directory: linux/dist
+        run: |
+          ./Tokendial.AppImage --appimage-extract >/dev/null
+          ENTRY=$(ls squashfs-root/*.desktop | head -1)
+          [ -n "$ENTRY" ] || { echo "no .desktop inside"; exit 1; }
+          cat "$ENTRY"
+          ICON=$(grep '^Icon=' "$ENTRY" | cut -d= -f2)
+          ls squashfs-root | grep -q "^${ICON}\." || { echo "entry names ${ICON} but no such icon"; exit 1; }
+          rm -rf squashfs-root
+      # Uploaded with gh rather than `vpk upload`, which wants to create or merge a release of its own -
+      # the Windows job already created and published this one. These are the three files the updater
+      # reads: it finds releases.linux.json on the release and fetches the package it names.
+      #
+      # The AppImage keeps the name Velopack gave it. releases.linux.json references it by that name, and
+      # renaming it to the house convention would break self-update; only the checksum file is named ours.
+      - name: Checksums
+        working-directory: linux/dist
+        run: |
+          sha256sum Tokendial.AppImage > "Tokendial-${VERSION}-linux.sha256"
+          cat "Tokendial-${VERSION}-linux.sha256"
+      - name: Attach to the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release upload ${{ env.TAG }} --clobber
+          linux/dist/Tokendial.AppImage
+          linux/dist/releases.linux.json
+          linux/dist/RELEASES-linux
+          linux/dist/Tokendial-${{ env.VERSION }}-linux-full.nupkg
+          linux/dist/Tokendial-${{ env.VERSION }}-linux.sha256
