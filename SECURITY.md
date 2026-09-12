@@ -63,8 +63,10 @@ runs that command and, for a command-line tool, the tool's own sign-in right aft
   not change that model.
 - **The binaries are not signed, and will not be.** A code-signing certificate and an Apple
   Developer ID cost more each year than this project earns, which is nothing, so Windows shows
-  SmartScreen and macOS reports the app as damaged. What stands in place of a signature is a
-  checksum: each release publishes `Tokendial-win.sha256` and `Tokendial-<version>-macos.sha256`
+  SmartScreen and macOS reports the app as damaged. The Linux AppImage is unsigned too; nothing on a
+  desktop checks it, which is not the same as it being verified. What stands in place of a signature is a
+  checksum: each release publishes `Tokendial-win.sha256`, `Tokendial-<version>-macos.sha256` and
+  `Tokendial-<version>-linux.sha256`
   over the files offered for download. Check one before running it:
 
   ```sh

@@ -43,7 +43,12 @@ const ogImage = image ?? new URL('/og.png', site).href;
         const ua = navigator.userAgent || '';
         const platform = navigator.userAgentData?.platform || navigator.platform || ua;
         const touch = /android|iphone|ipod/i.test(ua) || (/ipad/i.test(ua)) || (/mac/i.test(platform) && navigator.maxTouchPoints > 1);
-        root.dataset.platform = touch ? 'mobile' : /mac/i.test(platform) ? 'mac' : /win/i.test(platform) ? 'windows' : 'other';
+        root.dataset.platform = touch ? 'mobile'
+          : /mac/i.test(platform) ? 'mac'
+          : /win/i.test(platform) ? 'windows'
+          : /cros/i.test(ua) ? 'other'
+          : /linux|x11/i.test(platform) ? 'linux'
+          : 'other';
       } catch {}
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -71,7 +76,7 @@ const ogImage = image ?? new URL('/og.png', site).href;
       '@type': 'SoftwareApplication',
       name: 'Tokendial',
       applicationCategory: 'DeveloperApplication',
-      operatingSystem: 'Windows, macOS',
+      operatingSystem: 'Windows, macOS, Linux',
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       license: 'https://opensource.org/licenses/MIT',
       url: site.href,

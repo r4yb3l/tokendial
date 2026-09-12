@@ -176,7 +176,8 @@ body {
 :root[data-platform='other'] [data-download='windows'],
 :root[data-platform='mobile'] [data-download='windows'],
 :root[data-platform='windows'] [data-download='windows'],
-:root[data-platform='mac'] [data-download='mac'] {
+:root[data-platform='mac'] [data-download='mac'],
+:root[data-platform='linux'] [data-download='linux'] {
   @apply border-transparent bg-brand-500 text-[#062b1f] hover:bg-brand-400;
 }
 
@@ -184,23 +185,9 @@ body {
   @apply text-slate-500;
 }
 
-/* Linux is not shipping yet, so this is not a download button: it is a dashed link to the thread where
-   people can ask for it, which is also how the demand gets counted. A reader whose platform we could not
-   name is most often on Linux, so the line addressed to them brightens for them. */
-.soon {
-  @apply inline-flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-ink-600/70 px-4 text-sm font-medium text-slate-500 transition-colors duration-200;
-}
-
-.soon:hover {
-  @apply border-brand-500/50 bg-brand-500/5 text-slate-200;
-}
-
-:root[data-platform='other'] .soon {
-  @apply border-brand-500/40 bg-brand-500/5 text-slate-300;
-}
-
 :root[data-platform='windows'] .req-windows,
-:root[data-platform='mac'] .req-mac {
+:root[data-platform='mac'] .req-mac,
+:root[data-platform='linux'] .req-linux {
   @apply text-slate-300;
 }
 

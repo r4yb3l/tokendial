@@ -10,7 +10,7 @@ Native usage dials for Claude Code, Codex, Copilot, Cursor and five more, on the
 [![Release](https://img.shields.io/github/v/release/r4yb3l/tokendial?color=10b981&label=release)](https://github.com/r4yb3l/tokendial/releases/latest)
 [![CI](https://github.com/r4yb3l/tokendial/actions/workflows/ci.yml/badge.svg)](https://github.com/r4yb3l/tokendial/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/r4yb3l/tokendial?color=10b981)](LICENSE)
-![Platforms](https://img.shields.io/badge/platforms-macOS%2014%2B%20%C2%B7%20Windows%2010%2B-1f2937)
+![Platforms](https://img.shields.io/badge/platforms-macOS%2014%2B%20%C2%B7%20Windows%2010%2B%20%C2%B7%20Linux%20x86--64-1f2937)
 
 [**Download**](https://github.com/r4yb3l/tokendial/releases/latest) · [Website](https://tokendial.vercel.app) · [Guides](https://tokendial.vercel.app/guides) · [Security](SECURITY.md)
 
@@ -28,8 +28,8 @@ your machine, asks that tool's own usage endpoint, and tells you before a window
   reaches it and never takes focus from what you are typing in.
 - **Read-only by design.** Credentials are read where their tool already stores them, never written, never
   refreshed, never sent anywhere but that tool's own endpoint.
-- **Two native apps.** Swift and AppKit on macOS, C# and WPF on Windows, built from one shared
-  specification in [`docs/`](docs/) so a provider added once appears on both.
+- **Three native apps.** Swift and AppKit on macOS, C# and WPF on Windows, C# and Avalonia on Linux,
+  built from one shared specification in [`docs/`](docs/) so a provider added once appears on all three.
 - **Free and open source.** No account, no telemetry, no crash reports.
 
 ## What it looks like
@@ -48,8 +48,14 @@ Download the [latest release](https://github.com/r4yb3l/tokendial/releases/lates
 |---|---|---|
 | Windows | `Tokendial-win-Setup.exe`, or the portable zip. `Tokendial-win.msi` installs for every account and needs an administrator, for machines managed by policy | Windows 10 1809 or later |
 | macOS | `Tokendial-<version>-macos.dmg`, or the zip | macOS 14 or later, Intel and Apple Silicon in one universal binary |
+| Linux | `Tokendial.AppImage` — `chmod +x` it and run it; it offers to add itself to your menu, and Settings has an Uninstall that takes it back out | x86-64, glibc 2.35 or later (Mint 21+, Ubuntu 22.04+, Debian 12+), and an **X11 session** |
 
-**Neither build is signed with a paid certificate, and both systems will say so.** Windows shows
+On Linux the dock has to place itself on the screen, which no Wayland protocol lets a client do, so choose
+**Cinnamon on Xorg** — or your desktop's Xorg session — at the login screen. Some distributions need
+`libfuse2` before any AppImage will mount itself. If the file manager will not run it, its own permissions
+dialog has an "Allow executing file as program" checkbox.
+
+**No build is signed with a paid certificate, and the systems that check will say so.** Windows shows
 "Windows protected your PC": choose More info, then Run anyway. macOS refuses a notarised-less app that
 arrives with a quarantine flag and claims it is damaged — either right-click the app, choose Open, and
 Open again under System Settings → Privacy & Security, or clear the flag yourself:
@@ -60,11 +66,12 @@ xattr -dr com.apple.quarantine /Applications/Tokendial.app
 
 This will not change. A Windows code-signing certificate and an Apple Developer ID cost more every year
 than this project will ever earn, which is nothing. What each release publishes instead is a SHA-256
-checksum for every file a person downloads — `Tokendial-win.sha256` and `Tokendial-<version>-macos.sha256`
-— so the download can be checked against what the build produced:
+checksum for every file a person downloads — `Tokendial-win.sha256`, `Tokendial-<version>-macos.sha256`
+and `Tokendial-<version>-linux.sha256` — so the download can be checked against what the build produced:
 
 ```sh
 sha256sum -c Tokendial-win.sha256                       # Linux, macOS, Git Bash
+sha256sum -c Tokendial-<version>-linux.sha256           # beside the AppImage
 ```
 
 ```powershell
@@ -76,17 +83,19 @@ Get-FileHash Tokendial-win-Setup.exe -Algorithm SHA256  # PowerShell
 Each provider is opt-in, and a tool you do not have yet shows an **Install** button that puts the vendor's
 own command on screen before running it in a terminal you can watch. Nothing runs until you press Run.
 
-| Provider | Installed with, on macOS | on Windows |
-|---|---|---|
-| Claude Code | `brew install --cask claude-code` | `irm https://claude.ai/install.ps1 \| iex` |
-| Codex | `brew install --cask codex` | `irm https://chatgpt.com/codex/install.ps1 \| iex` |
-| GitHub Copilot | `brew install --cask copilot-cli` | `winget install GitHub.Copilot` |
-| Cursor | `brew install --cask cursor` | `winget install Anysphere.Cursor` |
-| Antigravity | `brew install --cask antigravity` | `winget install Google.Antigravity` |
-| Gemini CLI | `npm install -g @google/gemini-cli` | `npm install -g @google/gemini-cli` |
-| Grok | `curl -fsSL https://x.ai/cli/install.sh \| sh` | `irm https://x.ai/cli/install.ps1 \| iex` |
-| OpenCode | `brew install opencode` | `winget install SST.opencode` |
-| GLM (Z.ai Coding Plan) | an API key rather than a tool | — |
+| Provider | Installed with, on macOS | on Windows | on Linux |
+|---|---|---|---|
+| Claude Code | `brew install --cask claude-code` | `irm https://claude.ai/install.ps1 \| iex` | `curl -fsSL https://claude.ai/install.sh \| bash` |
+| Codex | `brew install --cask codex` | `irm https://chatgpt.com/codex/install.ps1 \| iex` | `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
+| GitHub Copilot | `brew install --cask copilot-cli` | `winget install GitHub.Copilot` | `npm install -g @github/copilot` |
+| Cursor | `brew install --cask cursor` | `winget install Anysphere.Cursor` | [download](https://cursor.com/downloads) |
+| Antigravity | `brew install --cask antigravity` | `winget install Google.Antigravity` | [download](https://antigravity.google/download) |
+| Gemini CLI | `npm install -g @google/gemini-cli` | `npm install -g @google/gemini-cli` | `npm install -g @google/gemini-cli` |
+| Grok | `curl -fsSL https://x.ai/cli/install.sh \| sh` | `irm https://x.ai/cli/install.ps1 \| iex` | `curl -fsSL https://x.ai/cli/install.sh \| bash` |
+| OpenCode | `brew install opencode` | `winget install SST.opencode` | `curl -fsSL https://opencode.ai/install \| bash` |
+| GLM (Z.ai Coding Plan) | an API key rather than a tool | — | — |
+
+On Linux, Antigravity's sessions are read but its usage is not: its token lives in the session keyring behind Secret Service, which Tokendial does not read. The provider says so rather than asking a signed-in user to sign in again.
 
 ## Alerts
 
@@ -124,8 +133,10 @@ xcodebuild -project Tokendial.xcodeproj -scheme Tokendial -configuration Debug b
 cd site && npm ci && npm run dev
 ```
 
-A release is built by CI from a `v*` tag that matches [`VERSION`](VERSION): Velopack packages Windows,
-`xcodebuild` archives a universal macOS binary, and both are attached to the GitHub release.
+A release is built by CI from a `v*` tag that matches [`VERSION`](VERSION): Velopack packages Windows and
+the Linux AppImage, `xcodebuild` archives a universal macOS binary, and all three are attached to the
+GitHub release. The Linux job builds on Ubuntu 22.04 rather than the newest runner, because the binary
+links against the runner's glibc and that is what keeps it running on Mint 21 and Debian 12.
 
 ## What is where
 
@@ -134,11 +145,12 @@ A release is built by CI from a `v*` tag that matches [`VERSION`](VERSION): Velo
 | `docs/` | the shared specification: providers, alert vectors, i18n catalogues, design tokens |
 | `windows/` | the WPF app and its core, plus the test suite |
 | `macos/` | the AppKit app and `TokendialCore`, its Swift package |
+| `linux/` | the Avalonia app, which reuses the Windows core unchanged |
 | `site/` | the website and the guides (Astro, six languages) |
-| `tools/` | the helper that builds and tests macOS over SSH from a Windows machine |
+| `tools/` | the helpers that build and test macOS and Linux over SSH from a Windows machine |
 
-Both apps read `docs/` at runtime and both test suites read it too, so a provider or a string is changed
-once. See [`docs/design/tokens.md`](docs/design/tokens.md) for the design system and
+All three apps read `docs/` at runtime and the test suites read it too, so a provider or a string is
+changed once. See [`docs/design/tokens.md`](docs/design/tokens.md) for the design system and
 [`SECURITY.md`](SECURITY.md) for what leaves your machine, which is as little as we could manage.
 
 ## Licence

@@ -124,6 +124,11 @@ jobs:
       - name: Articles follow the house rules
         working-directory: site
         run: npm run check-posts
+      # A missing key is silent: t() falls back to English, so the page renders in the wrong language
+      # rather than breaking. The app side has enforced the same rule from the beginning.
+      - name: Every locale says what English says
+        working-directory: site
+        run: npm run check-locales
       - name: Build
         working-directory: site
         run: npm run build
