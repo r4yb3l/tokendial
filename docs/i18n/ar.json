@@ -5,6 +5,10 @@
   "strings": {
     "app.name": "Tokendial",
 
+    "linux.session.title": "يلزم استخدام جلسة X11",
+    "linux.session.wayland": "يتطلب هذا الإصدار من Tokendial جلسة X11. يُفتح الشريط عند اقتراب المؤشر منه، ولا يُخبر Wayland أي تطبيق بموضع المؤشر إلا عندما يكون فوق نوافذ ذلك التطبيق نفسه، حتى عبر XWayland. اختر جلسة Xorg/X11 في شاشة تسجيل الدخول.",
+    "linux.session.noDisplay": "لم يعثر Tokendial على شاشة X11. شغّله من جلسة سطح مكتب Xorg/X11.",
+
     "panel.noProviders": "لا يوجد مزوّد متصل. انقر بالزر الأيمن للإعدادات.",
     "panel.noAgents": "لا يعمل أي وكيل",
     "panel.waiting": "{name} ينتظر ردّك ({elapsed})",

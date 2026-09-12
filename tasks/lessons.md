@@ -274,3 +274,20 @@ Rule: global state in a test is a scheduling bet, and CI has different cores fro
 on. Before writing one, grep for the same mutation elsewhere; the answer is usually already in the repo. And
 prefer not to need it: this test was about the *kind* of answer, and the wording belongs to the catalogue
 tests anyway.
+
+## Naming the windowing backend drops everything platform detection brought with it (2026-09-12)
+The four-edge work swapped `UsePlatformDetect()` for `UseX11()` so Wayland could never be picked. Seventy
+headless tests and a Release build stayed green, and every real start aborted: first "No rendering system
+configured", then, with Skia added, "No text shaping system configured". Headless tests configure their own
+platform and never touch the app's builder, so nothing in the suite could see it. The display probe, run once
+on the desktop, found it in two seconds.
+Rule: a change to startup is verified by starting the thing on a real display, not by a suite that bypasses
+startup. CI now opens the probe under Xvfb on all four edges for exactly this reason.
+
+## A simulated unplug has to send the event a real one does (2026-09-12)
+Testing fallback on a nested Xephyr, `xrandr --delmonitor` removed the external monitor and the dock stayed
+where it was. That looked like the bug the chooser was meant to prevent. `xev -root -event randr` showed
+`delmonitor` emits no RandR event at all, so Avalonia, which re-reads monitors only on RRScreenChangeNotify,
+never looked. `--output default --primary` does emit one; followed by that, fallback and return both worked.
+Rule: before believing a simulation showed a bug, check it delivered the same signal as the real event.
+`xev` is the one-line check for anything X11 is supposed to announce.

@@ -31,6 +31,8 @@ public static unsafe class X11
     [DllImport(Xlib)] private static extern nint XAllocWMHints();
     [DllImport(Xlib)] private static extern bool XQueryPointer(nint display, nint window, out nint root, out nint child,
         out int rootX, out int rootY, out int winX, out int winY, out uint mask);
+    [DllImport(Xlib)] private static extern bool XTranslateCoordinates(nint display, nint srcW, nint destW,
+        int srcX, int srcY, out int destX, out int destY, out nint child);
     [DllImport(Xlib)] private static extern nint XGetSelectionOwner(nint display, nint selection);
     [DllImport(Xext)] private static extern int XShapeCombineRectangles(nint display, nint window, int kind,
         int xOffset, int yOffset, XRectangle[] rectangles, int count, int operation, int ordering);
@@ -62,7 +64,16 @@ public static unsafe class X11
     public static bool Open()
     {
         if (Display != 0) return true;
-        Display = XOpenDisplay(0);
+        try
+        {
+            Display = XOpenDisplay(0);
+        }
+        catch (DllNotFoundException)
+        {
+            // No X client library on this machine (headless tests, Wayland-only installs): every caller
+            // treats a closed display as "no backend" rather than as an error.
+            return false;
+        }
         return Display != 0;
     }
 
@@ -140,6 +151,20 @@ public static unsafe class X11
         var root = XDefaultRootWindow(Display);
         var same = XQueryPointer(Display, root, out _, out _, out var x, out var y, out _, out _, out _);
         return (x, y, same);
+    }
+
+    /// <summary>
+    /// Where a window's own origin sits in root coordinates, in physical pixels. Avalonia's
+    /// <c>Position</c> getter reports where the window was asked to go, which on X11 is not where it is -
+    /// the spike measured <c>0,0</c> for a window <c>xwininfo</c> showed at <c>460,0</c> - so pointer math
+    /// asks the server instead. False when there is no display to ask.
+    /// </summary>
+    public static (int X, int Y, bool Ok) RootOrigin(nint window)
+    {
+        if (Display == 0) return (0, 0, false);
+        var root = XDefaultRootWindow(Display);
+        var ok = XTranslateCoordinates(Display, window, root, 0, 0, out var x, out var y, out _);
+        return (x, y, ok);
     }
 
     /// <summary>Whether a compositing manager owns the screen. Without one there is no per-pixel alpha at all.</summary>

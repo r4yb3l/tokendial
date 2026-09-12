@@ -92,6 +92,21 @@ jobs:
       - name: Core tests
         if: hashFiles('windows/Tokendial.Tests/Tokendial.Tests.csproj') != ''
         run: dotnet test windows/Tokendial.Tests/Tokendial.Tests.csproj --configuration Release
+      - name: Linux dock and session tests
+        run: dotnet test linux/Tokendial.Linux.Tests/Tokendial.Linux.Tests.csproj --configuration Release
+      # The headless tests set up their own Avalonia platform, so a start that aborts in AppBuilder.Setup
+      # passes all of them. The probe opens the real dock on a real X server, account-free, and must map
+      # its window and exit cleanly.
+      - name: The dock starts on a real X server
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb x11-utils
+          dotnet build tools/LinuxDisplayProbe --configuration Release
+          for edge in Top Bottom Left Right; do
+            XDG_SESSION_TYPE=x11 xvfb-run -a -s "-screen 0 1920x1080x24" \
+              tools/LinuxDisplayProbe/bin/Release/net10.0/LinuxDisplayProbe $edge auto expanded 3 > probe-$edge.log 2>&1 \
+              || { cat probe-$edge.log; exit 1; }
+            grep -q '^window=0x' probe-$edge.log || { cat probe-$edge.log; echo "no window on $edge"; exit 1; }
+          done
       - name: Publish
         if: hashFiles('linux/Tokendial.Avalonia/Tokendial.Avalonia.csproj') != ''
         run: >
