@@ -62,9 +62,13 @@ package, which the install rules already allow. `auggie account status` renders 
 has a JSON mode, so a CLI fallback exists if the endpoint is ever unreachable.
 
 **What is missing, and it is the only thing.** No response has been validated. There is no Augment
-machine here and the only plan their pricing page documents is Business at **$100/month**, so
-validating costs real money rather than a free sign-up. Until somebody with an account runs
-`auggie account status --json` or the raw POST once, this stays out of `docs/providers/`.
+machine here and **there is no free tier**: the plans are Standard $20/month, Business $100/month and
+Enterprise, all of them paid, so validating costs money rather than a sign-up. Until somebody with an
+account runs `auggie account status --json` or the raw POST once, this stays out of `docs/providers/`.
+
+Worth weighing before anyone pays for it: Augment is a $20-100/month team product, so the question is
+not whether the reading is possible but how many Tokendial users have an account at all. A provider
+costs the same to carry whether it is read by everyone or by nobody.
 
 **To unblock:** one capture of `get-billing-summary` from a real account — field names, units, and what
 `usage_unit` actually contains.
