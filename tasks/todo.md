@@ -89,6 +89,7 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] 2026-09-08/09 refinement: five basics articles (LLM, tokens and context window, MCP, coding agents, how plans meter you) with Commons/MIT-licensed figures or own diagrams; the three save-tokens articles rewritten with tiktoken measurements; nine install guides de-templated with vendor-checked commands (Gemini CLI added); tools (MCP servers measured locally, token-saving tools) and design (Claude as designer via Pencil/Figma MCP)
 - [ ] Blog follow-ups: news section still empty; GitHub source links in Sources 404 until the repo is public; the figure in the install guides is a Spanish-interface capture, retake in English when the app can be driven without touching the desktop
 - [ ] Provider specs to re-check against what the blog research found: Copilot moved to GitHub AI Credits on 2026-06-01 (spec still models premium requests); OpenCode Windows credential path unverified (`%APPDATA%/opencode/auth.json` fallback)
+- [ ] Candidate providers researched and parked in `tasks/candidate-providers.md`: Augment Code is fully specified from the vendor CLI and blocked only on one validated response ($100/mo plan, no machine here); Windsurf rejected while it is being renamed to Devin Desktop and exposes no personal usage endpoint
 - [ ] Cloudflare Pages project connected to the repo, `tokendial.app` domain attached (user)
 - [ ] Download links point at GitHub Releases; publish a first release and make the repo public before launch
 
