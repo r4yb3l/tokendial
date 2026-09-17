@@ -291,3 +291,23 @@ where it was. That looked like the bug the chooser was meant to prevent. `xev -r
 never looked. `--output default --primary` does emit one; followed by that, fallback and return both worked.
 Rule: before believing a simulation showed a bug, check it delivered the same signal as the real event.
 `xev` is the one-line check for anything X11 is supposed to announce.
+
+## A colour chosen against one theme is invisible in the other (2026-09-17)
+The nine provider marks on the site carried per-brand tints hardcoded in `Landing.astro`. Two of them —
+Cursor `#e2e8f0` and Grok `#f1f5f9` — are monochrome logos, so they were given near-white tints that read
+well on the dark ground and **disappeared entirely on a light card**. The user found them missing, not the
+tests: nothing fails when a colour matches its background. OpenCode was wrong in a second way, sitting on an
+amber background while its own mark is teal `#00c8b0` — a colour nobody had checked, only assumed.
+Rule: a per-brand colour belongs in `global.css` beside the theme blocks, never inline in a component, so it
+flips with `--color-brand-400` and the rest. Sample the asset before naming its colour — `PIL` on the PNG
+took one command and contradicted the word "green". And look at any colour work in **both** themes; a
+one-theme check proves nothing about the other.
+
+## The highlighted word in a headline is per-language, not a substring (2026-09-17)
+The new hero colours one word of `hero.title` to track the dial's band, which means each catalogue needs to
+name its own word. Searching for an English-shaped token fails in ways that are **silent**: German compounds
+it (`Limit` is not in "Lass kein Nutzungslimit den Vibe killen"), and Arabic inflects it, so `حد` matches
+inside `حدًّا` and would have split the word, leaving the ending outside the span. Neither breaks the page —
+the fallback renders the headline whole — so both would have shipped unnoticed.
+Rule: when a catalogue names a fragment of another of its own strings, assert `fragment in string` for every
+language in the same breath as adding the key. `check-locales` proves a key exists, never that it fits.
