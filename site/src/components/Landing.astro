@@ -13,13 +13,13 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 
 const providers = ['claude', 'codex', 'copilot', 'cursor', 'antigravity', 'gemini', 'glm', 'grok', 'opencode'] as const;
-const tints: Record<(typeof providers)[number], string> = {
-  claude: '#d97757', codex: '#38bdf8', copilot: '#a78bfa', cursor: '#e2e8f0',
-  antigravity: '#60a5fa', gemini: '#4e8df5', glm: '#3b82f6', grok: '#f1f5f9', opencode: '#fbbf24'
-};
+/* The tints live in global.css so the two of them whose marks are monochrome — Cursor and Grok — can
+   flip with the theme. A near-white tint chosen against the dark ground left both invisible in light mode. */
 const steps = list(locale, 'how');
 const alerts = list(locale, 'alerts');
 const alertTones = ['text-brand-400', 'text-watch', 'text-brand-400', 'text-critical'];
+const alertBand = ['watch', 'brand-400', 'brand-400', 'critical'];
+const alertFires = [t('alerts.1.fire'), t('alerts.2.fire'), t('alerts.3.fire'), t('alerts.4.fire')];
 const alertIcons = [
   'M12 3v18M5 12h14',
   'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
@@ -57,7 +57,7 @@ const languageNames: Record<string, string> = {
     <ul class="mt-4 grid gap-2.5 sm:grid-cols-3 lg:grid-cols-5" role="list">
       {providers.map((id) => (
         <li class="flex min-w-0 items-center gap-2.5 rounded-xl border border-ink-700/60 bg-ink-800 px-3 py-2.5">
-          <span class="grid size-6 shrink-0 place-items-center rounded-lg" style={`color:${tints[id]};background:${tints[id]}29`}>
+          <span class="grid size-6 shrink-0 place-items-center rounded-lg" style={`color:var(--tint-${id});background:color-mix(in srgb, var(--tint-${id}) 16%, transparent)`}>
             <Mark id={id} size={13} />
           </span>
           <span class="truncate text-xs font-medium text-slate-200">{t(`providers.${id}`)}</span>
@@ -68,60 +68,200 @@ const languageNames: Record<string, string> = {
 </Section>
 
 <Section id="alerts" eyebrow={t('alerts.eyebrow')} title={t('alerts.title')} lead={t('alerts.lead')}>
-  <ul class="grid gap-4 sm:grid-cols-2" role="list">
-    {alerts.map((alert, i) => (
-      <li class="card reveal flex gap-4 p-6" style={`transition-delay:${i * 60}ms`}>
-        <span class:list={['grid size-10 shrink-0 place-items-center rounded-xl border border-ink-700/60 bg-ink-800', alertTones[i]]}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={alertIcons[i]} /></svg>
-        </span>
-        <div>
-          <h3 class="font-semibold text-slate-100">{alert.title}</h3>
-          <p class="mt-1 text-sm leading-relaxed text-slate-400">{alert.body}</p>
+  <div class="grid items-start gap-4 lg:grid-cols-2" data-alert-stage>
+    <ul class="grid gap-2.5" role="list">
+      {alerts.map((alert, i) => (
+        <li>
+          <button
+            type="button"
+            class="card flex w-full gap-4 p-5 text-start transition-colors duration-200"
+            data-alert={i}
+            data-tone={alertBand[i]}
+            aria-pressed={i === 0 ? 'true' : 'false'}
+            data-on={i === 0 ? '' : undefined}
+          >
+            <span class:list={['grid size-10 shrink-0 place-items-center rounded-xl border border-ink-700/60 bg-ink-800', alertTones[i]]}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={alertIcons[i]} /></svg>
+            </span>
+            <span>
+              <span class="block font-semibold text-slate-100">{alert.title}</span>
+              <span class="mt-1 block text-sm leading-relaxed text-slate-400">{alert.body}</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+
+    <div class="ltr theme-dark relative h-full min-h-[22rem] overflow-hidden rounded-2xl border border-ink-700/60 bg-ink-950">
+      <span class="absolute start-1/2 top-0 flex -translate-x-1/2 items-center gap-3 rounded-b-xl border border-t-0 border-ink-600/60 bg-ink-900 px-4 py-2.5" aria-hidden="true">
+        <Dial size={22} stroke={3} fraction={0.41} animate={false} />
+        <Dial size={22} stroke={3} fraction={0.12} animate={false} />
+        <Dial size={22} stroke={3} fraction={0.87} color="#fbbf24" animate={false} />
+        <span data-alert-beat><Dial size={22} stroke={3} fraction={0.63} animate={false} /></span>
+      </span>
+
+      <pre class="absolute start-6 top-24 font-mono text-xs leading-7 text-ink-600" aria-hidden="true">$ claude --continue
+· refactoring auth middleware
+· 14 files changed</pre>
+
+      <div class="absolute end-5 bottom-5 w-[min(22rem,calc(100%-2.5rem))]">
+        <div class="card flex gap-3 p-4" data-alert-banner aria-live="polite">
+          <span class="w-[3px] shrink-0 rounded-sm bg-brand-400" data-alert-bar aria-hidden="true"></span>
+          <span class="min-w-0">
+            <span class="block truncate text-sm font-semibold text-slate-100" data-alert-title>{t('alerts.1.fire')}</span>
+            <span class="mt-1 block text-xs leading-relaxed text-slate-400" data-alert-body>{alerts[0].body}</span>
+          </span>
         </div>
-      </li>
-    ))}
-  </ul>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ fires: alertFires, bodies: alerts.map((a) => a.body), bands: alertBand }}>
+    /* The four alerts stop being a list and become the thing itself: the chosen one is drawn on a mock
+       screen the way the app would draw it. Clicking is the truth; the cycle is only there for a reader
+       who never clicks, and it stops the moment one does. */
+    for (const stage of document.querySelectorAll('[data-alert-stage]')) {
+      const buttons = [...stage.querySelectorAll('[data-alert]')];
+      const banner = stage.querySelector('[data-alert-banner]');
+      const bar = stage.querySelector('[data-alert-bar]');
+      const title = stage.querySelector('[data-alert-title]');
+      const body = stage.querySelector('[data-alert-body]');
+      const beat = stage.querySelector('[data-alert-beat]');
+      if (!buttons.length || !banner) continue;
+
+      const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let at = 0;
+      let cycle = null;
+
+      const show = (i) => {
+        at = i;
+        for (const [n, button] of buttons.entries()) {
+          button.toggleAttribute('data-on', n === i);
+          button.setAttribute('aria-pressed', n === i ? 'true' : 'false');
+        }
+        bar.style.background = 'var(--color-' + bands[i] + ')';
+        title.textContent = fires[i];
+        body.textContent = bodies[i];
+        if (beat) beat.classList.toggle('pulse', i === 2);
+        if (!still.matches) {
+          banner.animate(
+            [{ opacity: 0, transform: 'translateX(1.5rem)' }, { opacity: 1, transform: 'none' }],
+            { duration: 320, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }
+          );
+        }
+      };
+
+      for (const [i, button] of buttons.entries()) {
+        button.addEventListener('click', () => {
+          if (cycle) {
+            clearInterval(cycle);
+            cycle = null;
+          }
+          show(i);
+        });
+      }
+
+      const watcher = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !cycle && !still.matches) {
+            cycle = setInterval(() => show((at + 1) % buttons.length), 3400);
+          } else if (!entry.isIntersecting && cycle) {
+            clearInterval(cycle);
+            cycle = null;
+          }
+        }
+      }, { threshold: 0.35 });
+      watcher.observe(stage);
+    }
+  </script>
 </Section>
 
 <Section id="dock" eyebrow={t('dock.eyebrow')} title={t('dock.title')}>
   <div class="grid items-start gap-4 lg:grid-cols-2">
     <div class="card reveal divide-y divide-ink-700/50">
-      <div class="p-6">
+      <div class="p-6" data-dock-stage>
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('dock.1.title')}</p>
-        <ul class="mt-4 grid grid-cols-4 gap-3" role="list">
-          {edges.map((edge) => (
+
+        <div class="ltr theme-dark relative mt-4 h-52 overflow-hidden rounded-xl border border-ink-700/60 bg-ink-950 transition-colors duration-300" data-dock-screen>
+          <pre class="absolute start-5 top-16 font-mono text-[11px] leading-6 text-ink-600" aria-hidden="true">$ claude --continue
+· refactoring auth middleware</pre>
+          <span class="absolute flex items-center gap-3 border border-ink-600/60 bg-ink-900 px-4 py-2.5 shadow-lg transition-all duration-300" data-dock-bar aria-hidden="true">
+            <Dial size={22} stroke={3} fraction={0.41} animate={false} />
+            <Dial size={22} stroke={3} fraction={0.12} animate={false} />
+            <Dial size={22} stroke={3} fraction={0.87} color="#fbbf24" animate={false} />
+            <Dial size={22} stroke={3} fraction={0.63} animate={false} />
+          </span>
+        </div>
+
+        <ul class="mt-3 grid grid-cols-4 gap-2" role="list">
+          {edges.map((edge, i) => (
             <li>
-              <span class:list={['ltr theme-dark relative block h-20 rounded-lg border bg-ink-950', edge.lit ? 'border-brand-500/40' : 'border-ink-700/60']}>
-                <span class:list={['absolute rounded-sm', edge.bar, edge.lit ? 'bg-brand-500' : 'bg-ink-600']} aria-hidden="true"></span>
-              </span>
+              <button type="button" class="w-full rounded-lg border border-ink-700/60 bg-ink-800 px-2 py-2.5 transition-colors duration-200" data-edge={edge.key} aria-pressed={i === 0 ? 'true' : 'false'} data-on={i === 0 ? '' : undefined}>
+                <span class="ltr theme-dark relative mx-auto block h-9 w-14 rounded border border-ink-600/60 bg-ink-950" aria-hidden="true">
+                  <span class:list={['absolute rounded-sm bg-brand-500', edge.bar]}></span>
+                </span>
+                <span class="mt-1.5 block text-center text-[11px] text-slate-400">{t(`edge.${edge.key}`)}</span>
+              </button>
             </li>
           ))}
         </ul>
-      </div>
-      <div class="p-6">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('dock.2.title')}</p>
-        <ul class="mt-4 grid grid-cols-2 gap-3" role="list">
-          <li>
-            <span class="ltr theme-dark grid h-24 justify-center overflow-hidden rounded-lg border border-ink-700/60 bg-ink-950">
-              <span class="flex h-fit items-center gap-3 rounded-b-xl border border-t-0 border-ink-600/60 bg-ink-900 px-4 py-2.5">
-                <Dial size={22} stroke={3} fraction={0.41} animate={false} />
-                <Dial size={22} stroke={3} fraction={0.63} color="#fbbf24" animate={false} />
-                <Dial size={22} stroke={3} fraction={0.87} color="#fb7185" animate={false} />
-              </span>
-            </span>
-            <span class="mt-2 block text-center text-xs text-slate-400">{t('theme.dark')}</span>
-          </li>
-          <li>
-            <span class="ltr grid h-24 justify-center overflow-hidden rounded-lg border border-ink-700/60 bg-[#e9edf3]">
-              <span class="flex h-fit items-center gap-3 rounded-b-xl border border-t-0 border-[#c5ceda] bg-white px-4 py-2.5">
-                <Dial size={22} stroke={3} fraction={0.41} color="#059669" track="rgb(15 23 42 / 0.14)" animate={false} />
-                <Dial size={22} stroke={3} fraction={0.63} color="#d97706" track="rgb(15 23 42 / 0.14)" animate={false} />
-                <Dial size={22} stroke={3} fraction={0.87} color="#e11d48" track="rgb(15 23 42 / 0.14)" animate={false} />
-              </span>
-            </span>
-            <span class="mt-2 block text-center text-xs text-slate-400">{t('theme.light')}</span>
-          </li>
+
+        <p class="mt-3 text-xs text-slate-500">{t('dock.try')}</p>
+
+        <p class="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('dock.2.title')}</p>
+        <ul class="mt-3 grid grid-cols-2 gap-2" role="list">
+          {[{ key: 'dark', label: t('theme.dark') }, { key: 'light', label: t('theme.light') }].map((look, i) => (
+            <li>
+              <button type="button" class="w-full rounded-lg border border-ink-700/60 bg-ink-800 py-2.5 text-xs font-medium text-slate-400 transition-colors duration-200" data-look={look.key} aria-pressed={i === 0 ? 'true' : 'false'} data-on={i === 0 ? '' : undefined}>
+                {look.label}
+              </button>
+            </li>
+          ))}
         </ul>
+
+        <script is:inline>
+          /* The four edges and the two looks were pictures of choices. They are the choices now: the panel
+             above is one screen and the buttons move the real thing across it. */
+          for (const stage of document.querySelectorAll('[data-dock-stage]')) {
+            const screen = stage.querySelector('[data-dock-screen]');
+            const bar = stage.querySelector('[data-dock-bar]');
+            if (!screen || !bar) continue;
+
+            const edges = {
+              top: 'inset-inline-start:50%;top:0;transform:translateX(-50%);flex-direction:row;border-radius:0 0 0.75rem 0.75rem;border-top:0',
+              bottom: 'inset-inline-start:50%;bottom:0;transform:translateX(-50%);flex-direction:row;border-radius:0.75rem 0.75rem 0 0;border-bottom:0',
+              left: 'left:0;top:50%;transform:translateY(-50%);flex-direction:column;border-radius:0 0.75rem 0.75rem 0;border-left:0',
+              right: 'right:0;top:50%;transform:translateY(-50%);flex-direction:column;border-radius:0.75rem 0 0 0.75rem;border-right:0'
+            };
+
+            const press = (buttons, chosen) => {
+              for (const button of buttons) {
+                const on = button === chosen;
+                button.toggleAttribute('data-on', on);
+                button.setAttribute('aria-pressed', on ? 'true' : 'false');
+              }
+            };
+
+            const edgeButtons = [...stage.querySelectorAll('[data-edge]')];
+            for (const button of edgeButtons) {
+              button.addEventListener('click', () => {
+                bar.style.cssText = edges[button.dataset.edge] ?? edges.top;
+                press(edgeButtons, button);
+              });
+            }
+            bar.style.cssText = edges.top;
+
+            const lookButtons = [...stage.querySelectorAll('[data-look]')];
+            for (const button of lookButtons) {
+              button.addEventListener('click', () => {
+                const dark = button.dataset.look === 'dark';
+                screen.classList.toggle('theme-dark', dark);
+                screen.classList.toggle('theme-light', !dark);
+                press(lookButtons, button);
+              });
+            }
+          }
+        </script>
       </div>
       <div class="p-6">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('dock.3.title')}</p>

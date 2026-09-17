@@ -45,6 +45,15 @@
   --color-slate-300: #cbd5e1;
   --color-slate-400: #94a3b8;
   --color-slate-500: #64748b;
+  --tint-claude: #d97757;
+  --tint-codex: #38bdf8;
+  --tint-copilot: #a78bfa;
+  --tint-cursor: #e2e8f0;
+  --tint-antigravity: #60a5fa;
+  --tint-gemini: #4e8df5;
+  --tint-glm: #3b82f6;
+  --tint-grok: #f1f5f9;
+  --tint-opencode: #2dd4bf;
   --glow-1: rgb(16 185 129 / 0.10);
   --glow-2: rgb(56 67 88 / 0.25);
   --card-inset: rgb(255 255 255 / 0.03);
@@ -67,6 +76,15 @@
   --color-slate-300: #cbd5e1;
   --color-slate-400: #94a3b8;
   --color-slate-500: #64748b;
+  --tint-claude: #d97757;
+  --tint-codex: #38bdf8;
+  --tint-copilot: #a78bfa;
+  --tint-cursor: #e2e8f0;
+  --tint-antigravity: #60a5fa;
+  --tint-gemini: #4e8df5;
+  --tint-glm: #3b82f6;
+  --tint-grok: #f1f5f9;
+  --tint-opencode: #2dd4bf;
   --glow-1: rgb(16 185 129 / 0.10);
   --glow-2: rgb(56 67 88 / 0.25);
   --card-inset: rgb(255 255 255 / 0.03);
@@ -90,6 +108,9 @@
   --color-slate-300: #334155;
   --color-slate-400: #64748b;
   --color-slate-500: #94a3b8;
+  --tint-cursor: #334155;
+  --tint-grok: #0f172a;
+  --tint-opencode: #0d9488;
   --glow-1: rgb(16 185 129 / 0.14);
   --glow-2: rgb(15 23 42 / 0.06);
   --card-inset: rgb(255 255 255 / 0.6);
@@ -117,7 +138,10 @@
     --color-slate-300: #334155;
     --color-slate-400: #64748b;
     --color-slate-500: #94a3b8;
-    --glow-1: rgb(16 185 129 / 0.14);
+    --tint-cursor: #334155;
+  --tint-grok: #0f172a;
+  --tint-opencode: #0d9488;
+  --glow-1: rgb(16 185 129 / 0.14);
     --glow-2: rgb(15 23 42 / 0.06);
     --card-inset: rgb(255 255 255 / 0.6);
     --card-shadow: rgb(15 23 42 / 0.18);
@@ -215,6 +239,61 @@ body {
   .js .reveal { opacity: 1; transform: none; transition: none; }
   .dial-arc { transition: none; }
   .pulse { animation: none !important; }
+  .hero-scan { display: none; }
+  [data-arc], [data-pct], [data-hero-accent], [data-banner] { transition: none; }
+}
+
+/* The instrument's own surface: a faint engineering grid with a single line sweeping it, so the hero reads
+   as a panel rather than a page. Both sit under the content and neither carries meaning. */
+.hero-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--color-ink-700) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-ink-700) 1px, transparent 1px);
+  background-size: 68px 68px;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.hero-scan {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-brand-400), transparent);
+  opacity: 0.4;
+  pointer-events: none;
+  animation: hero-sweep 9s linear infinite;
+}
+
+@keyframes hero-sweep {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(46rem); }
+}
+
+[data-arc] {
+  transition: stroke 300ms var(--ease-out-expo);
+}
+
+/* The chosen alert, edge or look. The state lives on the attribute the script already toggles, so the
+   markup carries no class the server has to guess and the button keeps working with the script absent. */
+[data-alert][data-on],
+[data-edge][data-on],
+[data-look][data-on] {
+  border-color: color-mix(in oklab, var(--color-brand-500) 50%, transparent);
+  background: var(--color-ink-750);
+}
+
+[data-look][data-on] {
+  color: var(--color-slate-100);
+}
+
+[data-alert],
+[data-edge],
+[data-look] {
+  cursor: pointer;
 }
 
 @keyframes pulse-soft {
