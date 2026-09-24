@@ -22,13 +22,38 @@ public static class Program
 {
     public static int Main(string[] args)
     {
+        var display = Environment.GetEnvironmentVariable("DISPLAY");
+        var rejection = SessionPolicy.Rejection(Environment.GetEnvironmentVariable("XDG_SESSION_TYPE"),
+            Environment.GetEnvironmentVariable("WAYLAND_DISPLAY"), display);
+        if (rejection is not null)
+        {
+            Strings.Use(Settings.Load().Language);
+            Console.Error.WriteLine(Strings.T(rejection));
+            // XWayland can show an ordinary explanation window, even though it cannot supply this dock's
+            // desktop-wide pointer contract. With no X display, refuse before Avalonia calls XOpenDisplay.
+            if (!string.IsNullOrWhiteSpace(display) && Interop.X11.Open())
+                Builder<SessionNotice>().StartWithClassicDesktopLifetime(args);
+            return 1;
+        }
+
         // The claim is taken once this copy is going to be the running Tokendial, not here: a downloaded
         // AppImage may legitimately be an installer while another copy is already running.
         using var log = new FileLog();
         Log.Ui.Info($"starting {typeof(Program).Assembly.GetName().Version?.ToString(3)}, " +
                     $"appimage={Install.Desktop.Image ?? "none"}");
-        return AppBuilder.Configure<TokendialApp>().UsePlatformDetect().StartWithClassicDesktopLifetime(args);
+        return Builder<TokendialApp>().StartWithClassicDesktopLifetime(args);
     }
+
+    /// <summary>
+    /// The one builder every real start uses: the app, the Wayland notice and the display probe.
+    /// Platform detection brings the renderer and the text shaper along with X11; naming <c>UseX11()</c>
+    /// alone configures neither, and every start then aborts in <c>Setup</c> before a window exists.
+    /// Headless tests set up their own platform and cannot see that, so the display probe's smoke run
+    /// on a real X server is what guards it. Wayland never reaches here: <see cref="SessionPolicy"/>
+    /// refuses it first, and Avalonia 12 has no Wayland backend to detect.
+    /// </summary>
+    public static AppBuilder Builder<TApp>() where TApp : Application, new() =>
+        AppBuilder.Configure<TApp>().UsePlatformDetect();
 }
 
 /// <summary>
@@ -89,7 +114,7 @@ public sealed class TokendialApp : Application
         store.IsBusy = () => hub.AnyWorking;
 
         panel = new PanelWindow(providers.Where(p => !settings.Disconnected.Contains(p.Id)).Select(p => p.Id).ToList(),
-            settings.Display);
+            settings.Display, settings.Edge);
         panel.SettingsRequested += ShowSettings;
 
         // The engine decided what to say and when; these two only deliver it. The preference is read at
@@ -238,6 +263,7 @@ public sealed class TokendialApp : Application
     /// <summary>The chosen monitor reaches the dock and the banners together, so they never disagree.</summary>
     private void ApplyDisplay()
     {
+        panel?.SetEdge(settings.Edge);
         panel?.SetDisplay(settings.Display);
         if (banners is not null) banners.Display = settings.Display;
     }

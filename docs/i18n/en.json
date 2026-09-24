@@ -5,6 +5,10 @@
   "strings": {
     "app.name": "Tokendial",
 
+    "linux.session.title": "X11 session required",
+    "linux.session.wayland": "This version of Tokendial needs an X11 session. The dock opens when the pointer comes near it, and Wayland only tells an application where the pointer is while it is over that application's own windows, including through XWayland. Choose an Xorg/X11 session at the login screen.",
+    "linux.session.noDisplay": "Tokendial cannot find an X11 display. Start it from an Xorg/X11 desktop session.",
+
     "panel.noProviders": "No providers connected. Right-click for settings.",
     "panel.noAgents": "No agents running",
     "panel.waiting": "{name} is waiting for you ({elapsed})",

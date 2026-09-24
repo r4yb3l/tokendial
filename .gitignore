@@ -6,6 +6,7 @@ windows/dist/
 macos/dist/
 linux/**/bin/
 linux/**/obj/
+linux/**/TestResults/
 linux/dist/
 linux/publish/
 windows/publish/
@@ -21,4 +22,6 @@ tools/mac.local.ps1
 tools/linux.local.ps1
 *.log
 tools/shots/
+tools/LinuxDisplayProbe/bin/
+tools/LinuxDisplayProbe/obj/
 *.pen

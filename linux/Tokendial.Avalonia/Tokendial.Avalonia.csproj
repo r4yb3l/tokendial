@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../windows/Tokendial.Core/Tokendial.Core.csproj" />
+    <InternalsVisibleTo Include="Tokendial.Linux.Tests" />
   </ItemGroup>
 
   <!-- The same two resources under the same logical names the Windows app uses, so Marks.Load ports unchanged. -->

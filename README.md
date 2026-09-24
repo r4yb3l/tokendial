@@ -50,8 +50,10 @@ Download the [latest release](https://github.com/r4yb3l/tokendial/releases/lates
 | macOS | `Tokendial-<version>-macos.dmg`, or the zip | macOS 14 or later, Intel and Apple Silicon in one universal binary |
 | Linux | `Tokendial.AppImage` — `chmod +x` it and run it; it offers to add itself to your menu, and Settings has an Uninstall that takes it back out | x86-64, glibc 2.35 or later (Mint 21+, Ubuntu 22.04+, Debian 12+), and an **X11 session** |
 
-On Linux the dock has to place itself on the screen, which no Wayland protocol lets a client do, so choose
-**Cinnamon on Xorg** — or your desktop's Xorg session — at the login screen. Some distributions need
+On Linux, choose **Cinnamon on Xorg**, or your desktop's Xorg session, at the login screen. The dock opens
+when the pointer comes near it, and Wayland, XWayland included, does not tell an application where the
+pointer is outside its own windows, so a Wayland session is refused with an explanation.
+[Linux support](linux/README.md) has the reasoning and what would change it. Some distributions need
 `libfuse2` before any AppImage will mount itself. If the file manager will not run it, its own permissions
 dialog has an "Allow executing file as program" checkbox.
 
