@@ -148,7 +148,7 @@ public sealed class SettingsWindow
         words.Children.Add(license);
         bar.Children.Add(words);
         var links = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.app")));
+        links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.vercel.app")));
         links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
         var folder = Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Paths.Data));
         links.Children.Add(folder);
