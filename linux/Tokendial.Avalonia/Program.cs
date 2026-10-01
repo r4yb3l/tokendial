@@ -241,10 +241,22 @@ public sealed class TokendialApp : Application
             window.Changed += Refresh;
             window.Changed += ApplyDisplay;
             window.PanelModeChanged += mode => panel?.SetMode(mode);
+            window.LanguageChanged += ApplyLanguage;
             window.AlertsChanged += config => alerts?.Reconfigure(config, settings.Wants);
         }
         window.Show();
         window.Activate();
+    }
+
+    /// <summary>
+    /// The user picked a language: the tray menu and the settings window are rebuilt in it, and the dock
+    /// follows on the refresh, which reads its labels from the catalogue every time it applies a model.
+    /// </summary>
+    private void ApplyLanguage()
+    {
+        tray?.Relocalize();
+        window?.Relocalize();
+        Refresh();
     }
 
     /// <summary>Uninstalling removes the app from under itself, so it ends the session rather than lingering.</summary>

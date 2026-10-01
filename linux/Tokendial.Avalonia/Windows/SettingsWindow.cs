@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
@@ -72,6 +73,30 @@ public sealed class SettingsWindow : Window
     /// <summary>The dock's mode was chosen: expand on hover, always expanded, or hidden.</summary>
     public event Action<PanelMode>? PanelModeChanged;
 
+    /// <summary>The catalogue now speaks another language, and every surface built from it has to follow.</summary>
+    public event Action? LanguageChanged;
+
+    /// <summary>
+    /// Builds every section again in the current language, under the same window, with the flow turned
+    /// for a right-to-left one.
+    /// </summary>
+    public void Relocalize()
+    {
+        Title = Strings.T("settings.title");
+        FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        Content = Build();
+    }
+
+    /// <summary>
+    /// A control this window keeps across rebuilds, taken out of the tree it was in first: a control has one
+    /// parent, and adding it to the new tree while the old one still holds it throws.
+    /// </summary>
+    private static T Detach<T>(T control) where T : Control
+    {
+        if (control.Parent is Avalonia.Controls.Panel parent) parent.Children.Remove(control);
+        return control;
+    }
+
     private Control Build()
     {
         var columns = new Grid
@@ -101,7 +126,7 @@ public sealed class SettingsWindow : Window
     private Control Providers()
     {
         RefreshProviders();
-        return Chrome.Section(Strings.T("settings.providers"), Strings.T("settings.providersSub"), providerList);
+        return Chrome.Section(Strings.T("settings.providers"), Strings.T("settings.providersSub"), Detach(providerList));
     }
 
     private void RefreshProviders()
@@ -217,7 +242,7 @@ public sealed class SettingsWindow : Window
         position.Margin = new Thickness(0, 18, 0, 8);
 
         var body = new StackPanel { Children = { modes, position, edges } };
-        body.Children.Add(displayChooser);
+        body.Children.Add(Detach(displayChooser));
         RefreshDisplays();
         return Chrome.Section(Strings.T("settings.panel"), Strings.T("settings.panelSub"), body);
     }
@@ -331,7 +356,7 @@ public sealed class SettingsWindow : Window
         {
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 14, 0),
-            Children = { Chrome.Label(Strings.T("settings.addToMenu")), menuHint }
+            Children = { Chrome.Label(Strings.T("settings.addToMenu")), Detach(menuHint) }
         };
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 6, 0, 6) };
         grid.Children.Add(text);
@@ -359,7 +384,8 @@ public sealed class SettingsWindow : Window
                 settings.Language = code;
                 Strings.Use(code);
                 save();
-                Changed?.Invoke();
+                // Posted, because rebuilding the window replaces the chip that is still raising this.
+                Dispatcher.UIThread.Post(() => LanguageChanged?.Invoke());
             });
             chip.Margin = new Thickness(0, 0, 8, 8);
             languages.Children.Add(chip);
