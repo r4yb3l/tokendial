@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — your AI coding limits on a dial, before they stop you",
   "meta.description": "Made for vibecoders: a dock on the edge of your screen with one dial per AI coding assistant (Claude Code, Codex, Cursor, Copilot and more). It warns you before a window resets, when a limit hits, and when an agent is waiting for your yes. Free and open source, macOS and Windows.",
-  "nav.why": "Why Tokendial",
   "nav.how": "How it works",
   "nav.providers": "Providers",
   "nav.alerts": "Alerts",

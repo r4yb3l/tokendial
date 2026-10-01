@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — vos limites d'IA sur un cadran, avant qu'elles ne vous arrêtent",
   "meta.description": "Pensé pour les vibecoders : un dock au bord de votre écran avec un cadran par assistant de code (Claude Code, Codex, Cursor, Copilot et plus). Il vous prévient avant la remise à zéro d'une fenêtre, quand une limite est atteinte et quand un agent attend votre oui. Libre et open source, macOS et Windows.",
-  "nav.why": "Pourquoi Tokendial",
   "nav.how": "Fonctionnement",
   "nav.providers": "Fournisseurs",
   "nav.alerts": "Alertes",

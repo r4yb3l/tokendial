@@ -13,9 +13,8 @@ const site = production ? `https://${production}` : 'https://tokendial.app';
 export default defineConfig({
   site,
   output: 'static',
-  // Only the two index pages redirect. A dynamic source cannot be enumerated in a static build, and
-  // nothing outside the site ever linked to an individual post, so per-article redirects would be
-  // pages generated for links that do not exist.
+  // Only the two index pages redirect. A dynamic source cannot be enumerated in a static build, so a
+  // link to /blog/<slug> is a 404; check-posts refuses one in an article.
   redirects: {
     '/blog': '/guides',
     '/es/blog': '/es/guides'
@@ -28,5 +27,7 @@ export default defineConfig({
     routing: { prefixDefaultLocale: false }
   },
   integrations: [mdx(), sitemap({ i18n: { defaultLocale: 'en', locales: { en: 'en', 'en-GB': 'en-GB', es: 'es', fr: 'fr', de: 'de', ar: 'ar' } } })],
-  vite: { plugins: [tailwindcss()] }
+  // The content security policy says script-src 'self' and font-src 'self', so nothing may be inlined:
+  // Astro inlines a processed script below this limit, and an inline script is refused, not slowed.
+  vite: { plugins: [tailwindcss()], build: { assetsInlineLimit: 0 } }
 });

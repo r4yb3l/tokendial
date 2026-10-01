@@ -26,8 +26,14 @@ const FORBIDDEN = [
 
 /** The blog is written in tuteo. Voseo is not wrong, it is just a different voice, and one blog should
  *  have one. The accent carries the whole distinction - "usas" is tuteo, "usás" is not - so these
- *  patterns must never make the vowel optional, and the match must be case sensitive for the same reason. */
-const VOSEO = /\b(venís|podés|apretás|decís|tenés|sabés|querés|usás|mirá|escribís|leés|hacés|sos)\b/g;
+ *  patterns must never make the vowel optional, and the match must be case sensitive for the same reason.
+ *  The edges are letter lookarounds, not \b: to \b an accented vowel is not a word character, so "mirá"
+ *  followed by a space has no boundary after it and never matched. */
+const VOSEO = /(?<!\p{L})(venís|podés|apretás|decís|tenés|sabés|querés|usás|mirá|escribís|leés|hacés|sos)(?!\p{L})/gu;
+
+/** A link to another article must name a page the build makes. Only the two index pages redirect, so
+ *  /blog/<slug> is a 404 and three install guides shipped with one each. */
+const ARTICLE_LINK = /\]\((\/(?:es\/)?(?:guides|blog)\/[^)#\s]*)/g;
 
 function frontmatter(text) {
   const match = text.match(/^---\n([\s\S]*?)\n---/);
@@ -44,6 +50,7 @@ function frontmatter(text) {
 const problems = [];
 const warnings = [];
 const bySlug = new Map();
+const links = [];
 
 for (const lang of LANGS) {
   let files = [];
@@ -67,7 +74,7 @@ for (const lang of LANGS) {
     if (!front.title || !front.description) problems.push(`${where}: title and description are required`);
     if (!SECTIONS.includes(front.section)) problems.push(`${where}: section "${front.section}" is not one of ${SECTIONS.join(', ')}`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(front.date ?? '')) problems.push(`${where}: date must be YYYY-MM-DD`);
-    if (!/sources:/.test(front.__raw)) problems.push(`${where}: no sources; say what was read`);
+    if (!/^sources:\s*\n\s+- title:/m.test(front.__raw)) problems.push(`${where}: no sources; say what was read`);
     if (/example\.com|REPLACE/.test(front.__raw)) problems.push(`${where}: sources still hold the scaffold placeholder`);
     if (front.draft === 'true') problems.push(`${where}: still a draft`);
     // Twelve of the twenty published articles have no cover, so this cannot be an error without calling
@@ -79,6 +86,7 @@ for (const lang of LANGS) {
     for (const [pattern, why] of FORBIDDEN) {
       if (pattern.test(body)) problems.push(`${where}: ${why}`);
     }
+    for (const [, target] of body.matchAll(ARTICLE_LINK)) links.push({ where, target });
     // Install guides are reference pages and are meant to be short; an essay that short is unfinished.
     const floor = front.section === 'install' ? 250 : 400;
     const words = body.replace(/```[\s\S]*?```/g, ' ').split(/\s+/).filter(Boolean).length;
@@ -93,6 +101,12 @@ for (const lang of LANGS) {
 for (const [slug, langs] of bySlug) {
   const missing = LANGS.filter((l) => !langs.has(l));
   if (missing.length) problems.push(`${slug}: exists only in ${[...langs].join(', ')}; missing ${missing.join(', ')}`);
+}
+
+for (const { where, target } of links) {
+  const [, lang = 'en', kind, slug] = target.match(/^\/(?:(es)\/)?(guides|blog)\/(.*)$/) ?? [];
+  if (kind === 'blog') problems.push(`${where}: links ${target}; only the /blog index redirects, write /${lang === 'en' ? '' : 'es/'}guides/${slug}`);
+  else if (slug && !bySlug.get(slug)?.has(lang)) problems.push(`${where}: links ${target}, which is not an article`);
 }
 
 if (warnings.length) {

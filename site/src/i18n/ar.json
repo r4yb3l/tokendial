@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — حدود الذكاء الاصطناعي على قرص، قبل أن توقفك",
   "meta.description": "مصنوع لمبرمجي الـvibe: شريط على حافة شاشتك بقرص لكل مساعد برمجة (Claude Code وCodex وCursor وCopilot وغيرها). ينبّهك قبل إعادة ضبط النافذة، وعند بلوغ الحد، وعندما ينتظر وكيل موافقتك. حر ومفتوح المصدر، لنظامي macOS وWindows.",
-  "nav.why": "لماذا Tokendial",
   "nav.how": "كيف يعمل",
   "nav.providers": "المزوّدون",
   "nav.alerts": "التنبيهات",

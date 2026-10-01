@@ -13,7 +13,6 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 const home = pathFor(locale);
 const nav = [
-  [`${home}#why`, t('nav.why')],
   [`${home}#how`, t('nav.how')],
   [`${home}#providers`, t('nav.providers')],
   [`${home}#alerts`, t('nav.alerts')],

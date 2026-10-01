@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — tus límites de IA en un dial, antes de que te frenen",
   "meta.description": "Hecho para vibecoders: un dock en el borde de tu pantalla con un dial por asistente de código (Claude Code, Codex, Cursor, Copilot y más). Te avisa antes de que una ventana se reinicie, cuando llegas al límite y cuando un agente espera tu sí. Libre y de código abierto, macOS y Windows.",
-  "nav.why": "Por qué Tokendial",
   "nav.how": "Cómo funciona",
   "nav.providers": "Proveedores",
   "nav.alerts": "Alertas",

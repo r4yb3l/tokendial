@@ -147,3 +147,8 @@ jobs:
       - name: Build
         working-directory: site
         run: npm run build
+      # The policy says script-src 'self', so an inline script in the output is refused in production
+      # while working everywhere else, including the dev server. Only the build shows what Astro inlined.
+      - name: No inline scripts for the content security policy to refuse
+        working-directory: site
+        run: npm run check-csp

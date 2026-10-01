@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — deine KI-Limits auf einer Anzeige, bevor sie dich stoppen",
   "meta.description": "Gemacht für Vibecoder: ein Dock am Bildschirmrand mit einer Anzeige pro KI-Coding-Assistent (Claude Code, Codex, Cursor, Copilot und mehr). Es warnt dich, bevor ein Fenster zurückgesetzt wird, wenn ein Limit erreicht ist und wenn ein Agent auf dein Ja wartet. Frei und Open Source, macOS und Windows.",
-  "nav.why": "Warum Tokendial",
   "nav.how": "So funktioniert es",
   "nav.providers": "Anbieter",
   "nav.alerts": "Warnungen",
