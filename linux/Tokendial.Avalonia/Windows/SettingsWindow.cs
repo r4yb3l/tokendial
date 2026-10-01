@@ -69,6 +69,9 @@ public sealed class SettingsWindow : Window
     /// <summary>The alert settings moved, so the running engine needs the new shape of them.</summary>
     public event Action<Core.Alerts.AlertConfig>? AlertsChanged;
 
+    /// <summary>The dock's mode was chosen: expand on hover, always expanded, or hidden.</summary>
+    public event Action<PanelMode>? PanelModeChanged;
+
     private Control Build()
     {
         var columns = new Grid
@@ -231,9 +234,10 @@ public sealed class SettingsWindow : Window
 
     private void SetPanel(PanelMode mode)
     {
+        if (settings.Panel == mode) return;
         settings.Panel = mode;
         save();
-        Changed?.Invoke();
+        PanelModeChanged?.Invoke(mode);
     }
 
     // ---- alerts -------------------------------------------------------------------------------------

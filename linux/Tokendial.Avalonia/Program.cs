@@ -164,8 +164,9 @@ public sealed class TokendialApp : Application
     }
 
     /// <summary>
-    /// Becomes the running Tokendial: claims the session, shows the dock and starts reading. A copy that
-    /// cannot claim quits, because the two of them would draw two docks and poll the same accounts twice.
+    /// Becomes the running Tokendial: claims the session, puts the dock up in the mode the user chose and
+    /// starts reading. A copy that cannot claim quits, because the two of them would draw two docks and poll
+    /// the same accounts twice.
     /// </summary>
     private void Run(IClassicDesktopStyleApplicationLifetime desktop, bool justInstalled)
     {
@@ -176,8 +177,11 @@ public sealed class TokendialApp : Application
             return;
         }
 
-        desktop.MainWindow = panel;
-        panel.Show();
+        // A hidden dock leaves no window open, so closing settings would close the last one and end the
+        // application; quitting is always asked for explicitly instead, by the tray or by Uninstall. For the
+        // same reason the dock is not the lifetime's main window, which the lifetime shows when it starts.
+        desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        panel.SetMode(settings.Panel);
 
         tray = new Tokendial.Linux.Tray.TrayIcon(this);
         tray.ShowRequested += () => panel.Flash(TimeSpan.FromSeconds(6));
@@ -234,6 +238,7 @@ public sealed class TokendialApp : Application
             window.Closed += (_, _) => window = null;
             window.Changed += Refresh;
             window.Changed += ApplyDisplay;
+            window.PanelModeChanged += mode => panel?.SetMode(mode);
             window.AlertsChanged += config => alerts?.Reconfigure(config, settings.Wants);
         }
         window.Show();
