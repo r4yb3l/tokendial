@@ -22,6 +22,21 @@ public sealed class DesktopEntryTests
     [InlineData("/home/ana/50% off/$HOME/\"quoted\"/`tick`/back\\slash/Tokendial.AppImage")]
     public void ExecValueReadsBackAsThePath(string path) => Assert.Equal(path, ReadExec(Desktop.Quote(path)));
 
+    [Fact]
+    public void TouchMovesTheIconThemeForward()
+    {
+        var directory = Directory.CreateTempSubdirectory("tokendial-icons-");
+        try
+        {
+            var past = DateTime.UtcNow.AddDays(-2);
+            Directory.SetLastWriteTimeUtc(directory.FullName, past);
+            Desktop.Touch(directory.FullName);
+            Assert.True(Directory.GetLastWriteTimeUtc(directory.FullName) > past.AddDays(1));
+            Assert.Empty(directory.EnumerateFileSystemInfos());
+        }
+        finally { directory.Delete(recursive: true); }
+    }
+
     /// <summary>
     /// A desktop's reading of one quoted Exec argument, layer by layer in the order the specification
     /// gives: the string escapes of the value, then the quoting rule, then the field-code percent.

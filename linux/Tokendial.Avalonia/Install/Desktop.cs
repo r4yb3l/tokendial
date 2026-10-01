@@ -221,14 +221,27 @@ public static class Desktop
     }
 
     /// <summary>
-    /// Asks the desktop to notice. Both tools are optional and absent on a minimal install, which is why
-    /// neither failing is treated as the install failing - the entry is on disk either way and the menu
-    /// picks it up on the next session.
+    /// Asks the desktop to notice. The tool is optional and absent on a minimal install, which is why its
+    /// failing is not treated as the install failing - the entry is on disk either way and the menu picks it
+    /// up on the next session.
     /// </summary>
     private static void Refresh()
     {
         Run("update-desktop-database", Applications);
-        Run("gtk-update-icon-cache", "-f", "-t", Icons);
+        Touch(Icons);
+    }
+
+    /// <summary>
+    /// Moves the icon theme's modification time forward, which is how GTK and the menus learn to look at it
+    /// again: an icon cache older than its theme directory is ignored. Writing a cache instead, with
+    /// gtk-update-icon-cache, left one in the user's theme that outlived Tokendial and hid the icons other
+    /// applications later installed beside it, because adding an icon changes only a subdirectory and the
+    /// cache went on looking current.
+    /// </summary>
+    internal static void Touch(string directory)
+    {
+        try { if (Directory.Exists(directory)) Directory.SetLastWriteTimeUtc(directory, DateTime.UtcNow); }
+        catch (Exception error) { Log.Ui.Error($"touch {directory}: {error.Message}"); }
     }
 
     private static void Run(string tool, params string[] arguments)
