@@ -16,7 +16,10 @@ namespace Tokendial.Linux.Windows;
 /// </remarks>
 public static class Uninstall
 {
-    public static async Task Ask(Window owner, Action quit)
+    /// <param name="owner">The window the question is asked over.</param>
+    /// <param name="forgetAutostart">Clears launch at login in the settings that are about to be kept.</param>
+    /// <param name="quit">Ends the session once everything is gone.</param>
+    public static async Task Ask(Window owner, Action forgetAutostart, Action quit)
     {
         if (!Desktop.InMenu && !Desktop.CanInstall)
         {
@@ -28,7 +31,10 @@ public static class Uninstall
             Strings.T("settings.uninstall.appimage"));
         if (answer == Answer.Cancel) return;
 
-        Desktop.Remove(alsoData: answer == Answer.Yes);
+        var alsoData = answer == Answer.Yes;
+        // Only when the data stays: saving settings into a folder about to be deleted would put it back.
+        if (!alsoData) forgetAutostart();
+        Desktop.Remove(alsoData);
         quit();
     }
 

@@ -390,7 +390,7 @@ public sealed class SettingsWindow : Window
         links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.vercel.app")));
         links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
         links.Children.Add(Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Core.Paths.Data)));
-        links.Children.Add(Chrome.Button(Strings.T("settings.uninstall"), () => _ = Uninstall.Ask(this, quit)));
+        links.Children.Add(Chrome.Button(Strings.T("settings.uninstall"), () => _ = Uninstall.Ask(this, ForgetAutostart, quit)));
 
         var about = new StackPanel
         {
@@ -408,6 +408,16 @@ public sealed class SettingsWindow : Window
         grid.Children.Add(links);
 
         return new Border { Child = grid, Background = Chrome.TitleBarFill, BorderBrush = Chrome.Divider, BorderThickness = new Thickness(0, 1, 0, 0) };
+    }
+
+    /// <summary>
+    /// Uninstalling removes the autostart entry, so settings kept with the user's data must stop asking for
+    /// it: the next copy to start, a downloaded one included, would otherwise write it straight back.
+    /// </summary>
+    private void ForgetAutostart()
+    {
+        settings.LaunchAtLogin = false;
+        save();
     }
 
     /// <summary>xdg-open is the freedesktop way to ask the desktop what opens a URL or a folder.</summary>

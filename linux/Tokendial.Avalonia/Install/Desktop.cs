@@ -104,6 +104,10 @@ public static class Desktop
             Directory.CreateDirectory(Applications);
             File.WriteAllText(Entry, EntryText(target, autostart: false));
             Refresh();
+
+            // Launch at login, turned on while this ran from the download folder, wrote an entry naming that
+            // file; it has to name the copy that survives emptying the folder, as the menu entry now does.
+            if (AutostartIsSet) SetAutostart(true);
             return true;
         }
         catch (Exception error)

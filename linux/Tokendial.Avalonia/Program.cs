@@ -100,9 +100,6 @@ public sealed class TokendialApp : Application
         Strings.Use(settings.Language);
         Sqlite.SweepCache();
 
-        // An update changes the path the autostart entry holds, so it is written again on every launch.
-        Desktop.SyncAutostart(settings.LaunchAtLogin);
-
         var providers = ProviderCatalog.Providers(archive);
         catalogue = providers;
         Adopt(providers);
@@ -176,6 +173,11 @@ public sealed class TokendialApp : Application
             desktop.Shutdown();
             return;
         }
+
+        // Here rather than at startup: a downloaded AppImage still asking whether to install must not have
+        // written an autostart entry already. Written on every launch because an update changes the path
+        // the entry holds.
+        Desktop.SyncAutostart(settings.LaunchAtLogin);
 
         // A hidden dock leaves no window open, so closing settings would close the last one and end the
         // application; quitting is always asked for explicitly instead, by the tray or by Uninstall. For the
