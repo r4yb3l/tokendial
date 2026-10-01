@@ -104,7 +104,7 @@ public sealed class TokendialApp : Application
         catalogue = providers;
         Adopt(providers);
 
-        store = new UsageStore(providers, archive, settings.Disconnected);
+        store = new UsageStore(providers, archive, settings.Disconnected, launcher: new AppLauncher());
         assistant = new InstallAssistant(providers);
         assistant.SignedIn += id => { settings.Disconnected.Remove(id); store!.Connect(id); Save(); Refresh(); };
         hub = new ActivityHub(ProviderCatalog.Monitors());
