@@ -53,7 +53,7 @@ const others = [
 
   <ul class="mt-3 flex gap-2" role="list">
     {others.map((o) => (
-      <li class="w-[74px] rounded-xl border border-ink-700/60 bg-ink-800 py-2 text-center">
+      <li class="w-[74px] py-2 text-center">
         <span class="block font-mono text-sm font-bold" style={o.pct >= 80 ? 'color:var(--color-watch)' : 'color:var(--color-brand-400)'}>{o.pct}%</span>
         <span class="mt-0.5 block truncate px-1 text-[10px] text-slate-400">{t(`providers.${o.id}`)}</span>
       </li>
