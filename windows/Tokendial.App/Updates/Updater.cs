@@ -69,12 +69,18 @@ public sealed class Updater : IDisposable
         finally { checking = false; }
     }
 
-    /// <summary>Quits, applies the downloaded release and starts the new version. Only the user calls this, from the tray.</summary>
+    /// <summary>
+    /// Quits, applies the downloaded release and starts the new version. Only the user calls this, from the tray.
+    /// Velopack's updater is told to wait for this process and the app then shuts down the ordinary way: applying
+    /// and restarting at once ended the process on the spot, so the exit cleanup never ran and the old tray icon
+    /// stayed behind until the cursor passed over it.
+    /// </summary>
     public void RestartToUpdate()
     {
         if (ready is null) return;
         Log.Ui.Info($"updates: restarting into {ready.Version}");
-        manager.ApplyUpdatesAndRestart(ready);
+        manager.WaitExitThenApplyUpdates(ready, silent: false, restart: true);
+        System.Windows.Application.Current.Shutdown();
     }
 
     public void Dispose() => timer.Stop();
