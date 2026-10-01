@@ -29,9 +29,15 @@ public static class Terminals
     /// The distribution's own choice first, then the desktops' own, then the ones people install on purpose.
     /// A terminal is only reached for if the ones before it are not there.
     /// </summary>
+    /// <remarks>
+    /// <c>-e</c> takes the program and its arguments as separate words, the way xterm defines it and Debian
+    /// requires of every x-terminal-emulator; a terminal that execs the next word as given looks for a program
+    /// literally called "sh /path/to/script". Tilix is the exception: its <c>-e</c> takes one command line and
+    /// parses it itself.
+    /// </remarks>
     private static readonly Terminal[] Known =
     [
-        new("x-terminal-emulator", ["-e", "sh {script}"], ForksAway: true),
+        new("x-terminal-emulator", ["-e", "sh", "{script}"], ForksAway: true),
         new("gnome-terminal", ["--", "sh", "{script}"], ForksAway: true),
         new("mate-terminal", ["--", "sh", "{script}"], ForksAway: true),
         new("tilix", ["-e", "sh {script}"], ForksAway: true),
@@ -55,7 +61,7 @@ public static class Terminals
         foreach (var name in new[] { "TOKENDIAL_TERMINAL", "TERMINAL" })
         {
             if (env(name) is { Length: > 0 } chosen && exists(chosen))
-                return Known.FirstOrDefault(t => t.Command == chosen) ?? new Terminal(chosen, ["-e", "sh {script}"], ForksAway: true);
+                return Known.FirstOrDefault(t => t.Command == chosen) ?? new Terminal(chosen, ["-e", "sh", "{script}"], ForksAway: true);
         }
         return Known.FirstOrDefault(t => exists(t.Command));
     }
