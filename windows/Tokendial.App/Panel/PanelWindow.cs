@@ -362,12 +362,17 @@ public sealed class PanelWindow : Window
         if (hit != cardFor) ShowCard(hit);
     }
 
-    /// <summary>The detail card beside the hovered cell, on the interior side of the dock: below a top dock, above a bottom one, beside a column.</summary>
+    /// <summary>
+    /// The detail card beside the hovered cell, on the interior side of the dock: below a top dock, above a bottom
+    /// one, beside a column. Only a card for a newly hovered cell slides in; the card already showing is rebuilt in
+    /// place, or every reading, tick and session change would play its entrance again under the cursor.
+    /// </summary>
     private void ShowCard(string id)
     {
         var tile = model.Tiles.FirstOrDefault(t => t.Id == id);
         var cell = content.CellElements.FirstOrDefault(c => c.Id == id).Element;
         if (tile is null || cell is null) { HideCard(); return; }
+        var refresh = card is not null && cardFor == id;
         var fresh = HoverCard.Build(tile, Now());
         fresh.FlowDirection = ContentDirection;
         fresh.IsHitTestVisible = true;
@@ -396,7 +401,7 @@ public sealed class PanelWindow : Window
         Canvas.SetLeft(card, left);
         Canvas.SetTop(card, top);
         root.Children.Add(card);
-        if (!Theme.ReduceMotion)
+        if (!Theme.ReduceMotion && !refresh)
         {
             card.Opacity = 0;
             var (dx, dy) = edge switch { DockEdge.Top => (0.0, -6.0), DockEdge.Bottom => (0.0, 6.0), DockEdge.Left => (-6.0, 0.0), _ => (6.0, 0.0) };
