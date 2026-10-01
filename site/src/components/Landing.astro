@@ -48,7 +48,7 @@ const languageNames: Record<string, string> = {
   <ol class="grid gap-4 md:grid-cols-3">
     {steps.map((step, i) => (
       <li class="card reveal p-6" style={`transition-delay:${i * 60}ms`}>
-        <span class="inline-grid size-10 place-items-center rounded-xl border border-ink-700/60 bg-ink-800 font-mono text-sm font-semibold text-brand-400">{String(i + 1).padStart(2, '0')}</span>
+        <span class="block font-mono text-3xl font-bold text-brand-400/70">{String(i + 1).padStart(2, '0')}</span>
         <h3 class="mt-5 text-lg font-semibold text-slate-100">{step.title}</h3>
         <p class="mt-2 text-sm leading-relaxed text-slate-400">{step.body}</p>
       </li>
@@ -59,7 +59,7 @@ const languageNames: Record<string, string> = {
     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('providers.title')}</p>
     <ul class="mt-4 grid gap-2.5 sm:grid-cols-3 lg:grid-cols-5" role="list">
       {providers.map((id) => (
-        <li class="flex min-w-0 items-center gap-2.5 rounded-xl border border-ink-700/60 bg-ink-800 px-3 py-2.5">
+        <li class="flex min-w-0 items-center gap-2.5 px-1 py-1.5">
           <span class="grid size-6 shrink-0 place-items-center rounded-lg" style={`color:var(--tint-${id});background:color-mix(in srgb, var(--tint-${id}) 16%, transparent)`}>
             <Mark id={id} size={13} />
           </span>
@@ -231,6 +231,7 @@ const languageNames: Record<string, string> = {
             </li>
           ))}
         </ul>
+        <p class="mt-3 text-xs text-slate-500">{t('dock.look.try')}</p>
 
         <script>
           /* The four edges and the two looks were pictures of choices. They are the choices now: the panel
@@ -270,9 +271,9 @@ const languageNames: Record<string, string> = {
       </div>
       <div class="p-6">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{t('dock.3.title')}</p>
-        <ul class="mt-4 flex flex-wrap gap-2" role="list">
+        <ul class="mt-4 flex flex-wrap gap-x-3 gap-y-1.5 text-xs" role="list">
           {locales.map((code) => (
-            <li class:list={['rounded-lg border px-2.5 py-1.5 text-xs', code === locale ? 'border-brand-500/40 bg-brand-500/10 font-medium text-slate-100' : 'border-ink-700/60 bg-ink-800 text-slate-400']}>
+            <li class:list={code === locale ? 'font-semibold text-slate-100' : 'text-slate-500'}>
               {languageNames[code] ?? code}
             </li>
           ))}
