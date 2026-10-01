@@ -40,7 +40,8 @@ the tray; a copy started from `bin/` or the portable zip never checks.
 
 ## Where it keeps things
 
-Everything lives under `%LOCALAPPDATA%\Tokendial`:
+Everything lives under `%APPDATA%\Tokendial`. `%LOCALAPPDATA%\Tokendial` is the installer's and holds only the
+app itself; `Paths.cs` explains why the two are kept apart.
 
 - `settings.json`: panel mode, connected providers, thresholds, alert switches.
 - `readings.json`, `backoff.json`: the last good reading per provider and any rate-limit hold.

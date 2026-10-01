@@ -5,8 +5,8 @@ usage endpoint. That is the whole threat surface, and these are the rules the co
 
 ## What Tokendial never does
 
-- **Store a credential.** Nothing under `%LOCALAPPDATA%\Tokendial` (or `~/Library/Application
-  Support/Tokendial`) holds a token, cookie or key. The files there are settings, the last usage
+- **Store a credential.** Nothing under `%APPDATA%\Tokendial` (`~/Library/Application
+  Support/Tokendial` on macOS, `~/.config/Tokendial` on Linux) holds a token, cookie or key. The files there are settings, the last usage
   reading per provider, rate-limit holds and alert epochs.
 - **Write or refresh a credential.** Files, keychains and the Credential Manager are opened
   read-only. When a token expires, Tokendial shows "sign in" and waits for the tool to refresh it.
@@ -89,5 +89,5 @@ you, blocking `/_vercel/insights` changes nothing about the site.
 
 ## Reporting
 
-Open an issue at https://github.com/r4yb3l-qa/tokendial or write to the address on the profile.
+Open an issue at https://github.com/r4yb3l/tokendial or write to the address on the profile.
 Please do not include tokens or credential files in a report.

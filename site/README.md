@@ -16,22 +16,19 @@ npm run preview
   tokens and marks (`src/data/marks.json`, copied from `docs/design/marks/normalized`).
 - `src/pages/index.astro` is English at `/`; `src/pages/[lang]/index.astro` renders `/es`, `/fr`, `/de`, `/ar`, `/en-GB`.
   Arabic renders right-to-left; code and the dock stay left-to-right through the `.ltr` utility.
-- `public/_headers` — security headers and immutable caching for Cloudflare Pages.
+- `vercel.json` — what production serves: security headers, immutable caching for `/_astro/`, and the
+  `cleanUrls`/`trailingSlash` pair that makes `/es` answer for `es.html`. `public/_headers` carries the same headers
+  for any other static host and must be kept identical.
 
-## Deploying to Cloudflare Pages
+## Deploying
 
-Create a Pages project connected to the GitHub repository with these settings:
+The site is a Vercel project with `site` as its root directory, served at https://tokendial.vercel.app; every push
+to `main` that touches `site/` rebuilds it. No domain is bought yet, so `astro.config.mjs` takes the canonical
+host from `VERCEL_PROJECT_PRODUCTION_URL` rather than naming `tokendial.app`.
 
-| Setting | Value |
-|---|---|
-| Production branch | `main` |
-| Root directory | `site` |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Environment variable | `NODE_VERSION` = `24` |
-
-Then add `tokendial.app` (and `www.tokendial.app` as a redirect) under Custom domains; Cloudflare issues the
-certificate. Every push to `main` that touches `site/` rebuilds the site.
+The content security policy says `script-src 'self'`: a script must be a file. Write processed `<script>` tags, not
+`is:inline` ones, and run `npm run check-csp` after a build — an inline script works on the dev server and is
+refused in production.
 
 ## Keeping the marks in sync
 

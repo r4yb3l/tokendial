@@ -1,6 +1,6 @@
 {
   "meta.title": "Tokendial — vos limites d'IA sur un cadran, avant qu'elles ne vous arrêtent",
-  "meta.description": "Pensé pour les vibecoders : un dock au bord de votre écran avec un cadran par assistant de code (Claude Code, Codex, Cursor, Copilot et plus). Il vous prévient avant la remise à zéro d'une fenêtre, quand une limite est atteinte et quand un agent attend votre oui. Libre et open source, macOS et Windows.",
+  "meta.description": "Pensé pour les vibecoders : un dock au bord de votre écran avec un cadran par assistant de code (Claude Code, Codex, Cursor, Copilot et plus). Il vous prévient avant la remise à zéro d'une fenêtre, quand une limite est atteinte et quand un agent attend votre oui. Libre et open source, pour macOS, Windows et Linux.",
   "nav.how": "Fonctionnement",
   "nav.providers": "Fournisseurs",
   "nav.alerts": "Alertes",
@@ -116,7 +116,7 @@
   "unsigned.windows": "Windows affiche « Windows a protégé votre ordinateur ». Choisissez Informations complémentaires, puis Exécuter quand même.",
   "unsigned.macos": "macOS annonce que l’application est endommagée. Faites un clic droit sur Tokendial dans Applications, choisissez Ouvrir, puis Ouvrir à nouveau — ou retirez vous-même l’indicateur de quarantaine :",
   "cta.title": "Que le vibe continue.",
-  "cta.lead": "Libre et open source, Windows et macOS, construits à partir d'une même spécification.",
+  "cta.lead": "Libre et open source, Windows, macOS et Linux, construits à partir d'une même spécification.",
   "footer.made": "Réalisé par Raybel Hernández · Licence MIT",
   "footer.disclaimer": "Tokendial est un projet indépendant. Il n'est ni affilié, ni approuvé, ni sponsorisé par Anthropic, OpenAI, GitHub, Cursor, Google, Z.ai, xAI ou le projet OpenCode. Les noms et marques appartiennent à leurs propriétaires.",
   "footer.source": "Code source",
