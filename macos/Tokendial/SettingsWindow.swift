@@ -190,7 +190,7 @@ private struct ProviderRow: View {
                     Text(summary.name)
                         .font(Chrome.font(12, summary.connected ? .semibold : .medium))
                         .foregroundStyle(summary.connected ? Chrome.strong : Chrome.slate300)
-                    if let fraction { usedBadge(fraction) }
+                    if let fraction, let pct = Int(exactly: (fraction * 100).rounded(.toNearestOrAwayFromZero)) { usedBadge(pct) }
                 }
                 Text(assisted && recipe != nil ? InstallDetail.text(summary, recipe!, installer) : model.detail(summary))
                     .font(Chrome.font(11))
@@ -235,12 +235,11 @@ private struct ProviderRow: View {
         }
     }
 
-    private func usedBadge(_ fraction: Double) -> some View {
-        let pct = Int((fraction * 100).rounded(.toNearestOrAwayFromZero))
-        return ChromePill(Strings.t("settings.usedBadge", ["pct": pct]),
-                          foreground: pct > 0 ? Chrome.accent : Chrome.slate300,
-                          background: pct > 0 ? Chrome.brandSoft : Chrome.surface700,
-                          border: .clear, mono: true, size: 10, radius: 4)
+    private func usedBadge(_ pct: Int) -> some View {
+        ChromePill(Strings.t("settings.usedBadge", ["pct": pct]),
+                   foreground: pct > 0 ? Chrome.accent : Chrome.slate300,
+                   background: pct > 0 ? Chrome.brandSoft : Chrome.surface700,
+                   border: .clear, mono: true, size: 10, radius: 4)
     }
 
     @ViewBuilder private var actions: some View {
