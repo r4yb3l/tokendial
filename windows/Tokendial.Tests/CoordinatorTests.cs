@@ -140,4 +140,29 @@ public class CoordinatorTests
         }
         finally { File.Delete(file); }
     }
+
+    /// <summary>
+    /// A value this build cannot read - here an edge a newer version added - falls back to the defaults, and
+    /// the first save after that used to write those defaults over the only copy of the user's settings.
+    /// </summary>
+    [Fact]
+    public void SettingsThatCannotBeReadAreSetAsideRatherThanOverwritten()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"tokendial-settings-{Guid.NewGuid():N}.json");
+        var original = """{ "Edge": "Diagonal", "FirstRunDone": true, "Display": "HDMI-1" }""";
+        try
+        {
+            File.WriteAllText(file, original);
+            var loaded = Settings.Load(file);
+            Assert.False(loaded.FirstRunDone);
+            Assert.Null(loaded.Display);
+            Assert.False(File.Exists(file));
+            Assert.Equal(original, File.ReadAllText(file + ".bad"));
+        }
+        finally
+        {
+            File.Delete(file);
+            File.Delete(file + ".bad");
+        }
+    }
 }
