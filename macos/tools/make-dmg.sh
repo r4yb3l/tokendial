@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 
 VERSION=$(tr -d '[:space:]' < ../VERSION)
 VOL="Tokendial ${VERSION}"
+MOUNT="/Volumes/${VOL}"
 APP=dist/Tokendial.app
 STAGE=build/dmg-stage
 RW=build/dmg-rw.dmg
@@ -15,7 +16,29 @@ OUT="dist/Tokendial-${VERSION}-macos.dmg"
 
 [ -d "$APP" ] || { echo "no app at ${APP}"; exit 1; }
 
-hdiutil detach "/Volumes/${VOL}" -quiet 2>/dev/null || true
+# Finder keeps the volume open for a moment after it closes the window, so a detach straight after
+# often answers "Resource busy". Asking again usually works; forcing is the last resort.
+detach() {
+  [ -d "$MOUNT" ] || return 0
+  tries=0
+  while [ "$tries" -lt 5 ]; do
+    hdiutil detach "$MOUNT" -quiet 2>/dev/null && return 0
+    tries=$((tries + 1))
+    sleep 2
+  done
+  hdiutil detach "$MOUNT" -force -quiet
+}
+
+# A run that stops halfway must not leave the image mounted or the app staged: each is one more
+# Tokendial in the Mac's Spotlight.
+cleanup() {
+  detach || true
+  rm -rf "$STAGE" "$RW"
+}
+trap cleanup EXIT
+trap 'exit 1' INT TERM HUP
+
+detach
 rm -rf "$STAGE" "$RW"
 mkdir -p "$STAGE/.background" dist
 cp -R "$APP" "$STAGE/"
@@ -54,8 +77,7 @@ end tell
 AS
 
 sync
-hdiutil detach "/Volumes/${VOL}" -quiet
+detach
 rm -f "$OUT"
 hdiutil convert "$RW" -format UDZO -imagekey zlib-level=9 -o "$OUT" >/dev/null
-rm -f "$RW"
 ls -la "$OUT" | awk '{printf "%.2f MB  %s\n", $5/1048576, $9}'
