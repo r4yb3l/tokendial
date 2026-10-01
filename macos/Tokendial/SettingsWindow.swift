@@ -332,7 +332,7 @@ private struct SettingsFooter: View {
                     .font(Chrome.font(11)).foregroundStyle(Chrome.slate400)
             }
             Spacer(minLength: 12)
-            ChromeButton(label: Strings.t("settings.website")) { open("https://tokendial.app") }
+            ChromeButton(label: Strings.t("settings.website")) { open("https://tokendial.vercel.app") }
             ChromeButton(label: Strings.t("settings.source")) { open("https://github.com/r4yb3l/tokendial") }
             ChromeButton(label: Strings.t("settings.dataFolder")) { NSWorkspace.shared.open(Paths.appSupport) }
         }
