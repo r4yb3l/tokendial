@@ -109,7 +109,7 @@ public sealed class App : Application
         };
 
         panel.Show();
-        panel.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        panel.ContentDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         panel.SetMode(settings.Panel);
         RefreshModel();
 
@@ -262,7 +262,7 @@ public sealed class App : Application
     private void ApplyLanguage(string? code)
     {
         Strings.Use(code);
-        panel.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        panel.ContentDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         panel.Relocalize();
         tray.Relocalize();
         settingsWindow?.Relocalize();

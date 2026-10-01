@@ -99,6 +99,17 @@ public sealed class PanelWindow : Window
     public bool IsExpanded => expanded;
     public Func<DateTimeOffset> Now { get; set; } = () => DateTimeOffset.UtcNow;
 
+    /// <summary>
+    /// The reading direction of the tiles and the hover card. The window itself stays left to right: mirrored, a
+    /// side dock's capsule left its edge for the far side of the window, its open base faced the screen, and the
+    /// card landed between the capsule and the edge.
+    /// </summary>
+    public FlowDirection ContentDirection
+    {
+        get => capsuleContent.FlowDirection;
+        set => capsuleContent.FlowDirection = value;
+    }
+
     private bool Vertical => edge is DockEdge.Left or DockEdge.Right;
     private int Count => Math.Max(model.Tiles.Count, 0);
 
@@ -263,12 +274,18 @@ public sealed class PanelWindow : Window
         else if (card is not null) HideCard();
     }
 
-    /// <summary>Whether the cursor is over the element, with a strip of extra tolerance on the side facing the screen's interior.</summary>
+    /// <summary>
+    /// Whether the cursor is over the element, with a strip of extra tolerance on the side facing the screen's
+    /// interior. The corners are sorted because a right-to-left element's local origin is its top-right corner;
+    /// unsorted, nothing was ever inside an Arabic dock, so it never opened.
+    /// </summary>
     private bool Contains(FrameworkElement element, Native.POINT cursor, double extraInterior)
     {
         if (element.ActualWidth <= 0 || !element.IsVisible) return false;
-        var topLeft = element.PointToScreen(new Point(0, 0));
-        var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+        var origin = element.PointToScreen(new Point(0, 0));
+        var opposite = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+        var topLeft = new Point(Math.Min(origin.X, opposite.X), Math.Min(origin.Y, opposite.Y));
+        var bottomRight = new Point(Math.Max(origin.X, opposite.X), Math.Max(origin.Y, opposite.Y));
         var extra = extraInterior * (screen?.Scale ?? 1);
         switch (edge)
         {
@@ -352,10 +369,14 @@ public sealed class PanelWindow : Window
         var cell = content.CellElements.FirstOrDefault(c => c.Id == id).Element;
         if (tile is null || cell is null) { HideCard(); return; }
         var fresh = HoverCard.Build(tile, Now());
+        fresh.FlowDirection = ContentDirection;
         fresh.IsHitTestVisible = true;
         fresh.Measure(new Size(Theme.CardWidth, double.PositiveInfinity));
         var cardHeight = fresh.DesiredSize.Height;
-        var cellOrigin = cell.TranslatePoint(new Point(0, 0), root);
+        // Right-to-left content sits in a left-to-right window, and there a cell's own origin is its right edge.
+        var near = cell.TranslatePoint(new Point(0, 0), root);
+        var far = cell.TranslatePoint(new Point(cell.ActualWidth, 0), root);
+        var cellOrigin = new Point(Math.Min(near.X, far.X), near.Y);
         var capsuleLeft = Canvas.GetLeft(capsule);
         var capsuleTop = Canvas.GetTop(capsule);
         double left, top;
