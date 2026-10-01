@@ -56,6 +56,7 @@ public sealed class PanelWindow : Window
     /// </summary>
     public event Action<bool>? HoverChanged;
 
+    private readonly DispatcherTimer pin = new();
     private DispatcherTimer? poll;
     private EventHandler? screensHandler;
     private DockEdge edge;
@@ -67,8 +68,9 @@ public sealed class PanelWindow : Window
     private bool built;
     private bool expanded;
     private bool engaged;
+    private bool hovering;
+    private bool pinned;
     private int hovered = -1;
-    private DateTimeOffset pinnedUntil = DateTimeOffset.MinValue;
     private string? display;
     private PanelMode mode = PanelMode.ExpandOnHover;
     private PanelModel? model;
@@ -105,6 +107,7 @@ public sealed class PanelWindow : Window
             if (e.InitialPressMouseButton == Avalonia.Input.MouseButton.Right) SettingsRequested?.Invoke();
         };
 
+        pin.Tick += (_, _) => Unpin();
         Opened += OnOpened;
     }
 
@@ -160,6 +163,7 @@ public sealed class PanelWindow : Window
         alive = false;
         poll?.Stop();
         poll = null;
+        pin.Stop();
         if (screensHandler is not null) Screens.Changed -= screensHandler;
         screensHandler = null;
         ScalingChanged -= OnScalingChanged;
@@ -488,13 +492,26 @@ public sealed class PanelWindow : Window
     /// <remarks>
     /// A hidden dock comes out for the moment too and goes back when it passes: Show in the tray and a clicked
     /// banner are both someone asking to see the numbers, and neither changes the mode they chose.
+    /// The moment runs on its own timer rather than as a deadline the pointer poll reads, because that poll
+    /// needs an X connection: under Wayland there is none, and a deadline nothing ever looks at would leave
+    /// the dock open and the alert engine silenced for good.
     /// </remarks>
     public void Flash(TimeSpan? duration = null)
     {
-        pinnedUntil = DateTimeOffset.UtcNow + (duration ?? TimeSpan.FromSeconds(6));
+        pinned = true;
+        pin.Stop();
+        pin.Interval = duration ?? TimeSpan.FromSeconds(6);
+        pin.Start();
         Reveal();
-        Engage(true);
-        if (!expanded) Reconcile(true);
+        Settle();
+    }
+
+    /// <summary>The pin's moment has passed, so whatever is left holding the dock open decides.</summary>
+    internal void Unpin()
+    {
+        pin.Stop();
+        pinned = false;
+        Settle();
     }
 
     /// <summary>
@@ -506,7 +523,8 @@ public sealed class PanelWindow : Window
         mode = next;
         if (mode == PanelMode.Hidden)
         {
-            pinnedUntil = DateTimeOffset.MinValue;
+            pin.Stop();
+            pinned = false;
             Conceal();
             return;
         }
@@ -529,6 +547,9 @@ public sealed class PanelWindow : Window
     /// <summary>Collapses the capsule first, so the dock that comes back later starts compact.</summary>
     private void Conceal()
     {
+        // A dock that is off the screen is under nothing, and the pointer poll stops reading while it is: the
+        // last reading has to be dropped here or it would still be holding the dock open when it comes back.
+        hovering = false;
         Engage(false);
         if (expanded) Reconcile(false);
         if (IsVisible) Hide();
@@ -546,9 +567,23 @@ public sealed class PanelWindow : Window
         HoverChanged?.Invoke(on);
     }
 
+    /// <summary>
+    /// The pointer and the pin hold the dock open independently of each other, so neither can decide alone:
+    /// this is the one place that reads both, and the only way a dock flashed out of hiding goes back.
+    /// </summary>
+    private void Settle()
+    {
+        var held = hovering || pinned;
+        Engage(held);
+        var open = held || mode == PanelMode.AlwaysExpanded;
+        if (open != expanded) Reconcile(open);
+        if (!open && mode == PanelMode.Hidden) Conceal();
+    }
+
     private void Track()
     {
-        // No X connection - headless tests, or a session without one - means no pointer to read.
+        // No X connection - headless tests, or a Wayland session - means no pointer to read. The pin keeps its
+        // own timer precisely because this tick is allowed never to run.
         if (!x11 || layout is null || !IsVisible) return;
         var (x, y, sameScreen) = X11.Pointer();
         if (!sameScreen) return;
@@ -565,16 +600,10 @@ public sealed class PanelWindow : Window
         // stay on the capsule for the dock to remain open.
         var inside = layout.Hot.Contains(local);
 
-        // A pinned dock stays open until its moment passes, whatever the pointer is doing.
-        var held = inside || DateTimeOffset.UtcNow < pinnedUntil;
-        Engage(held);
-        var open = held || mode == PanelMode.AlwaysExpanded;
-        if (open != expanded) Reconcile(open);
-        if (!open && mode == PanelMode.Hidden)
-        {
-            Conceal();
-            return;
-        }
+        hovering = inside;
+        Settle();
+        // Settling may have taken the dock off the screen, and there is no card to place on a dock that is gone.
+        if (!IsVisible) return;
         Card(inside, local, origin);
     }
 

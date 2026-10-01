@@ -116,4 +116,33 @@ public sealed class PanelWindowModelTests
         }
         finally { window.Close(); }
     }
+
+    /// <summary>
+    /// Headless has no X connection, which is the state a Wayland session is in: the pointer poll reads nothing
+    /// there, so the pin running out is the only thing that can put a flashed dock back and let the alert engine
+    /// speak again.
+    /// </summary>
+    [AvaloniaFact]
+    public void AFlashedHiddenDockGoesBackWhenThePinRunsOut()
+    {
+        var window = new PanelWindow(["claude", "codex"]);
+        var held = new List<bool>();
+        window.HoverChanged += held.Add;
+        try
+        {
+            window.Update(Model("claude", "codex"));
+            window.SetMode(PanelMode.Hidden);
+            window.Flash();
+            Assert.True(window.IsVisible);
+            Assert.True(window.IsExpanded);
+
+            window.Unpin();
+
+            Assert.False(window.IsVisible);
+            Assert.False(window.IsExpanded);
+            Assert.Equal(PanelMode.Hidden, window.Mode);
+            Assert.Equal(new[] { true, false }, held);
+        }
+        finally { window.Close(); }
+    }
 }
