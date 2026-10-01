@@ -12,7 +12,7 @@ namespace Tokendial.App.Windows;
 public static class WelcomeWindow
 {
     /// <summary>Closing the window without pressing either button connects nothing: the boxes start ticked, and a choice nobody confirmed is not an opt-in.</summary>
-    public static void Show(IReadOnlyList<ProviderSummary> detected, IReadOnlyList<ProviderSummary> absent, InstallAssistant assistant, Action<IReadOnlyList<string>> connect, Action openSettings)
+    public static void Show(IReadOnlyList<ProviderSummary> detected, IReadOnlyList<ProviderSummary> absent, InstallAssistant assistant, Action<IReadOnlyList<string>> connect, Action openSettings, Func<string, bool> openApp)
     {
         Window? window = null;
         var page = new StackPanel { Margin = new Thickness(24, 22, 24, 22) };
@@ -46,7 +46,7 @@ public static class WelcomeWindow
             void Rebuild()
             {
                 rows.Children.Clear();
-                foreach (var provider in absent) rows.Children.Add(AbsentRow(provider, assistant, window!));
+                foreach (var provider in absent) rows.Children.Add(AbsentRow(provider, assistant, window!, openApp));
             }
             assistant.Changed += Rebuild;
             page.Children.Add(Chrome.Section(Strings.T("welcome.notSignedIn"), Strings.T("welcome.notSignedInHint"), rows));
@@ -74,7 +74,7 @@ public static class WelcomeWindow
     }
 
     /// <summary>A tool that is not signed in yet: its mark, where it stands, and the Install or Sign in button when a recipe exists.</summary>
-    private static UIElement AbsentRow(ProviderSummary provider, InstallAssistant assistant, Window owner)
+    private static UIElement AbsentRow(ProviderSummary provider, InstallAssistant assistant, Window owner, Func<string, bool> openApp)
     {
         var grid = new Grid { Margin = new Thickness(0, 5, 0, 5) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -94,7 +94,7 @@ public static class WelcomeWindow
             detail.FontSize = 11;
             text.Children.Add(detail);
             text.Children.Add(InstallSteps.Strip(state));
-            if (InstallSteps.Action(owner, provider, recipe, state, assistant, () => false) is Button next)
+            if (InstallSteps.Action(owner, provider, recipe, state, assistant, () => openApp(provider.Id)) is Button next)
             {
                 next.VerticalAlignment = VerticalAlignment.Center;
                 Grid.SetColumn(next, 2);

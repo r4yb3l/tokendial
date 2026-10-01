@@ -162,7 +162,7 @@ public sealed class App : Application
             Save();
             store.Disconnected = settings.Disconnected;
             Begin();
-        }, ShowSettings);
+        }, ShowSettings, store.OpenSource);
     }
 
     /// <summary>The assistant saw the tool sign in: the provider joins the dial without another click. During the welcome it is kept for the choice being made there.</summary>
