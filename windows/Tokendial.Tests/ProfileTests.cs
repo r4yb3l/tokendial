@@ -42,7 +42,7 @@ public class ProfileTests : IDisposable
         Assert.NotNull(profiles[0].DesktopFile);
         Assert.Null(profiles[1].DesktopFile);
         // Named per shell rather than through SignInCommand, which follows whatever is running this.
-        Assert.Equal("$env:CODEX_HOME='~/.codex-work'; codex login", profiles[1].SignInFor(Desktop.Windows));
+        Assert.Equal("$env:CODEX_HOME = Join-Path $env:USERPROFILE '.codex-work'; codex login", profiles[1].SignInFor(Desktop.Windows));
         Assert.Equal("CODEX_HOME=\"$HOME/.codex-work\" codex login", profiles[1].SignInFor(Desktop.Linux));
         Assert.Equal("codex login", profiles[0].SignInCommand);
     }

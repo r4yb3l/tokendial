@@ -16,7 +16,15 @@ public struct ClaudeProfile: Equatable, Sendable {
     public var displayName: String { slug.map { "Claude Code (\($0))" } ?? "Claude Code" }
     public var credentialsFile: URL { directory.appendingPathComponent(".credentials.json") }
     public var sessionsDirectory: URL { directory.appendingPathComponent("sessions") }
-    public var signInCommand: String { slug.map { "CLAUDE_CONFIG_DIR=~/.claude-\($0) claude" } ?? "claude" }
+    public var signInCommand: String { slug.map { "CLAUDE_CONFIG_DIR=\"$HOME/.claude-\(Self.doubleQuoted($0))\" claude" } ?? "claude" }
+
+    /// The slug is whatever the user called a folder, and inside double quotes sh still reads these four.
+    private static func doubleQuoted(_ text: String) -> String {
+        text.reduce(into: "") { quoted, character in
+            if "\\\"$`".contains(character) { quoted.append("\\") }
+            quoted.append(character)
+        }
+    }
 
     public static func `default`(home: URL = Paths.home) -> ClaudeProfile { ClaudeProfile(slug: nil, directory: home.appendingPathComponent(".claude")) }
 

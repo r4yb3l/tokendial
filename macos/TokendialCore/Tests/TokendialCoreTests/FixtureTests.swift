@@ -213,6 +213,13 @@ final class SecurityTests: XCTestCase {
         try Data(#"{"github.company.com:Iv1.x":{"oauth_token":"ghe_token"},"github.com:Iv1.y":{"oauth_token":"gho_token","user":"ada"}}"#.utf8).write(to: both)
         XCTAssertEqual("gho_token", try CopilotCredential.fromPluginFile(both)?.token)
     }
+
+    /// A profile's directory name is whatever the user called a folder; inside sh's double quotes it must stay text.
+    func testAProfileSignInKeepsItsSlugInsideTheQuotes() {
+        let home = URL(fileURLWithPath: "/tmp")
+        XCTAssertEqual(#"CLAUDE_CONFIG_DIR="$HOME/.claude-work" claude"#, ClaudeProfile(slug: "work", directory: home).signInCommand)
+        XCTAssertEqual(#"CLAUDE_CONFIG_DIR="$HOME/.claude-it's \$(x) \`y\` \"z\" \\" claude"#, ClaudeProfile(slug: #"it's $(x) `y` "z" \"#, directory: home).signInCommand)
+    }
 }
 
 /// What a provider says when it cannot get a usable answer right now. None of these is a sign-out: a sign-out erases
