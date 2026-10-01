@@ -21,7 +21,9 @@ public class AlertVectorTests
         using var document = JsonDocument.Parse(File.ReadAllText(Docs.Path("alerts", "vectors", file)));
         var root = document.RootElement;
         var config = Config(root.GetProperty("config"));
-        var engine = new AlertEngine(config);
+        var off = Off(root.GetProperty("config"));
+        Func<AlertKind, bool> wants = kind => !off.Contains(kind);
+        var engine = new AlertEngine(config, wants: wants);
         var emitted = new List<string>();
 
         foreach (var step in root.GetProperty("steps").EnumerateArray())
@@ -45,7 +47,7 @@ public class AlertVectorTests
 
             if (step.TryGetProperty("persistAndRestart", out var persist) && persist.ValueKind == JsonValueKind.True)
             {
-                engine = AlertEngine.Load(engine.Save(), config);
+                engine = AlertEngine.Load(engine.Save(), config, wants);
             }
 
             foreach (var alert in engine.Reduce(alertEvent))
@@ -94,6 +96,12 @@ public class AlertVectorTests
             TimeSpan.FromSeconds(Int("waitingRepeatSeconds", (int)d.WaitingRepeat.TotalSeconds)),
             TimeSpan.FromSeconds(Int("perProviderCooldownSeconds", (int)d.PerProviderCooldown.TotalSeconds)));
     }
+
+    /// <summary>The kinds the vector's user switched off, named as in "expected".</summary>
+    private static HashSet<AlertKind> Off(JsonElement element) =>
+        element.TryGetProperty("off", out var off)
+            ? off.EnumerateArray().Select(k => Enum.Parse<AlertKind>(k.GetString()!, ignoreCase: true)).ToHashSet()
+            : new HashSet<AlertKind>();
 }
 
 /// <summary>Finds the shared docs/ directory next to the test output or up the tree.</summary>

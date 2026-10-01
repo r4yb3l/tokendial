@@ -1,0 +1,12 @@
+{
+  "name": "20-restart-forgets-hover",
+  "config": {},
+  "steps": [
+    { "t": 0, "event": { "kind": "hover", "on": true } },
+    { "t": 10, "event": { "kind": "restart" }, "persistAndRestart": true },
+    { "t": 20, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 60, "resetsAt": 18000 } }
+  ],
+  "expected": [
+    { "t": 20, "kind": "threshold", "provider": "claude", "window": "session", "pct": 50 }
+  ]
+}

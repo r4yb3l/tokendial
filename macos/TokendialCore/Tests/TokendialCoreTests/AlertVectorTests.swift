@@ -17,7 +17,9 @@ final class AlertVectorTests: XCTestCase {
     private func run(_ file: URL) throws {
         let root = try XCTUnwrap(JSON.object(Data(contentsOf: file)), file.lastPathComponent)
         let config = Self.config(root.obj("config") ?? [:])
-        var engine = AlertEngine(config: config)
+        let off = Set((root.obj("config") ?? [:]).arr("off").compactMap { ($0 as? String).flatMap { AlertKind(rawValue: $0) } })
+        let wants: (AlertKind) -> Bool = { !off.contains($0) }
+        var engine = AlertEngine(config: config, wants: wants)
         var emitted: [String] = []
 
         for step in root.objects("steps") {
@@ -40,7 +42,7 @@ final class AlertVectorTests: XCTestCase {
                 XCTFail("unknown event in \(file.lastPathComponent)"); return
             }
             if step.bool("persistAndRestart") == true {
-                engine = AlertEngine.load(engine.save(), config: config)
+                engine = AlertEngine.load(engine.save(), config: config, wants: wants)
             }
             for alert in engine.reduce(event) {
                 emitted.append(Self.describe(t, alert))

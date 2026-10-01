@@ -7,8 +7,8 @@ namespace Tokendial.Core.Alerts;
 /// <summary>
 /// The host side of the alert engine: turns readings and sessions into events,
 /// runs the reducer under one lock, persists its state, and hands alerts to the
-/// sink after filtering the kinds the user switched off. Time comes from a clock
-/// the tests can drive.
+/// sink. The kinds the user switched off are the engine's to drop, before they
+/// can hold or start a cooldown. Time comes from a clock the tests can drive.
 /// </summary>
 public sealed class AlertCoordinator : IDisposable
 {
@@ -17,7 +17,6 @@ public sealed class AlertCoordinator : IDisposable
     private readonly Func<DateTimeOffset> now;
     private readonly string? stateFile;
     private AlertEngine engine;
-    private Func<AlertKind, bool> wants;
     private Timer? ticker;
 
     public AlertCoordinator(IAlertSink sink, AlertConfig? config = null, string? stateFile = null, Func<DateTimeOffset>? now = null, Func<AlertKind, bool>? wants = null)
@@ -25,8 +24,7 @@ public sealed class AlertCoordinator : IDisposable
         this.sink = sink;
         this.now = now ?? (() => DateTimeOffset.UtcNow);
         this.stateFile = stateFile;
-        this.wants = wants ?? (_ => true);
-        engine = LoadEngine(stateFile, config ?? AlertConfig.Default);
+        engine = LoadEngine(stateFile, config ?? AlertConfig.Default, wants);
         Log.Alerts.Info($"state: {engine.EpochCount} epoch(s) from {(stateFile is null ? "memory" : Path.GetFileName(stateFile))}");
         Apply(new AlertEvent.Restart(this.now()));
     }
@@ -45,11 +43,7 @@ public sealed class AlertCoordinator : IDisposable
     /// <summary>Thresholds or switches changed: the engine keeps its epochs and only the rules move.</summary>
     public void Reconfigure(AlertConfig config, Func<AlertKind, bool> wants)
     {
-        lock (gate)
-        {
-            engine = AlertEngine.Load(engine.Save(), config);
-            this.wants = wants;
-        }
+        lock (gate) engine = AlertEngine.Load(engine.Save(), config, wants);
     }
 
     public void OnReadings(IEnumerable<ProviderReading> readings)
@@ -63,27 +57,34 @@ public sealed class AlertCoordinator : IDisposable
         }
     }
 
+    /// <summary>
+    /// One snapshot of every session, applied whole under the lock. Linux calls this from each monitor's own
+    /// timer thread; applied piecemeal, one snapshot could close a session another had just reported waiting.
+    /// </summary>
     public void OnActivities(IReadOnlyDictionary<string, Activity> activities)
     {
-        var at = now();
-        var seen = new HashSet<string>();
-        foreach (var (provider, activity) in activities)
+        var alerts = new List<Alert>();
+        lock (gate)
         {
-            foreach (var session in activity.Sessions)
+            var at = now();
+            var seen = new HashSet<string>();
+            foreach (var (provider, activity) in activities)
             {
-                seen.Add(session.Id);
-                Apply(new AlertEvent.Session(at, provider, session.Id, session.State switch
+                foreach (var session in activity.Sessions)
                 {
-                    SessionState.Waiting => SessionActivity.Waiting,
-                    SessionState.Working => SessionActivity.Working,
-                    _ => SessionActivity.Done
-                }));
+                    seen.Add(session.Id);
+                    alerts.AddRange(Reduce(new AlertEvent.Session(at, provider, session.Id, session.State switch
+                    {
+                        SessionState.Waiting => SessionActivity.Waiting,
+                        SessionState.Working => SessionActivity.Working,
+                        _ => SessionActivity.Done
+                    })));
+                }
             }
+            foreach (var (provider, id) in engine.Waiting.Where(w => !seen.Contains(w.SessionId)))
+                alerts.AddRange(Reduce(new AlertEvent.Session(at, provider, id, SessionActivity.Done)));
         }
-        IReadOnlyList<(string Provider, string SessionId)> waiting;
-        lock (gate) waiting = engine.Waiting;
-        foreach (var (provider, id) in waiting.Where(w => !seen.Contains(w.SessionId)))
-            Apply(new AlertEvent.Session(at, provider, id, SessionActivity.Done));
+        Deliver(alerts);
     }
 
     public void OnHover(bool on) => Apply(new AlertEvent.Hover(now(), on));
@@ -92,14 +93,24 @@ public sealed class AlertCoordinator : IDisposable
 
     private void Apply(AlertEvent e)
     {
-        List<Alert> alerts;
-        lock (gate)
-        {
-            alerts = engine.Reduce(e).Where(a => wants(a.Kind)).ToList();
-            if (alerts.Count > 0 || e is AlertEvent.Usage or AlertEvent.Restart) Persist();
-            delivered.AddRange(alerts);
-            if (delivered.Count > 200) delivered.RemoveRange(0, delivered.Count - 200);
-        }
+        IReadOnlyList<Alert> alerts;
+        lock (gate) alerts = Reduce(e);
+        Deliver(alerts);
+    }
+
+    /// <summary>Runs one event through the engine and persists what it changed. The caller holds the lock.</summary>
+    private IReadOnlyList<Alert> Reduce(AlertEvent e)
+    {
+        var alerts = engine.Reduce(e);
+        if (alerts.Count > 0 || e is AlertEvent.Usage or AlertEvent.Restart) Persist();
+        delivered.AddRange(alerts);
+        if (delivered.Count > 200) delivered.RemoveRange(0, delivered.Count - 200);
+        return alerts;
+    }
+
+    /// <summary>Outside the lock, so a slow notification centre never stalls the next event.</summary>
+    private void Deliver(IEnumerable<Alert> alerts)
+    {
         foreach (var alert in alerts)
         {
             Log.Alerts.Info($"{alert.Kind} {alert.Provider}{(alert.Window is null ? "" : "/" + alert.Window)}{(alert.Pct is null ? "" : $" {alert.Pct}%")}");
@@ -121,14 +132,14 @@ public sealed class AlertCoordinator : IDisposable
         catch (Exception error) { Log.Alerts.Error($"persist: {error.Message}"); }
     }
 
-    private static AlertEngine LoadEngine(string? file, AlertConfig config)
+    private static AlertEngine LoadEngine(string? file, AlertConfig config, Func<AlertKind, bool>? wants)
     {
         try
         {
-            if (file is not null && File.Exists(file)) return AlertEngine.Load(File.ReadAllText(file), config);
+            if (file is not null && File.Exists(file)) return AlertEngine.Load(File.ReadAllText(file), config, wants);
         }
         catch (Exception error) { Log.Alerts.Error($"load: {error.Message}"); }
-        return new AlertEngine(config);
+        return new AlertEngine(config, wants: wants);
     }
 
     public void Dispose() => ticker?.Dispose();
