@@ -31,21 +31,22 @@ public static class Uninstall
 
     public static void Ask(Window owner)
     {
+        var options = Strings.RightToLeft ? MessageBoxOptions.RtlReading | MessageBoxOptions.RightAlign : MessageBoxOptions.None;
         if (!Available)
         {
             MessageBox.Show(owner, Strings.T("settings.uninstall.portable"), Strings.T("app.name"),
-                MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.None, options);
             return;
         }
 
         var answer = MessageBox.Show(owner, Strings.T("settings.uninstall.ask"), Strings.T("settings.uninstall"),
-            MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.None, options);
         if (answer == MessageBoxResult.Cancel) return;
 
         Remember(removeData: answer == MessageBoxResult.Yes);
         try
         {
-            Process.Start(new ProcessStartInfo(Updater, "--uninstall") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(Updater, "--uninstall") { UseShellExecute = true })?.Dispose();
         }
         catch (Exception error)
         {

@@ -601,7 +601,7 @@ public sealed class SettingsWindow
 
     public static void Open(string target)
     {
-        try { Process.Start(new ProcessStartInfo(target) { UseShellExecute = true }); }
+        try { Process.Start(new ProcessStartInfo(target) { UseShellExecute = true })?.Dispose(); }
         catch (Exception error) { Core.Diagnostics.Log.Ui.Error($"open {target}: {error.Message}"); }
     }
 }

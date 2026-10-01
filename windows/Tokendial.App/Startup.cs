@@ -58,7 +58,7 @@ public sealed class AppLauncher : IAppLauncher
         if (target is null) return false;
         try
         {
-            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true })?.Dispose();
             return true;
         }
         catch (Exception error)
@@ -71,7 +71,7 @@ public sealed class AppLauncher : IAppLauncher
     private string? Resolve(string appKey) => InstallCatalog.For(appKey)?.Here is PlatformRecipe platform ? locator.Resolve(platform.Detect) : null;
 }
 
-/// <summary>Rolling text log under %LOCALAPPDATA%\Tokendial\logs. Debug lines only with TOKENDIAL_DEBUG set.</summary>
+/// <summary>Rolling text log under %APPDATA%\Tokendial\logs. Debug lines only with TOKENDIAL_DEBUG set.</summary>
 public sealed class FileLog : IDisposable
 {
     private readonly object gate = new();

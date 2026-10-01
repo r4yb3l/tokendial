@@ -45,6 +45,8 @@ public sealed class App : Application
         this.instance = instance;
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         DispatcherUnhandledException += (_, e) => { Log.Ui.Error($"unhandled: {e.Exception}"); e.Handled = true; };
+        // A throw on a timer or pool thread never reaches the dispatcher and ends the process; this line is all it leaves.
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => Log.Ui.Error($"unhandled: {e.ExceptionObject}");
     }
 
     public static string Version => typeof(App).Assembly.GetName().Version is Version v ? $"{v.Major}.{v.Minor}.{v.Build}" : "dev";
