@@ -16,7 +16,7 @@ public static class RunSheet
     public static void Show(Window owner, string providerName, InstallRecipe recipe, PlatformRecipe platform, InstallAction action, bool wingetMissing, Action run)
     {
         var installing = action == InstallAction.Install;
-        var command = installing ? platform.Install : platform.SignIn?.Command ?? "";
+        var command = string.Join(Environment.NewLine, Commands(platform, action));
         var page = new StackPanel { Margin = new Thickness(22, 20, 22, 20) };
         page.Children.Add(Chrome.Body(installing ? Strings.T("install.sheet.intro", ("vendor", recipe.Vendor)) : Strings.T("install.sheet.signInIntro", ("name", providerName))));
 
@@ -80,5 +80,17 @@ public static class RunSheet
         window.ResizeMode = ResizeMode.NoResize;
         window.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         window.ShowDialog();
+    }
+
+    /// <summary>
+    /// Every command the script will run, in the order it runs them, by the same rules as
+    /// <see cref="InstallScript.Compose"/>: an install of a command-line tool chains its sign-in in the same
+    /// window, and that sign-in may be one Tokendial composed for a profile. Showing only the install line let
+    /// the second command run without ever having been shown.
+    /// </summary>
+    private static IEnumerable<string> Commands(PlatformRecipe platform, InstallAction action)
+    {
+        if (action == InstallAction.Install && platform.Install.Length > 0) yield return platform.Install;
+        if (platform.Kind == InstallKind.Cli && platform.SignIn is SignInStep signIn && signIn.Command.Length > 0) yield return signIn.Command;
     }
 }
