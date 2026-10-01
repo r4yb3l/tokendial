@@ -4,11 +4,16 @@ import SQLite3
 /// Read-only access to a database another app owns in WAL mode: plain read-only first, immutable next.
 /// No copy is ever made: a copy of Cursor's store would hold its session token.
 public enum Sqlite {
-    public static func column(_ path: URL, _ sql: String, parameter: String? = nil) -> [String]? {
-        rows(path, sql, parameter: parameter)?.compactMap { $0.first ?? nil }
+    /// The owner held the database busy past the timeout: what it says right now is unknown, which is not the same
+    /// as empty. Thrown instead of falling back to the immutable read, which answers from the last checkpoint - for
+    /// Cursor a token already replaced, a 401, and a signed-in user told to sign in.
+    public struct Busy: Error {}
+
+    public static func column(_ path: URL, _ sql: String, parameter: String? = nil) throws -> [String]? {
+        try rows(path, sql, parameter: parameter)?.compactMap { $0.first ?? nil }
     }
 
-    public static func rows(_ path: URL, _ sql: String, parameter: String? = nil) -> [[String?]]? {
+    public static func rows(_ path: URL, _ sql: String, parameter: String? = nil) throws -> [[String?]]? {
         guard FileManager.default.fileExists(atPath: path.path) else { return nil }
         let candidates = ["file:\(path.path)?mode=ro", "file:\(path.path)?immutable=1"]
         for uri in candidates {
@@ -17,23 +22,34 @@ public enum Sqlite {
             defer { sqlite3_close(db) }
             sqlite3_busy_timeout(db, 1000)
             var statement: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { continue }
+            let prepared = sqlite3_prepare_v2(db, sql, -1, &statement, nil)
+            guard prepared == SQLITE_OK, let statement else {
+                if contended(prepared) { throw Busy() }
+                continue
+            }
             defer { sqlite3_finalize(statement) }
             if let parameter { sqlite3_bind_text(statement, 1, parameter, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self)) }
             var result: [[String?]] = []
-            var failed = false
+            var failure: Int32?
             loop: while true {
-                switch sqlite3_step(statement) {
+                let code = sqlite3_step(statement)
+                switch code {
                 case SQLITE_ROW:
                     let count = Int(sqlite3_column_count(statement))
                     result.append((0..<count).map { i in sqlite3_column_text(statement, Int32(i)).map { String(cString: $0) } })
                 case SQLITE_DONE: break loop
-                default: failed = true; break loop
+                default: failure = code; break loop
                 }
             }
-            if !failed { return result }
+            guard let failure else { return result }
+            if contended(failure) { throw Busy() }
         }
         return nil
+    }
+
+    /// SQLITE_BUSY or SQLITE_LOCKED, extended codes included: the owner is writing, which is not a failure to open.
+    private static func contended(_ code: Int32) -> Bool {
+        (code & 0xFF) == SQLITE_BUSY || (code & 0xFF) == SQLITE_LOCKED
     }
 }
 
@@ -45,18 +61,23 @@ public struct CursorCredential: Equatable {
     public static var defaultStore: URL { Paths.under("Library", "Application Support", "Cursor", "User", "globalStorage", "state.vscdb") }
     public var cookie: String { "WorkosCursorSessionToken=\(accountId)::\(accessToken)" }
 
+    /// Read as of the editor's latest write; a store the editor holds busy is transient, never a sign-out.
     public static func read(store: URL = defaultStore) throws -> CursorCredential {
-        guard let token = value(store, "cursorAuth/accessToken"), let account = value(store, "cursorAuth/stripeMembershipAuthId") else { throw UsageError.needsSignIn() }
-        return CursorCredential(accessToken: token, accountId: account)
+        do {
+            guard let token = try value(store, "cursorAuth/accessToken"), let account = try value(store, "cursorAuth/stripeMembershipAuthId") else { throw UsageError.needsSignIn() }
+            return CursorCredential(accessToken: token, accountId: account)
+        } catch is Sqlite.Busy {
+            throw UsageError.credentialExpired()
+        }
     }
 
     public static func account(store: URL = defaultStore) -> ProviderAccount? {
-        guard let email = value(store, "cursorAuth/cachedEmail") else { return nil }
-        return ProviderAccount(label: email, plan: value(store, "cursorAuth/stripeMembershipType"), source: "Cursor", manageURL: URL(string: "https://cursor.com/dashboard"))
+        guard let email = try? value(store, "cursorAuth/cachedEmail") else { return nil }
+        return ProviderAccount(label: email, plan: try? value(store, "cursorAuth/stripeMembershipType"), source: "Cursor", manageURL: URL(string: "https://cursor.com/dashboard"))
     }
 
-    private static func value(_ store: URL, _ key: String) -> String? {
-        Sqlite.column(store, "SELECT value FROM ItemTable WHERE key = ?", parameter: key)?.first.flatMap { $0.isEmpty ? nil : $0 }
+    private static func value(_ store: URL, _ key: String) throws -> String? {
+        try Sqlite.column(store, "SELECT value FROM ItemTable WHERE key = ?", parameter: key)?.first.flatMap { $0.isEmpty ? nil : $0 }
     }
 }
 

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Data.Sqlite;
 using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
@@ -203,6 +204,34 @@ public class CredentialReadTests : IDisposable
     {
         using var provider = Copilot(Write("apps.json", CopilotApps), HttpStatusCode.Forbidden, (header, value));
         Assert.Equal(kind, (await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync())).Kind);
+    }
+
+    /// <summary>
+    /// While the editor writes, its store answers busy. The immutable fallback then read the token as of the last
+    /// checkpoint, one the editor had already replaced: a 401, and a signed-in user told to sign in.
+    /// </summary>
+    [Fact]
+    public void ACursorStoreTheEditorHoldsBusyIsTransientNotAStaleToken()
+    {
+        var store = Path.Combine(root, "state.vscdb");
+        var connection = new SqliteConnectionStringBuilder { DataSource = store, Pooling = false }.ToString();
+        using (var setup = new SqliteConnection(connection))
+        {
+            setup.Open();
+            using var create = setup.CreateCommand();
+            create.CommandText = "CREATE TABLE ItemTable (key TEXT UNIQUE, value BLOB); INSERT INTO ItemTable VALUES ('cursorAuth/accessToken', 'token'), ('cursorAuth/stripeMembershipAuthId', 'account');";
+            create.ExecuteNonQuery();
+        }
+        Assert.Equal("token", CursorCredential.Read(store).AccessToken);
+
+        using var editor = new SqliteConnection(connection);
+        editor.Open();
+        using (var begin = editor.CreateCommand())
+        {
+            begin.CommandText = "BEGIN EXCLUSIVE";
+            begin.ExecuteNonQuery();
+        }
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => CursorCredential.Read(store)).Kind);
     }
 }
 

@@ -18,11 +18,17 @@ public sealed record CursorCredential(string AccessToken, string AccountId)
 
     public string Cookie => $"WorkosCursorSessionToken={AccountId}::{AccessToken}";
 
+    /// <summary>Read as of the editor's latest write; a store the editor holds busy is transient, never a sign-out.</summary>
     public static CursorCredential Read(string? store = null)
     {
         store ??= DefaultStore;
-        var token = Value(store, "cursorAuth/accessToken");
-        var account = Value(store, "cursorAuth/stripeMembershipAuthId");
+        string? token, account;
+        try
+        {
+            token = CurrentValue(store, "cursorAuth/accessToken");
+            account = CurrentValue(store, "cursorAuth/stripeMembershipAuthId");
+        }
+        catch (Sqlite.BusyException) { throw UsageError.CredentialExpired(); }
         if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(account)) throw UsageError.NeedsSignIn();
         return new CursorCredential(token, account);
     }
@@ -35,6 +41,8 @@ public sealed record CursorCredential(string AccessToken, string AccountId)
     }
 
     private static string? Value(string store, string key) => Sqlite.Column(store, "SELECT value FROM ItemTable WHERE key = $p", key)?.FirstOrDefault();
+
+    private static string? CurrentValue(string store, string key) => Sqlite.CurrentColumn(store, "SELECT value FROM ItemTable WHERE key = $p", key)?.FirstOrDefault();
 }
 
 /// <summary>GET /api/usage-summary. Zero is a reading; an empty plan is not.</summary>

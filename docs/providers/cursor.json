@@ -9,7 +9,7 @@
       "path": "~/Library/Application Support/Cursor/User/globalStorage/state.vscdb",
       "query": "SELECT value FROM ItemTable WHERE key = ?",
       "fields": { "accessToken": "cursorAuth/accessToken", "accountId": "cursorAuth/stripeMembershipAuthId", "email": "cursorAuth/cachedEmail", "plan": "cursorAuth/stripeMembershipType" },
-      "notes": "WAL mode. Open read-only but never immutable while the editor runs, or you read the state at the last checkpoint: an already-rotated token. Fall back to immutable=1 once the editor has quit."
+      "notes": "WAL mode. Open read-only but never immutable while the editor runs, or you read the state at the last checkpoint: an already-rotated token. Fall back to immutable=1 once the editor has quit, which shows as a failure to open; a read the editor holds busy (SQLITE_BUSY, SQLITE_LOCKED) never falls back and is credentialExpired, not needsAuth."
     },
     "windows": {
       "kind": "sqlite",
