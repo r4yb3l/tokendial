@@ -46,4 +46,8 @@ public sealed class SettingsWindowTests
         Assert.Contains(Strings.T("settings.addToMenu"), before);
         Assert.Contains(Strings.T("settings.launchAtLogin"), before);
     });
+
+    [AvaloniaFact]
+    public void NoUpdateSwitchWhileNothingOnLinuxChecksForUpdates() => WithWindow(window =>
+        Assert.DoesNotContain(Strings.T("settings.checkForUpdates"), Texts(window)));
 }

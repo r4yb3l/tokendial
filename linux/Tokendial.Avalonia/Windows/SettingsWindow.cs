@@ -391,14 +391,14 @@ public sealed class SettingsWindow : Window
             languages.Children.Add(chip);
         }
 
+        // No "Check for updates" switch, although Windows and macOS have one: nothing in the Linux app checks
+        // for updates yet, and a switch that controls nothing tells the user something untrue.
         var body = new StackPanel
         {
             Children =
             {
                 Chrome.SwitchRow(Strings.T("settings.launchAtLogin"), Strings.T("settings.launchAtLoginHint"), settings.LaunchAtLogin,
                     on => { settings.LaunchAtLogin = on; Install.Desktop.SetAutostart(on); save(); }),
-                Chrome.SwitchRow(Strings.T("settings.checkForUpdates"), Strings.T("settings.checkForUpdatesHint"),
-                    settings.CheckForUpdates, on => { settings.CheckForUpdates = on; save(); }),
                 MenuEntry(),
                 Chrome.Rule(new Thickness(0, 10, 0, 10)),
                 Chrome.SmallTitle(Strings.T("settings.language")),
