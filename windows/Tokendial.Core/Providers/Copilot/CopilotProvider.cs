@@ -40,19 +40,29 @@ public sealed record CopilotCredential(string Token, string? User, string Source
         return FromPluginFile(files.Apps) ?? FromPluginFile(files.Hosts) ?? FromGhHosts(files.GhHosts) ?? throw UsageError.NeedsSignIn();
     }
 
-    /// <summary>apps.json keys entries "github.com:&lt;client id&gt;"; hosts.json keys them by host. Either way: oauth_token and user, github.com's only.</summary>
+    /// <summary>
+    /// apps.json keys entries "github.com:&lt;client id&gt;"; hosts.json keys them by host. Either way: oauth_token
+    /// and user, github.com's only. One editor per OAuth app signs in separately, so several github.com entries
+    /// can hold tokens for different people, and nothing in the file says which one the user is looking at: the
+    /// lowest client id used to win, which is someone else's quota as often as the right one. When they disagree
+    /// no entry is returned at all, and hosts.yml - which does name the active account - answers instead.
+    /// </summary>
     public static CopilotCredential? FromPluginFile(string path)
     {
         if (CredentialFile.Text(path) is not string text) return null;
         using var document = Json.Parse(text);
         if (document is null || document.RootElement.ValueKind != JsonValueKind.Object) return null;
+        var accounts = new HashSet<string>(StringComparer.Ordinal);
+        CopilotCredential? first = null;
         foreach (var entry in document.RootElement.EnumerateObject().OrderBy(e => e.Name, StringComparer.Ordinal))
         {
             if (!IsGitHubDotCom(entry.Name) || entry.Value.ValueKind != JsonValueKind.Object) continue;
-            var token = entry.Value.Str("oauth_token");
-            if (token is not null) return new CopilotCredential(token, entry.Value.Str("user"), "GitHub Copilot");
+            if (entry.Value.Str("oauth_token") is not string token) continue;
+            var user = entry.Value.Str("user");
+            accounts.Add(user ?? token);
+            first ??= new CopilotCredential(token, user, "GitHub Copilot");
         }
-        return null;
+        return accounts.Count == 1 ? first : null;
     }
 
     /// <summary>A bare "github.com" prefix also matched github.company.com, an Enterprise host whose token must never reach api.github.com.</summary>

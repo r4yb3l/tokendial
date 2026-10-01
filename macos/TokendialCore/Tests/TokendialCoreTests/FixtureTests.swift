@@ -214,6 +214,35 @@ final class SecurityTests: XCTestCase {
         XCTAssertEqual("gho_token", try CopilotCredential.fromPluginFile(both)?.token)
     }
 
+    /// Each editor signs in through its own OAuth app, so apps.json can hold a token per account with nothing in it
+    /// naming the active one. The lowest client id used to win, which showed one person the other's quota; an
+    /// ambiguous file answers for nobody and hosts.yml, which does name the active account, is asked instead.
+    func testTwoCopilotAccountsInOnePluginFileAnswerForNeither() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tokendial-sec-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let rivals = directory.appendingPathComponent("rivals.json")
+        try Data(#"{"github.com:Iv1.a":{"oauth_token":"gho_ada","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace","user":"grace"}}"#.utf8).write(to: rivals)
+        XCTAssertNil(try CopilotCredential.fromPluginFile(rivals))
+        let unnamed = directory.appendingPathComponent("unnamed.json")
+        try Data(#"{"github.com:Iv1.a":{"oauth_token":"gho_ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace"}}"#.utf8).write(to: unnamed)
+        XCTAssertNil(try CopilotCredential.fromPluginFile(unnamed))
+        let sameAccount = directory.appendingPathComponent("same.json")
+        try Data(#"{"github.com:Iv1.a":{"oauth_token":"gho_editor","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_cli","user":"ada"}}"#.utf8).write(to: sameAccount)
+        XCTAssertEqual("gho_editor", try CopilotCredential.fromPluginFile(sameAccount)?.token)
+
+        let ghHosts = directory.appendingPathComponent("hosts.yml")
+        try Data("""
+            github.com:
+                user: grace
+                oauth_token: gho_active
+            """.utf8).write(to: ghHosts)
+        let files = CopilotCredential.Files(apps: rivals, hosts: directory.appendingPathComponent("absent.json"), ghHosts: ghHosts)
+        let credential = try CopilotCredential.read(files)
+        XCTAssertEqual("gho_active", credential.token)
+        XCTAssertEqual("GitHub CLI", credential.source)
+    }
+
     /// The issuer is matched whole: a lookalike host is a customer IdP like any other.
     func testOnlyAuthXaiItselfIsATrustedGrokIssuer() {
         let lookalike: JSONObject = ["https://auth.x.ai.evil.example::cli": ["key": "foreign"] as JSONObject]

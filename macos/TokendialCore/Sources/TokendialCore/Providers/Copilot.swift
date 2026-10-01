@@ -28,14 +28,21 @@ public struct CopilotCredential: Equatable {
 
     /// apps.json keys entries "github.com:<client id>"; hosts.json keys them by host. Either way: oauth_token and user,
     /// github.com's only - a bare prefix also matched github.company.com, an Enterprise host whose token must never
-    /// reach api.github.com.
+    /// reach api.github.com. One editor per OAuth app signs in separately, so several github.com entries can hold
+    /// tokens for different people, and nothing in the file says which one the user is looking at: the lowest client
+    /// id used to win, which is someone else's quota as often as the right one. When they disagree no entry is
+    /// returned at all, and hosts.yml - which does name the active account - answers instead.
     public static func fromPluginFile(_ path: URL) throws -> CopilotCredential? {
         guard let data = try JSON.credentialData(path), let root = JSON.object(data) else { return nil }
+        var accounts = Set<String>()
+        var first: CopilotCredential?
         for key in root.keys.sorted() where key == "github.com" || key.hasPrefix("github.com:") {
             guard let entry = root[key] as? JSONObject, let token = entry.str("oauth_token") else { continue }
-            return CopilotCredential(token: token, user: entry.str("user"), source: "GitHub Copilot")
+            let user = entry.str("user")
+            accounts.insert(user ?? token)
+            if first == nil { first = CopilotCredential(token: token, user: user, source: "GitHub Copilot") }
         }
-        return nil
+        return accounts.count == 1 ? first : nil
     }
 
     /// gh writes one block per host, and since 2.40 a users: map inside it holding every signed-in account's token;

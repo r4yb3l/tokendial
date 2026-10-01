@@ -219,6 +219,8 @@ public final class AntigravityProvider: UsageProvider {
     private static let quietAfterRefusal: TimeInterval = 15 * 60
     /// The poll timer, a refresh the user asked for and the account lookup reach the credential from different threads.
     private let state = NSLock()
+    /// Two callers that both find nothing held would otherwise raise two keychain prompts at once.
+    private let reading = NSLock()
     private var held: AntigravityUsage.Credential?
     private var refusedAt: Date?
     private var bridge: Bridge?
@@ -259,6 +261,8 @@ public final class AntigravityProvider: UsageProvider {
 
     /// A refusal is held for a while: without that, one "Deny" would raise the same dialog every poll.
     private func load() throws -> AntigravityUsage.Credential {
+        reading.lock()
+        defer { reading.unlock() }
         let (current, refused) = state.withLock { (held, refusedAt) }
         if let current { return current }
         if let refused, now().timeIntervalSince(refused) < Self.quietAfterRefusal { throw Keychain.Refused() }

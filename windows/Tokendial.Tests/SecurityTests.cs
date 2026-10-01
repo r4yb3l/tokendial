@@ -133,6 +133,31 @@ public class SecurityTests : IDisposable
         Assert.Equal("gho_token", CopilotCredential.FromPluginFile(both)?.Token);
     }
 
+    /// <summary>
+    /// Each editor signs in through its own OAuth app, so apps.json can hold a token per account with nothing
+    /// in it naming the active one. The lowest client id used to win, which showed one person the other's quota;
+    /// an ambiguous file answers for nobody and hosts.yml, which does name the active account, is asked instead.
+    /// </summary>
+    [Fact]
+    public void TwoCopilotAccountsInOnePluginFileAnswerForNeither()
+    {
+        var rivals = Scratch("rivals.json", """{"github.com:Iv1.a":{"oauth_token":"gho_ada","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace","user":"grace"}}""");
+        Assert.Null(CopilotCredential.FromPluginFile(rivals));
+        var unnamed = Scratch("unnamed.json", """{"github.com:Iv1.a":{"oauth_token":"gho_ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace"}}""");
+        Assert.Null(CopilotCredential.FromPluginFile(unnamed));
+        var sameAccount = Scratch("same.json", """{"github.com:Iv1.a":{"oauth_token":"gho_editor","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_cli","user":"ada"}}""");
+        Assert.Equal("gho_editor", CopilotCredential.FromPluginFile(sameAccount)?.Token);
+
+        var ghHosts = Scratch("hosts.yml", """
+            github.com:
+                user: grace
+                oauth_token: gho_active
+            """);
+        var credential = CopilotCredential.Read(new CopilotCredential.Files(rivals, Path.Combine(scratch, "absent.json"), ghHosts));
+        Assert.Equal("gho_active", credential.Token);
+        Assert.Equal("GitHub CLI", credential.Source);
+    }
+
     /// <summary>The issuer is matched whole: a lookalike host is a customer IdP like any other, and its token never reaches the public endpoint.</summary>
     [Fact]
     public void OnlyAuthXaiItselfIsATrustedGrokIssuer()
