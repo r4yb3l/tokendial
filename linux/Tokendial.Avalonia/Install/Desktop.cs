@@ -191,10 +191,18 @@ public static class Desktop
     }
 
     /// <summary>
-    /// Exec quoting as the desktop entry specification defines it: the value is a double-quoted string in
-    /// which a backslash and a double quote are themselves escaped with a backslash.
+    /// One path as an <c>Exec=</c> value, in the three layers the desktop entry specification reads back in
+    /// reverse. The argument is double-quoted with <c>"</c>, <c>`</c>, <c>$</c> and <c>\</c> backslash-escaped
+    /// inside it; the key's value is itself a string, whose own escaping then doubles every backslash; and a
+    /// literal <c>%</c> becomes <c>%%</c>, since a lone one opens a field code. Without the middle layer the
+    /// string reader consumes or rejects the quoting escapes before the Exec parser sees them, so a path with
+    /// a backslash or a quote in it came back as a different path, or as no entry at all.
     /// </summary>
-    private static string Quote(string path) => "\"" + path.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+    internal static string Quote(string path)
+    {
+        var argument = string.Concat(path.Select(c => c is '"' or '`' or '$' or '\\' ? $"\\{c}" : c.ToString()));
+        return ("\"" + argument + "\"").Replace("\\", "\\\\").Replace("%", "%%");
+    }
 
     private static void WriteIcon(int size)
     {
