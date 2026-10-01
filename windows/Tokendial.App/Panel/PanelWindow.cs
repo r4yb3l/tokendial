@@ -34,6 +34,7 @@ public sealed class PanelWindow : Window
     private string? cardFor;
     private PanelModel model = PanelModel.Empty;
     private PanelMode mode = PanelMode.ExpandOnHover;
+    private PanelMode configured = PanelMode.ExpandOnHover;
     private DockEdge edge = DockEdge.Top;
     private bool hovering;
     private bool expanded;
@@ -87,7 +88,7 @@ public sealed class PanelWindow : Window
 
         hoverTimer.Interval = TimeSpan.FromMilliseconds(300);
         hoverTimer.Tick += (_, _) => PollHover();
-        pinTimer.Tick += (_, _) => { pinTimer.Stop(); pinned = false; Reconcile(); };
+        pinTimer.Tick += (_, _) => { pinTimer.Stop(); pinned = false; Settle(); };
         SourceInitialized += (_, _) => OnSourceReady();
     }
 
@@ -133,13 +134,27 @@ public sealed class PanelWindow : Window
         Reposition();
     }
 
+    /// <summary>The mode the user chose. A flash may lend a hidden dock hover behaviour for a while; this is what it returns to.</summary>
     public void SetMode(PanelMode next)
+    {
+        configured = next;
+        ApplyMode(next);
+    }
+
+    private void ApplyMode(PanelMode next)
     {
         mode = next;
         if (mode == PanelMode.Hidden) { hoverTimer.Stop(); Hide(); return; }
         if (!IsVisible) { Show(); Reposition(); }
         hoverTimer.Start();
         Reconcile();
+    }
+
+    /// <summary>Follow the cursor and the pin, and once neither holds a flashed dock open, hide it again if hidden is what the user chose.</summary>
+    private void Settle()
+    {
+        Reconcile();
+        if (configured == PanelMode.Hidden && mode != PanelMode.Hidden && !pinned && !hovering) ApplyMode(PanelMode.Hidden);
     }
 
     /// <summary>Move the dock to another edge: a row along the top or bottom, a column along the left or right, with the same tiles.</summary>
@@ -154,10 +169,10 @@ public sealed class PanelWindow : Window
         ShapeDock(new Size(capsule.Width, capsule.Height));
     }
 
-    /// <summary>A toast was clicked or a second instance launched: expand for a moment even without the cursor.</summary>
+    /// <summary>A toast was clicked or a second instance launched: expand for a moment even without the cursor, even when the dock is hidden.</summary>
     public void Flash(TimeSpan? duration = null)
     {
-        if (mode == PanelMode.Hidden) { SetMode(PanelMode.ExpandOnHover); }
+        if (mode == PanelMode.Hidden) ApplyMode(PanelMode.ExpandOnHover);
         pinned = true;
         pinTimer.Interval = duration ?? TimeSpan.FromSeconds(5);
         pinTimer.Stop();
@@ -267,7 +282,7 @@ public sealed class PanelWindow : Window
             hovering = inside;
             Log.Ui.Debug($"hover {(hovering ? "on" : "off")}");
             HoverChanged?.Invoke(hovering);
-            Reconcile();
+            Settle();
         }
         hoverTimer.Interval = TimeSpan.FromMilliseconds(expanded ? 120 : 300);
         if (expanded && hovering) UpdateCard(cursor);
