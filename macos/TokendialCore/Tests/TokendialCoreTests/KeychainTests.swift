@@ -132,3 +132,27 @@ final class ClaudeKeychainTests: XCTestCase {
         XCTAssertEqual(3, attempts)
     }
 }
+
+final class AntigravityKeychainTests: XCTestCase {
+    private var clock = Date(timeIntervalSince1970: 1_790_000_000)
+
+    /// A refusal is not a sign-out, and one "Deny" must not bring the same dialog back on every poll.
+    func testARefusalIsHeldForAQuarterHourInReadAndAccountAlike() async {
+        var attempts = 0
+        let provider = AntigravityProvider(google: Answer(500), local: Answer(500),
+                                           readCredential: {
+                                               attempts += 1
+                                               throw Keychain.Refused()
+                                           },
+                                           discover: { nil }, now: { self.clock })
+        let refused = await failure(provider)
+        XCTAssertTrue(refused is Keychain.Refused)
+        XCTAssertNil(provider.account())
+        _ = await failure(provider)
+        XCTAssertEqual(1, attempts)
+
+        clock += 15 * 60
+        XCTAssertNil(provider.account())
+        XCTAssertEqual(2, attempts)
+    }
+}

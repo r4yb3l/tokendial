@@ -184,7 +184,11 @@ public final class AntigravityProvider: UsageProvider {
     private let discover: () -> Bridge?
     private let requestsToday: () -> Int
     private let now: () -> Date
+    private static let quietAfterRefusal: TimeInterval = 15 * 60
+    /// The poll timer, a refresh the user asked for and the account lookup reach the credential from different threads.
+    private let state = NSLock()
     private var held: AntigravityUsage.Credential?
+    private var refusedAt: Date?
     private var bridge: Bridge?
     private var everBridged = false
 
@@ -197,29 +201,55 @@ public final class AntigravityProvider: UsageProvider {
         self.requestsToday = requestsToday ?? { AntigravityTranscripts.requestsToday(now: now()) }
     }
 
-    /// Go's keyring on macOS: a generic password with service "gemini" and account "antigravity".
+    /// Go's keyring on macOS: a generic password with service "gemini" and account "antigravity". Only a
+    /// missing item means signed out; a read the keychain turned away throws `Keychain.Refused`.
     public static func keychainCredential() throws -> AntigravityUsage.Credential {
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "gemini", kSecAttrAccount as String: "antigravity", kSecMatchLimit as String: kSecMatchLimitOne, kSecReturnData as String: true]
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data, let text = String(data: data, encoding: .utf8) else { throw UsageError.needsSignIn() }
-        guard let credential = AntigravityUsage.Credential.decode(text) else { throw UsageError.needsSignIn() }
+        guard let data = try Keychain.genericPassword(service: "gemini", account: "antigravity"), let text = String(data: data, encoding: .utf8),
+              let credential = AntigravityUsage.Credential.decode(text) else { throw UsageError.needsSignIn() }
         return credential
     }
 
     public var id: String { "antigravity" }
     public var displayName: String { "Antigravity" }
     public var signIn: SignInRoute { .openApp(appKey: "antigravity", name: "Antigravity") }
-    public func forgetCredential() { held = nil }
+
+    public func forgetCredential() {
+        state.withLock {
+            held = nil
+            refusedAt = nil
+        }
+    }
 
     public func account() -> ProviderAccount? {
-        guard let c = held ?? (try? readCredential()) else { return nil }
+        guard let c = try? load() else { return nil }
         return ProviderAccount(label: nil, plan: c.authMethod == "consumer" ? "Personal" : (c.authMethod.isEmpty ? nil : c.authMethod), source: "Antigravity", manageURL: URL(string: "https://antigravity.google"))
     }
 
+    /// A refusal is held for a while: without that, one "Deny" would raise the same dialog every poll.
+    private func load() throws -> AntigravityUsage.Credential {
+        let (current, refused) = state.withLock { (held, refusedAt) }
+        if let current { return current }
+        if let refused, now().timeIntervalSince(refused) < Self.quietAfterRefusal { throw Keychain.Refused() }
+        do {
+            let fresh = try readCredential()
+            state.withLock {
+                held = fresh
+                refusedAt = nil
+            }
+            return fresh
+        } catch is Keychain.Refused {
+            state.withLock { refusedAt = now() }
+            Log.usage.info("antigravity: the keychain read was refused, asking again in \(Int(Self.quietAfterRefusal / 60)) min")
+            throw Keychain.Refused()
+        }
+    }
+
     public func read() async throws -> ProviderReading {
-        let credential = try held ?? readCredential()
-        held = credential
-        if credential.expiresAt <= now() { held = nil; throw UsageError.credentialExpired() }
+        let credential = try load()
+        if credential.expiresAt <= now() {
+            state.withLock { held = nil }
+            throw UsageError.credentialExpired()
+        }
         try await passGate(credential)
         let bridged = await localQuota()
         if !bridged.isEmpty {
@@ -238,7 +268,9 @@ public final class AntigravityProvider: UsageProvider {
         Log.usage.debug("antigravity: gate \(response.statusCode)")
         switch response.statusCode {
         case 200: return
-        case 401: held = nil; throw UsageError.needsSignIn()
+        case 401:
+            state.withLock { held = nil }
+            throw UsageError.needsSignIn()
         case 403: throw UsageError.needsSignIn()
         case 429: throw UsageError.rateLimited(RetryAfterHeader.from(response, now: now()) ?? 0)
         default: throw UsageError.badResponse(response.statusCode)
