@@ -214,6 +214,17 @@ final class SecurityTests: XCTestCase {
         XCTAssertEqual("gho_token", try CopilotCredential.fromPluginFile(both)?.token)
     }
 
+    /// Windsurf and the Codeium extensions run the same language_server with the same flags; the first one found used to win.
+    func testTheBridgeIsAntigravitysOwnLanguageServerAndNeverAnotherProducts() {
+        let processes = [
+            "1 /Applications/Windsurf.app/Contents/Resources/app/extensions/windsurf/bin/language_server_macos_arm --csrf_token w",
+            "2 /Users/ada/.vscode/extensions/codeium.codeium-1.2.3/dist/language_server_macos_arm --csrf_token c",
+            "3 /opt/tools/language_server_macos_arm --csrf_token u",
+            "4 /Applications/Antigravity.app/Contents/Resources/app/extensions/antigravity/bin/language_server_macos_arm --csrf_token a"
+        ]
+        XCTAssertEqual(["4", "3"], Bridge.candidates(processes).map { String($0.prefix(1)) })
+    }
+
     /// A profile's directory name is whatever the user called a folder; inside sh's double quotes it must stay text.
     func testAProfileSignInKeepsItsSlugInsideTheQuotes() {
         let home = URL(fileURLWithPath: "/tmp")

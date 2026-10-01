@@ -92,15 +92,26 @@ public struct Bridge {
     public var csrf: String
 
     public static func discover() -> Bridge? {
-        let processes = shell("/bin/ps", ["-axo", "pid=,command="])
-        for line in processes.split(separator: "\n") {
-            let text = line.trimmingCharacters(in: .whitespaces)
-            guard text.contains("language_server"), text.contains("--csrf_token"), let csrf = csrfToken(text) else { continue }
+        let processes = shell("/bin/ps", ["-axo", "pid=,command="]).split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { $0.contains("language_server") && $0.contains("--csrf_token") }
+        for text in candidates(processes) {
+            guard let csrf = csrfToken(text) else { continue }
             let pid = text.prefix { $0.isNumber }
             let ports = listeningPorts(pid: String(pid))
             if !ports.isEmpty { return Bridge(ports: ports, csrf: csrf) }
         }
         return nil
+    }
+
+    /// Windsurf and the Codeium extensions ship a language_server with the same flags, and the first one with a CSRF
+    /// token used to win, so another product's quota could be shown as Antigravity's. Antigravity's own comes first,
+    /// known by its install path; one that names no product is the fallback; one that names another product is never taken.
+    public static func candidates(_ processes: [String]) -> [String] {
+        func names(_ text: String, _ product: String) -> Bool { text.range(of: product, options: .caseInsensitive) != nil }
+        let own = processes.filter { names($0, "antigravity") }
+        let unnamed = processes.filter { text in !names(text, "antigravity") && !["windsurf", "codeium"].contains(where: { names(text, $0) }) }
+        return own + unnamed
     }
 
     public static func csrfToken(_ commandLine: String) -> String? {

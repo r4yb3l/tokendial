@@ -130,4 +130,18 @@ public class SecurityTests : IDisposable
         var both = Scratch("apps.json", """{"github.company.com:Iv1.x":{"oauth_token":"ghe_token"},"github.com:Iv1.y":{"oauth_token":"gho_token","user":"ada"}}""");
         Assert.Equal("gho_token", CopilotCredential.FromPluginFile(both)?.Token);
     }
+
+    /// <summary>
+    /// Windsurf and the Codeium extensions run the same language_server with the same --csrf_token flag. The
+    /// first one found used to win, and its quota would have been shown as Antigravity's.
+    /// </summary>
+    [Fact]
+    public void TheBridgeIsAntigravitysOwnLanguageServerAndNeverAnotherProducts()
+    {
+        (int, string) windsurf = (1, "C:/Programs/Windsurf/resources/app/extensions/windsurf/bin/language_server_windows_x64.exe --csrf_token w");
+        (int, string) codeium = (2, "/home/ada/.vscode/extensions/codeium.codeium-1.2.3/dist/language_server_linux_x64 --csrf_token c");
+        (int, string) unnamed = (3, "/opt/tools/language_server_linux_x64 --csrf_token u");
+        (int, string) antigravity = (4, "C:/Programs/Antigravity/resources/app/extensions/antigravity/bin/language_server_windows_x64.exe --csrf_token a");
+        Assert.Equal([4, 3], Bridge.Candidates([windsurf, codeium, unnamed, antigravity]).Select(p => p.Pid));
+    }
 }
