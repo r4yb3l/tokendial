@@ -2,13 +2,27 @@ using System.Net;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
 using Tokendial.Core.Providers.Claude;
+using Tokendial.Core.Providers.Copilot;
 using Tokendial.Core.Store;
 
 namespace Tokendial.Tests;
 
 /// <summary>Credentials go to the host the spec names and nowhere else.</summary>
-public class SecurityTests
+public class SecurityTests : IDisposable
 {
+    private readonly string scratch = Path.Combine(Path.GetTempPath(), "tokendial-tests", Guid.NewGuid().ToString("N"));
+
+    public SecurityTests() => Directory.CreateDirectory(scratch);
+
+    public void Dispose() => Directory.Delete(scratch, recursive: true);
+
+    private string Scratch(string name, string content)
+    {
+        var path = Path.Combine(scratch, name);
+        File.WriteAllText(path, content);
+        return path;
+    }
+
     private sealed class Redirecting : HttpMessageHandler
     {
         public List<Uri> Seen { get; } = new();
@@ -57,5 +71,63 @@ public class SecurityTests
         Assert.True(Bridge.IsLoopback(new Uri("https://[::1]:4321/x")));
         Assert.False(Bridge.IsLoopback(new Uri("https://cloudcode-pa.googleapis.com/x")));
         Assert.False(Bridge.IsLoopback(new Uri("https://127.0.0.1.evil.example/x")));
+    }
+
+    /// <summary>
+    /// gh keeps one block per host and, since 2.40, every signed-in account's token under users:. The first
+    /// oauth_token in the file used to win, which here is an Enterprise host's; only github.com's own token,
+    /// the active account's, may reach api.github.com.
+    /// </summary>
+    [Fact]
+    public void OnlyGitHubDotComsActiveTokenLeavesTheGhHostsFile()
+    {
+        var hosts = Scratch("hosts.yml", """
+            ghe.corp.example:
+                users:
+                    ada-corp:
+                        oauth_token: ghe_enterprise
+                git_protocol: https
+                user: ada-corp
+                oauth_token: ghe_enterprise
+            github.com:
+                users:
+                    ada:
+                        oauth_token: gho_personal
+                    ada-work:
+                        oauth_token: gho_work
+                git_protocol: https
+                user: ada-work
+                oauth_token: gho_work
+            """);
+        var credential = CopilotCredential.FromGhHosts(hosts);
+        Assert.NotNull(credential);
+        Assert.Equal("gho_work", credential.Token);
+        Assert.Equal("ada-work", credential.User);
+    }
+
+    /// <summary>With the github.com token in the keyring, the file holds no token for it at all - and the Enterprise one is still not it.</summary>
+    [Fact]
+    public void AnEnterpriseTokenIsNeverTakenForGitHubDotCom()
+    {
+        var hosts = Scratch("hosts.yml", """
+            ghe.corp.example:
+                oauth_token: ghe_enterprise
+                user: ada-corp
+            github.com:
+                users:
+                    ada:
+                git_protocol: https
+                user: ada
+            """);
+        Assert.Null(CopilotCredential.FromGhHosts(hosts));
+    }
+
+    /// <summary>A bare "github.com" prefix also matched github.company.com, an Enterprise host.</summary>
+    [Fact]
+    public void ACopilotPluginEntryIsGitHubDotComsOnlyWhenItsKeySaysSoWhole()
+    {
+        Assert.Null(CopilotCredential.FromPluginFile(Scratch("enterprise.json", """{"github.company.com:Iv1.x":{"oauth_token":"ghe_token","user":"ada-corp"}}""")));
+        var both = Scratch("apps.json", """{"github.company.com:Iv1.x":{"oauth_token":"ghe_token"},"github.com:Iv1.y":{"oauth_token":"gho_token","user":"ada"}}""");
+        Assert.Equal("gho_token", CopilotCredential.FromPluginFile(both)?.Token);
     }
 }

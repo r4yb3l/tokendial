@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Tokendial.Core.Diagnostics;
 using Tokendial.Core.Model;
 using Tokendial.Core.Store;
@@ -19,18 +18,18 @@ public sealed record CopilotCredential(string Token, string? User, string Source
         /// The only provider that genuinely branches three ways. Windows keeps the plugin's tokens in
         /// %LOCALAPPDATA% and the gh CLI's under %APPDATA%\GitHub CLI; everywhere else Copilot follows the
         /// XDG convention directly - ~/.config/github-copilot and ~/.config/gh - which is not the same thing
-        /// as the platform's config root, since on macOS that is Application Support.
+        /// as the platform's config root, since on macOS that is Application Support. Both tools put
+        /// $XDG_CONFIG_HOME ahead of all of that on every platform, and gh puts $GH_CONFIG_DIR ahead of it:
+        /// the order gh documents.
         /// </summary>
         public static Files For(Desktop desktop, Roots roots, Func<string, string?> env)
         {
-            var plugin = desktop == Desktop.Windows
-                ? roots.In(roots.Data, "github-copilot")
-                : roots.UnderHome(".config", "github-copilot");
+            var plugin = roots.In(desktop == Desktop.Windows ? roots.XdgConfigHome ?? roots.Data : roots.XdgConfig, "github-copilot");
             var gh = env("GH_CONFIG_DIR") is { Length: > 0 } configured
                 ? configured.TrimEnd('/', '\\')
-                : desktop == Desktop.Windows
+                : desktop == Desktop.Windows && roots.XdgConfigHome is null
                     ? roots.In(roots.Config, "GitHub CLI")
-                    : roots.UnderHome(".config", "gh");
+                    : roots.In(roots.XdgConfig, "gh");
             return new Files(roots.In(plugin, "apps.json"), roots.In(plugin, "hosts.json"), roots.In(gh, "hosts.yml"));
         }
     }
@@ -41,38 +40,69 @@ public sealed record CopilotCredential(string Token, string? User, string Source
         return FromPluginFile(files.Apps) ?? FromPluginFile(files.Hosts) ?? FromGhHosts(files.GhHosts) ?? throw UsageError.NeedsSignIn();
     }
 
-    /// <summary>apps.json keys entries "github.com:&lt;client id&gt;"; hosts.json keys them by host. Either way: oauth_token and user.</summary>
+    /// <summary>apps.json keys entries "github.com:&lt;client id&gt;"; hosts.json keys them by host. Either way: oauth_token and user, github.com's only.</summary>
     public static CopilotCredential? FromPluginFile(string path)
     {
-        if (!File.Exists(path)) return null;
-        try
+        if (CredentialFile.Text(path) is not string text) return null;
+        using var document = Json.Parse(text);
+        if (document is null || document.RootElement.ValueKind != JsonValueKind.Object) return null;
+        foreach (var entry in document.RootElement.EnumerateObject().OrderBy(e => e.Name, StringComparer.Ordinal))
         {
-            using var document = Json.Parse(File.ReadAllText(path));
-            if (document is null || document.RootElement.ValueKind != JsonValueKind.Object) return null;
-            foreach (var entry in document.RootElement.EnumerateObject().OrderBy(e => e.Name, StringComparer.Ordinal))
-            {
-                if (!entry.Name.StartsWith("github.com", StringComparison.Ordinal) || entry.Value.ValueKind != JsonValueKind.Object) continue;
-                var token = entry.Value.Str("oauth_token");
-                if (token is not null) return new CopilotCredential(token, entry.Value.Str("user"), "GitHub Copilot");
-            }
+            if (!IsGitHubDotCom(entry.Name) || entry.Value.ValueKind != JsonValueKind.Object) continue;
+            var token = entry.Value.Str("oauth_token");
+            if (token is not null) return new CopilotCredential(token, entry.Value.Str("user"), "GitHub Copilot");
         }
-        catch (IOException) { }
         return null;
     }
 
-    private static readonly Regex GhToken = new(@"^\s*oauth_token:\s*(\S+)", RegexOptions.Multiline);
-    private static readonly Regex GhUser = new(@"^\s*user:\s*(\S+)", RegexOptions.Multiline);
+    /// <summary>A bare "github.com" prefix also matched github.company.com, an Enterprise host whose token must never reach api.github.com.</summary>
+    private static bool IsGitHubDotCom(string key) => key == "github.com" || key.StartsWith("github.com:", StringComparison.Ordinal);
 
+    /// <summary>
+    /// gh writes one block per host, and since 2.40 a users: map inside it holding every signed-in account's
+    /// token; the active account's is the host's own oauth_token. Only that one is read, and only github.com's:
+    /// the first oauth_token anywhere in the file used to win, which sent an Enterprise host's token, or
+    /// another account's, to api.github.com.
+    /// </summary>
     public static CopilotCredential? FromGhHosts(string path)
     {
-        if (!File.Exists(path)) return null;
-        try
+        if (CredentialFile.Text(path) is not string text) return null;
+        var host = GhHost(text, "github.com");
+        return host.TryGetValue("oauth_token", out var token) ? new CopilotCredential(token, host.GetValueOrDefault("user"), "GitHub CLI") : null;
+    }
+
+    /// <summary>The scalar keys directly under one top-level host of gh's hosts.yml; anything nested deeper is ignored.</summary>
+    public static IReadOnlyDictionary<string, string> GhHost(string yaml, string host)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        var inside = false;
+        var depth = -1;
+        foreach (var raw in yaml.Split('\n'))
         {
-            var text = File.ReadAllText(path);
-            var token = GhToken.Match(text);
-            return token.Success ? new CopilotCredential(token.Groups[1].Value, GhUser.Match(text) is { Success: true } u ? u.Groups[1].Value : null, "GitHub CLI") : null;
+            var line = raw.TrimEnd('\r');
+            var content = line.TrimStart();
+            if (content.Length == 0 || content[0] == '#') continue;
+            var indent = line.Length - content.Length;
+            var (key, value) = YamlPair(content);
+            if (indent == 0)
+            {
+                if (inside) break;
+                inside = key == host;
+                continue;
+            }
+            if (!inside) continue;
+            if (depth < 0) depth = indent;
+            if (indent == depth && value.Length > 0) values.TryAdd(key, value);
         }
-        catch (IOException) { return null; }
+        return values;
+    }
+
+    private static (string Key, string Value) YamlPair(string content)
+    {
+        var colon = content.IndexOf(':');
+        if (colon < 0) return (content, "");
+        var value = content[(colon + 1)..].Trim().Split(' ', '\t')[0];
+        return (content[..colon].Trim().Trim('"', '\''), value.Trim('"', '\''));
     }
 }
 
@@ -104,6 +134,20 @@ public static class CopilotUsage
         }
         if (windows.Count == 0) throw UsageError.NothingMetered($"Unlimited on the {plan ?? "current"} plan — nothing to meter");
         return new Parsed(windows, windows[0].Id, plan);
+    }
+
+    /// <summary>
+    /// GitHub answers an exhausted rate limit with 403 as often as with 429, so a 403 is a missing seat only
+    /// when it carries neither x-ratelimit-remaining: 0 nor Retry-After. Read as a missing seat, a rate limit
+    /// erased the last reading and told someone with a seat that nothing was metered.
+    /// </summary>
+    public static bool RateLimited(HttpResponseMessage response)
+    {
+        var status = (int)response.StatusCode;
+        if (status == 429) return true;
+        if (status != 403) return false;
+        if (response.Headers.Contains("Retry-After")) return true;
+        return response.Headers.TryGetValues("x-ratelimit-remaining", out var remaining) && remaining.FirstOrDefault()?.Trim() == "0";
     }
 
     /// <summary>quota_reset_date is a calendar date; the quota rolls at midnight UTC.</summary>
@@ -169,14 +213,14 @@ public sealed class CopilotProvider : IUsageProvider, IDisposable
         using var response = await http.SendAsync(request, cancellationToken).ConfigureAwait(false);
         var status = (int)response.StatusCode;
         Log.Usage.Debug($"copilot: user {status}");
-        if (status == 403) throw UsageError.NothingMetered("No Copilot seat on this GitHub account");
-        if (status == 429)
+        if (CopilotUsage.RateLimited(response))
         {
             var delay = Backoff.Exponential(consecutive429++, RetryAfterHeader.From(response, now()));
             retryAt = now() + delay;
             archive.SetBackoff(Id, retryAt);
             throw UsageError.RateLimited(delay);
         }
+        if (status == 403) throw UsageError.NothingMetered("No Copilot seat on this GitHub account");
         Http.ThrowUnlessOk(response);
         var parsed = CopilotUsage.Parse(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
         consecutive429 = 0;

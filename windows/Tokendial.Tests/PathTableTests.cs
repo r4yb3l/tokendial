@@ -98,6 +98,26 @@ public class PathTableTests
         Assert.Equal("/srv/gh/hosts.yml", files.GhHosts);
     }
 
+    /// <summary>gh documents GH_CONFIG_DIR, then $XDG_CONFIG_HOME/gh, then the platform's own place; the Copilot plugins read XDG first too.</summary>
+    [Theory]
+    [InlineData(Desktop.Windows, @"D:\xdg", @"D:\xdg\github-copilot\apps.json", @"D:\xdg\gh\hosts.yml")]
+    [InlineData(Desktop.MacOS, "/srv/xdg", "/srv/xdg/github-copilot/apps.json", "/srv/xdg/gh/hosts.yml")]
+    [InlineData(Desktop.Linux, "/srv/xdg", "/srv/xdg/github-copilot/apps.json", "/srv/xdg/gh/hosts.yml")]
+    public void XdgConfigHomeMovesCopilotAndGhOnEveryPlatform(Desktop desktop, string xdg, string apps, string gh)
+    {
+        var files = CopilotCredential.Files.For(desktop, RootsFor(desktop, ("XDG_CONFIG_HOME", xdg)), None);
+        Assert.Equal(apps, files.Apps);
+        Assert.Equal(gh, files.GhHosts);
+    }
+
+    [Fact]
+    public void GhConfigDirStillWinsOverXdg()
+    {
+        var files = CopilotCredential.Files.For(Desktop.Linux, RootsFor(Desktop.Linux, ("XDG_CONFIG_HOME", "/srv/xdg")), key => key == "GH_CONFIG_DIR" ? "/srv/gh" : null);
+        Assert.Equal("/srv/gh/hosts.yml", files.GhHosts);
+        Assert.Equal("/srv/xdg/github-copilot/apps.json", files.Apps);
+    }
+
     /// <summary>
     /// OpenCode keeps its data in the XDG data directory on every platform, macOS included - not Application
     /// Support - and GLM borrows a key from the same file, so both have to move together.

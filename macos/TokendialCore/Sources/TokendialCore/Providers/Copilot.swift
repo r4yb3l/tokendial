@@ -10,36 +10,75 @@ public struct CopilotCredential: Equatable {
         public var apps: URL
         public var hosts: URL
         public var ghHosts: URL
+        /// Both tools put $XDG_CONFIG_HOME ahead of ~/.config, and gh puts $GH_CONFIG_DIR ahead of that: the order gh documents.
         public static var `default`: Files {
-            Files(apps: Paths.under(".config", "github-copilot", "apps.json"), hosts: Paths.under(".config", "github-copilot", "hosts.json"), ghHosts: Paths.under(".config", "gh", "hosts.yml"))
+            let plugin = Paths.xdg("XDG_CONFIG_HOME", orUnder: ".config").appendingPathComponent("github-copilot")
+            let configured = ProcessInfo.processInfo.environment["GH_CONFIG_DIR"] ?? ""
+            let gh = configured.isEmpty ? Paths.xdg("XDG_CONFIG_HOME", orUnder: ".config").appendingPathComponent("gh") : URL(fileURLWithPath: configured)
+            return Files(apps: plugin.appendingPathComponent("apps.json"), hosts: plugin.appendingPathComponent("hosts.json"), ghHosts: gh.appendingPathComponent("hosts.yml"))
         }
     }
 
     public static func read(_ files: Files = .default) throws -> CopilotCredential {
-        guard let found = fromPluginFile(files.apps) ?? fromPluginFile(files.hosts) ?? fromGhHosts(files.ghHosts) else { throw UsageError.needsSignIn() }
-        return found
+        if let found = try fromPluginFile(files.apps) { return found }
+        if let found = try fromPluginFile(files.hosts) { return found }
+        if let found = try fromGhHosts(files.ghHosts) { return found }
+        throw UsageError.needsSignIn()
     }
 
-    /// apps.json keys entries "github.com:<client id>"; hosts.json keys them by host. Either way: oauth_token and user.
-    public static func fromPluginFile(_ path: URL) -> CopilotCredential? {
-        guard let data = try? Data(contentsOf: path), let root = JSON.object(data) else { return nil }
-        for key in root.keys.sorted() where key.hasPrefix("github.com") {
+    /// apps.json keys entries "github.com:<client id>"; hosts.json keys them by host. Either way: oauth_token and user,
+    /// github.com's only - a bare prefix also matched github.company.com, an Enterprise host whose token must never
+    /// reach api.github.com.
+    public static func fromPluginFile(_ path: URL) throws -> CopilotCredential? {
+        guard let data = try JSON.credentialData(path), let root = JSON.object(data) else { return nil }
+        for key in root.keys.sorted() where key == "github.com" || key.hasPrefix("github.com:") {
             guard let entry = root[key] as? JSONObject, let token = entry.str("oauth_token") else { continue }
             return CopilotCredential(token: token, user: entry.str("user"), source: "GitHub Copilot")
         }
         return nil
     }
 
-    public static func fromGhHosts(_ path: URL) -> CopilotCredential? {
-        guard let text = try? String(contentsOf: path, encoding: .utf8) else { return nil }
-        func value(_ name: String) -> String? {
-            guard let range = text.range(of: "\(name):", options: []) else { return nil }
-            let rest = text[range.upperBound...].trimmingCharacters(in: .whitespaces)
-            let token = rest.prefix { !$0.isWhitespace }
-            return token.isEmpty ? nil : String(token)
+    /// gh writes one block per host, and since 2.40 a users: map inside it holding every signed-in account's token;
+    /// the active account's is the host's own oauth_token. Only that one is read, and only github.com's: the first
+    /// oauth_token anywhere in the file used to win, which sent an Enterprise host's token, or another account's,
+    /// to api.github.com.
+    public static func fromGhHosts(_ path: URL) throws -> CopilotCredential? {
+        guard let data = try JSON.credentialData(path), let text = String(data: data, encoding: .utf8) else { return nil }
+        let host = ghHost(text, "github.com")
+        guard let token = host["oauth_token"] else { return nil }
+        return CopilotCredential(token: token, user: host["user"], source: "GitHub CLI")
+    }
+
+    /// The scalar keys directly under one top-level host of gh's hosts.yml; anything nested deeper is ignored.
+    public static func ghHost(_ yaml: String, _ host: String) -> [String: String] {
+        var values: [String: String] = [:]
+        var inside = false
+        var depth = -1
+        for raw in yaml.split(whereSeparator: { $0.isNewline }) {
+            let line = String(raw)
+            let content = line.drop(while: { $0 == " " || $0 == "\t" })
+            guard let first = content.first, first != "#" else { continue }
+            let indent = line.count - content.count
+            let (key, value) = yamlPair(String(content))
+            if indent == 0 {
+                if inside { break }
+                inside = key == host
+                continue
+            }
+            guard inside else { continue }
+            if depth < 0 { depth = indent }
+            if indent == depth, !value.isEmpty, values[key] == nil { values[key] = value }
         }
-        guard let token = value("oauth_token") else { return nil }
-        return CopilotCredential(token: token, user: value("user"), source: "GitHub CLI")
+        return values
+    }
+
+    private static func yamlPair(_ content: String) -> (key: String, value: String) {
+        let quotes = CharacterSet(charactersIn: "\"'")
+        guard let colon = content.firstIndex(of: ":") else { return (content, "") }
+        let key = content[..<colon].trimmingCharacters(in: .whitespaces).trimmingCharacters(in: quotes)
+        let rest = content[content.index(after: colon)...].trimmingCharacters(in: .whitespaces)
+        let value = String(rest.prefix(while: { !$0.isWhitespace })).trimmingCharacters(in: quotes)
+        return (key, value)
     }
 }
 
@@ -68,6 +107,19 @@ public enum CopilotUsage {
         f.dateFormat = "yyyy-MM-dd"
         return f
     }()
+
+    /// GitHub answers an exhausted rate limit with 403 as often as with 429, so a 403 is a missing seat only when it
+    /// carries neither x-ratelimit-remaining: 0 nor Retry-After. Read as a missing seat, a rate limit erased the last
+    /// reading and told someone with a seat that nothing was metered.
+    public static func rateLimited(_ response: HTTPURLResponse) -> Bool {
+        switch response.statusCode {
+        case 429: return true
+        case 403:
+            if response.value(forHTTPHeaderField: "Retry-After") != nil { return true }
+            return response.value(forHTTPHeaderField: "x-ratelimit-remaining")?.trimmingCharacters(in: .whitespaces) == "0"
+        default: return false
+        }
+    }
 
     /// quota_reset_date is a calendar date; the quota rolls at midnight UTC.
     public static func resetDate(_ text: String?) -> Date? {
@@ -121,14 +173,14 @@ public final class CopilotProvider: UsageProvider {
         let request = HTTP.request(Self.endpoint, headers: ["Authorization": "token \(credential.token)", "Editor-Version": "vscode/1.104.0", "Editor-Plugin-Version": "copilot-chat/0.30.0", "User-Agent": "GitHubCopilotChat/0.30.0"])
         let (data, response) = try await transport.send(request)
         Log.usage.debug("copilot: user \(response.statusCode)")
-        if response.statusCode == 403 { throw UsageError.nothingMetered("No Copilot seat on this GitHub account") }
-        if response.statusCode == 429 {
+        if CopilotUsage.rateLimited(response) {
             let delay = Backoff.exponential(consecutive429, hint: RetryAfterHeader.from(response, now: now()))
             consecutive429 += 1
             retryAt = now().addingTimeInterval(delay)
             archive.setBackoff(id, until: retryAt)
             throw UsageError.rateLimited(delay)
         }
+        if response.statusCode == 403 { throw UsageError.nothingMetered("No Copilot seat on this GitHub account") }
         try HTTP.throwUnlessOK(response)
         let parsed = try CopilotUsage.parse(data)
         consecutive429 = 0
