@@ -28,7 +28,9 @@ for (const page of pages(dist)) {
   count++;
   const html = readFileSync(page, 'utf8');
   for (const [tag] of html.matchAll(/<script\b[^>]*>/gi)) {
-    if (/\bsrc\s*=/i.test(tag) || /type\s*=\s*["']?application\/ld\+json/i.test(tag)) continue;
+    // Both exemptions match on a leading space: \b also matches after a hyphen, which would let
+    // data-src and data-type carry an inline script past the check.
+    if (/\ssrc\s*=/i.test(tag) || /\stype\s*=\s*["']?application\/ld\+json/i.test(tag)) continue;
     problems.push(`${relative(dist, page)}: inline ${tag}`);
   }
 }
