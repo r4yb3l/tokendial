@@ -144,7 +144,8 @@ final class SecurityTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let transport = Redirecting()
         let provider = ClaudeProvider(profile: ClaudeProfile(slug: nil, directory: directory), transport: transport, archive: ReadingArchive(directory: directory),
-                                      credentialReader: { _ in ClaudeCredential(accessToken: "sk-test", expiresAt: .distantFuture, plan: "pro") })
+                                      newestItem: { _ in nil },
+                                      credentialReader: { _, _ in ClaudeCredential(accessToken: "sk-test", expiresAt: .distantFuture, plan: "pro") })
         do {
             _ = try await provider.read()
             XCTFail("expected a bad response")

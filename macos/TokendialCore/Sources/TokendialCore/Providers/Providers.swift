@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Security
 
@@ -49,9 +50,24 @@ public struct ClaudeCredential: Equatable {
         return ClaudeCredential(accessToken: token, expiresAt: oauth.epochMillis("expiresAt") ?? .distantPast, plan: oauth.str("subscriptionType"))
     }
 
-    /// Keychain first (service "Claude Code-credentials", one item per profile), then the file.
-    public static func read(profile: ClaudeProfile) throws -> ClaudeCredential {
-        if let data = try Keychain.genericPassword(service: profile.slug.map { "Claude Code-credentials-\($0)" } ?? "Claude Code-credentials") {
+    /// The keychain service Claude Code files a profile's token under. The default directory has the bare
+    /// name; any other is told apart by the first eight hex digits of the SHA-256 of its path, as
+    /// CLAUDE_CONFIG_DIR hands it over: absolute, with no trailing slash.
+    public static func keychainService(_ profile: ClaudeProfile) -> String {
+        guard profile.slug != nil else { return "Claude Code-credentials" }
+        // A name listed from an HFS+ volume comes back decomposed; the variable typed in a terminal is composed.
+        let path = profile.directory.path.precomposedStringWithCanonicalMapping
+        return "Claude Code-credentials-" + SHA256.hash(data: Data(path.utf8)).prefix(4).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// The newest item under the profile's service, attributes only: looking raises no prompt.
+    public static func newestItem(profile: ClaudeProfile) throws -> Keychain.Item? {
+        try Keychain.newestGenericPassword(service: keychainService(profile))
+    }
+
+    /// That item's secret when there is one, otherwise the file.
+    public static func read(profile: ClaudeProfile, item: Keychain.Item?) throws -> ClaudeCredential {
+        if let item, let data = try Keychain.genericPassword(service: keychainService(profile), account: item.account) {
             return try parse(data)
         }
         if let data = try? Data(contentsOf: profile.credentialsFile) { return try parse(data) }
@@ -69,14 +85,48 @@ public enum Keychain {
         public var errorDescription: String? { Strings.t("error.keychainRefused") }
     }
 
-    /// The first generic password for a service, whatever the account; nil when there is no such item.
-    public static func genericPassword(service: String) throws -> Data? {
+    /// Which item, and when it last changed. Reading these never asks the user; reading the secret may.
+    public struct Item: Equatable, Sendable {
+        public var account: String?
+        public var modified: Date?
+
+        public init(account: String?, modified: Date?) {
+            self.account = account
+            self.modified = modified
+        }
+    }
+
+    /// The most recently modified generic password for a service, without its secret; nil when there is none.
+    public static func newestGenericPassword(service: String) throws -> Item? {
         let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecMatchLimit as String: kSecMatchLimitAll,
+            kSecReturnAttributes as String: true
+        ]
+        var result: CFTypeRef?
+        switch SecItemCopyMatching(query as CFDictionary, &result) {
+        case errSecSuccess:
+            let attributes = result as? [[String: Any]] ?? []
+            return newest(attributes.map { Item(account: $0[kSecAttrAccount as String] as? String, modified: $0[kSecAttrModificationDate as String] as? Date) })
+        case errSecItemNotFound: return nil
+        default: throw Refused()
+        }
+    }
+
+    static func newest(_ items: [Item]) -> Item? {
+        items.max { ($0.modified ?? .distantPast) < ($1.modified ?? .distantPast) }
+    }
+
+    /// The secret of a generic password, narrowed to one account when given; nil when there is no such item.
+    public static func genericPassword(service: String, account: String? = nil) throws -> Data? {
+        var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecMatchLimit as String: kSecMatchLimitOne,
             kSecReturnData as String: true
         ]
+        if let account { query[kSecAttrAccount as String] = account }
         var item: CFTypeRef?
         switch SecItemCopyMatching(query as CFDictionary, &item) {
         case errSecSuccess: return item as? Data
@@ -93,18 +143,30 @@ public final class ClaudeProvider: UsageProvider {
     private let transport: Transport
     private let archive: ReadingArchive
     private let now: () -> Date
-    private let credentialReader: (ClaudeProfile) throws -> ClaudeCredential
+    private let newestItem: (ClaudeProfile) throws -> Keychain.Item?
+    private let credentialReader: (ClaudeProfile, Keychain.Item?) throws -> ClaudeCredential
     private static let quietAfterRefusal: TimeInterval = 15 * 60
+    /// The poll timer, a refresh the user asked for and the account lookup reach this from different threads.
+    private let state = NSLock()
+    /// Two callers that both find the token stale would otherwise raise two keychain prompts at once.
+    private let reading = NSLock()
     private var held: ClaudeCredential?
+    /// The keychain item `held` was read from; nil when it came from the file.
+    private var heldItem: Keychain.Item?
+    /// The endpoint turned `held` away. Reading the same item again would only hand back the same token.
+    private var heldRejected = false
     private var refusedAt: Date?
     private var retryAt: Date?
     private var consecutive429 = 0
 
-    public init(profile: ClaudeProfile = .default(), transport: Transport = SessionTransport(), archive: ReadingArchive = ReadingArchive(), now: @escaping () -> Date = Date.init, credentialReader: @escaping (ClaudeProfile) throws -> ClaudeCredential = ClaudeCredential.read) {
+    public init(profile: ClaudeProfile = .default(), transport: Transport = SessionTransport(), archive: ReadingArchive = ReadingArchive(), now: @escaping () -> Date = Date.init,
+                newestItem: @escaping (ClaudeProfile) throws -> Keychain.Item? = ClaudeCredential.newestItem(profile:),
+                credentialReader: @escaping (ClaudeProfile, Keychain.Item?) throws -> ClaudeCredential = ClaudeCredential.read(profile:item:)) {
         self.profile = profile
         self.transport = transport
         self.archive = archive
         self.now = now
+        self.newestItem = newestItem
         self.credentialReader = credentialReader
         retryAt = archive.backoffUntil(profile.id)
     }
@@ -119,39 +181,62 @@ public final class ClaudeProvider: UsageProvider {
     }
 
     public func forgetCredential() {
-        held = nil
-        refusedAt = nil
+        state.withLock {
+            held = nil
+            heldItem = nil
+            heldRejected = false
+            refusedAt = nil
+        }
     }
 
-    /// The credential is held until it ages out, so the keychain is read once per run rather than once per
-    /// poll. A refusal is held too: without that, one "Deny" would raise the same dialog every poll.
+    /// The credential is held while it is good, so the keychain is not touched at all. Once it ages out, the
+    /// newest item's attributes say whether Claude Code has stored another; looking at those raises no
+    /// prompt, so the secret is read once per token rather than once per poll. A refusal is held too:
+    /// without that, one "Deny" would raise the same dialog every poll.
     private func load() throws -> ClaudeCredential {
-        if let held, !held.expired(now()) { return held }
-        if let refusedAt, now().timeIntervalSince(refusedAt) < Self.quietAfterRefusal { throw Keychain.Refused() }
+        reading.lock()
+        defer { reading.unlock() }
+        let (current, from, rejected, refused) = state.withLock { (held, heldItem, heldRejected, refusedAt) }
+        if let current, !rejected, !current.expired(now()) { return current }
+        if let refused, now().timeIntervalSince(refused) < Self.quietAfterRefusal { throw Keychain.Refused() }
         do {
-            let fresh = try credentialReader(profile)
-            refusedAt = nil
-            held = fresh
+            let item = try newestItem(profile)
+            if let current, let item, item.modified != nil, item == from {
+                if rejected { throw UsageError.needsSignIn() }
+                return current
+            }
+            let fresh = try credentialReader(profile, item)
+            state.withLock {
+                held = fresh
+                heldItem = item
+                heldRejected = false
+                refusedAt = nil
+            }
             return fresh
         } catch is Keychain.Refused {
-            refusedAt = now()
+            state.withLock { refusedAt = now() }
             Log.usage.info("\(id): the keychain read was refused, asking again in \(Int(Self.quietAfterRefusal / 60)) min")
             throw Keychain.Refused()
         }
     }
 
     public func read() async throws -> ProviderReading {
-        if let at = retryAt, at > now() { throw UsageError.rateLimited(at.timeIntervalSince(now())) }
+        if let at = state.withLock({ retryAt }), at > now() { throw UsageError.rateLimited(at.timeIntervalSince(now())) }
         do {
             let parsed = try await fetch(retry: true)
-            retryAt = nil
-            consecutive429 = 0
+            state.withLock {
+                retryAt = nil
+                consecutive429 = 0
+            }
             archive.setBackoff(id, until: nil)
             return ProviderReading(providerId: id, displayName: displayName, fidelity: .official, status: .live, windows: parsed.windows, headlineId: parsed.headline)
         } catch let error as UsageError where error.kind == .rateLimited {
-            consecutive429 += 1
-            retryAt = now().addingTimeInterval(error.retryAfter)
-            archive.setBackoff(id, until: retryAt)
+            let until = now().addingTimeInterval(error.retryAfter)
+            state.withLock {
+                consecutive429 += 1
+                retryAt = until
+            }
+            archive.setBackoff(id, until: until)
             throw error
         }
     }
@@ -163,11 +248,14 @@ public final class ClaudeProvider: UsageProvider {
         let (data, response) = try await transport.send(request)
         Log.usage.debug("\(id): usage \(response.statusCode)")
         if response.statusCode == 401 || response.statusCode == 403 {
-            held = nil
+            state.withLock {
+                if held == credential { heldRejected = true }
+            }
             if retry { return try await fetch(retry: false) }
             throw UsageError.needsSignIn()
         }
-        if response.statusCode == 429 { throw UsageError.rateLimited(Backoff.exponential(consecutive429, hint: RetryAfterHeader.from(response, now: now()))) }
+        let consecutive = state.withLock { consecutive429 }
+        if response.statusCode == 429 { throw UsageError.rateLimited(Backoff.exponential(consecutive, hint: RetryAfterHeader.from(response, now: now()))) }
         try HTTP.throwUnlessOK(response)
         return try ClaudeUsage.parse(data)
     }
