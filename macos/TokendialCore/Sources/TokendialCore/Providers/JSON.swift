@@ -40,6 +40,23 @@ public enum JSON {
         guard let text, !text.isEmpty else { return nil }
         return fractional.date(from: text) ?? plain.date(from: text) ?? dateOnly.date(from: text)
     }
+
+    /// A credential file another tool owns and rewrites whenever it refreshes the token, or nil when there is no file.
+    /// One that is there but cannot be read now - locked mid-rewrite, or a read we were refused - is transient, and
+    /// never the sign-out that would erase the last reading and send a signed-in user to sign in again.
+    public static func credentialData(_ file: URL) throws -> Data? {
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        guard let data = try? Data(contentsOf: file) else { throw UsageError.credentialExpired() }
+        return data
+    }
+
+    /// The credential file as JSON. No file is a sign-in; one that is empty or not yet whole JSON is the owner caught
+    /// mid-rewrite, transient for the same reason as an unreadable one.
+    public static func credentialFile(_ file: URL) throws -> JSONObject {
+        guard let data = try credentialData(file) else { throw UsageError.needsSignIn() }
+        guard let root = object(data) else { throw UsageError.credentialExpired() }
+        return root
+    }
 }
 
 public extension Dictionary where Key == String, Value == Any {
@@ -52,12 +69,15 @@ public extension Dictionary where Key == String, Value == Any {
         return s
     }
 
+    /// A finite number, or a string holding one: Double("nan") and Double("inf") parse, and trap later in Int(...).
     func num(_ name: String) -> Double? {
+        let parsed: Double?
         switch self[name] {
-        case let n as NSNumber where CFGetTypeID(n) != CFBooleanGetTypeID(): return n.doubleValue
-        case let s as String: return Double(s)
-        default: return nil
+        case let n as NSNumber where CFGetTypeID(n) != CFBooleanGetTypeID(): parsed = n.doubleValue
+        case let s as String: parsed = Double(s)
+        default: parsed = nil
         }
+        return parsed.flatMap { $0.isFinite ? $0 : nil }
     }
 
     func bool(_ name: String) -> Bool? {

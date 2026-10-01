@@ -9,7 +9,7 @@
       "path": "~/Library/Application Support/Cursor/User/globalStorage/state.vscdb",
       "query": "SELECT value FROM ItemTable WHERE key = ?",
       "fields": { "accessToken": "cursorAuth/accessToken", "accountId": "cursorAuth/stripeMembershipAuthId", "email": "cursorAuth/cachedEmail", "plan": "cursorAuth/stripeMembershipType" },
-      "notes": "WAL mode. Open read-only but never immutable while the editor runs, or you read the state at the last checkpoint: an already-rotated token. Fall back to immutable=1 once the editor has quit."
+      "notes": "WAL mode. Open read-only but never immutable while the editor runs, or you read the state at the last checkpoint: an already-rotated token. Fall back to immutable=1 once the editor has quit, which shows as a failure to open; a read the editor holds busy (SQLITE_BUSY, SQLITE_LOCKED) never falls back and is credentialExpired, not needsAuth."
     },
     "windows": {
       "kind": "sqlite",
@@ -20,8 +20,14 @@
     "linux": {
       "kind": "sqlite",
       "path": "~/.config/Cursor/User/globalStorage/state.vscdb",
-      "query": "SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'",
-      "notes": "Electron keeps its user data under $XDG_CONFIG_HOME on Linux, so the directory is ~/.config/Cursor rather than the macOS Application Support path."
+      "query": "SELECT value FROM ItemTable WHERE key = ?",
+      "fields": {
+        "accessToken": "cursorAuth/accessToken",
+        "accountId": "cursorAuth/stripeMembershipAuthId",
+        "email": "cursorAuth/cachedEmail",
+        "plan": "cursorAuth/stripeMembershipType"
+      },
+      "notes": "Electron keeps its user data under $XDG_CONFIG_HOME on Linux, ~/.config when that is unset, so the directory is ~/.config/Cursor rather than the macOS Application Support path. The same keys and the same WAL rule as macOS."
     }
   },
   "endpoints": [

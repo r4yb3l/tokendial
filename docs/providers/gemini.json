@@ -8,7 +8,7 @@
       "path": "~/.gemini/oauth_creds.json",
       "fields": { "accessToken": "$.access_token" },
       "expiry": "$.expiry_date as epochMillis",
-      "notes": "The directory follows GEMINI_CLI_HOME when set. ~/.gemini/settings.json → security.auth.selectedType must be oauth-personal: an API key or Vertex sign-in publishes no quota (nothingMetered). The active email comes from ~/.gemini/google_accounts.json ($.active). The access token lives about an hour and is never refreshed here; the CLI rewrites the file when it runs. With GEMINI_FORCE_ENCRYPTED_FILE_STORAGE the CLI keeps the token in the keychain instead and this provider reports needsAuth."
+      "notes": "The directory follows GEMINI_CLI_HOME when set. ~/.gemini/settings.json → security.auth.selectedType must be oauth-personal: an API key or Vertex sign-in publishes no quota (nothingMetered). The active email comes from ~/.gemini/google_accounts.json ($.active). The access token lives about an hour and is never refreshed here; the CLI rewrites the file when it runs. With GEMINI_FORCE_ENCRYPTED_FILE_STORAGE the CLI keeps the token in the keychain instead and this provider reports needsAuth. A file that is there but empty or not yet whole JSON is the CLI mid-rewrite: credentialExpired, not needsAuth."
     },
     "windows": {
       "kind": "file",
@@ -21,11 +21,10 @@
       "kind": "file",
       "path": "~/.gemini/oauth_creds.json",
       "fields": {
-        "accessToken": "$.access_token",
-        "refreshToken": "$.refresh_token"
+        "accessToken": "$.access_token"
       },
       "expiry": "$.expiry_date as epochMillis",
-      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged: GEMINI_CLI_HOME, the oauth-personal rule and google_accounts.json included. The refresh token beside the access token is never read; the CLI refreshes."
     }
   },
   "endpoints": [
@@ -36,7 +35,7 @@
       "headers": { "Authorization": "Bearer {accessToken}", "Content-Type": "application/json" },
       "body": "{\"metadata\":{\"ideType\":\"IDE_UNSPECIFIED\",\"platform\":\"PLATFORM_UNSPECIFIED\",\"pluginType\":\"GEMINI\"}}",
       "timeoutSeconds": 15,
-      "notes": "Gate and project lookup. 401/403 → needsAuth; 429 → rateLimited(Retry-After); other non-200 → badResponse. The account is eligible when currentTier is present or allowedTiers is non-empty; otherwise nothingMetered with ineligibleTiers[0].reasonMessage (since 2026-06-18 personal, AI Pro and AI Ultra accounts get UNSUPPORTED_CLIENT and are pointed to Antigravity). Project: GOOGLE_CLOUD_PROJECT, then GOOGLE_CLOUD_PROJECT_ID, then $.cloudaicompanionProject (a string, or an object with id or projectId); none → nothingMetered. paidTier.name ?? currentTier.name is the plan."
+      "notes": "Gate and project lookup. 401/403 → needsAuth; 429 → rateLimited, backing off exponentially, which Retry-After can only lengthen; other non-200 → badResponse. The account is eligible when currentTier is present or allowedTiers is non-empty; otherwise nothingMetered with ineligibleTiers[0].reasonMessage (since 2026-06-18 personal, AI Pro and AI Ultra accounts get UNSUPPORTED_CLIENT and are pointed to Antigravity). Project: GOOGLE_CLOUD_PROJECT, then GOOGLE_CLOUD_PROJECT_ID, then $.cloudaicompanionProject (a string, or an object with id or projectId); none → nothingMetered. paidTier.name ?? currentTier.name is the plan."
     },
     {
       "name": "retrieveUserQuota",

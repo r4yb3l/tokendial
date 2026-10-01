@@ -82,4 +82,18 @@ public class TerminalsTests
         var tilix = Terminals.Resolve(Nothing, Present("tilix"))!;
         Assert.Equal(["-e", "sh /tmp/grok.sh"], tilix.Arguments("/tmp/grok.sh"));
     }
+
+    /// <summary>
+    /// xterm's <c>-e</c>, which Debian requires of x-terminal-emulator and which st and urxvt follow, execs the
+    /// next word as the program and hands it the rest. One word reading "sh /tmp/grok.sh" names no program at all.
+    /// </summary>
+    [Fact]
+    public void AnXtermStyleTerminalGetsTheProgramAndTheScriptAsSeparateWords()
+    {
+        var debian = Terminals.Resolve(Nothing, Present("x-terminal-emulator"))!;
+        Assert.Equal(["-e", "sh", "/tmp/grok.sh"], debian.Arguments("/tmp/grok.sh"));
+
+        var unknown = Terminals.Resolve(key => key == "TERMINAL" ? "st" : null, Present("st"))!;
+        Assert.Equal(["-e", "sh", "/tmp/grok.sh"], unknown.Arguments("/tmp/grok.sh"));
+    }
 }

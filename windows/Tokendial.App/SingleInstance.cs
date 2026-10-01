@@ -15,6 +15,7 @@ public sealed class SingleInstance : IDisposable
     private readonly EventWaitHandle settings = new(false, EventResetMode.AutoReset, SettingsEvent);
     private readonly EventWaitHandle testAlert = new(false, EventResetMode.AutoReset, TestAlertEvent);
     private readonly CancellationTokenSource stop = new();
+    private bool listening;
 
     private SingleInstance(Mutex mutex) => this.mutex = mutex;
 
@@ -36,30 +37,44 @@ public sealed class SingleInstance : IDisposable
         catch (WaitHandleCannotBeOpenedException) { }
     }
 
-    /// <summary>Raised on a pool thread; the caller marshals to its dispatcher.</summary>
+    /// <summary>
+    /// Raised on a pool thread; the caller marshals to its dispatcher. From here on the listening thread owns the
+    /// three events and disposes them when it stops: disposed from <see cref="Dispose"/>, they could vanish under a
+    /// wait that had not yet seen the cancellation, and the throw would end the process on its way out.
+    /// </summary>
     public void Listen(Action<Signal> onSignal)
     {
         var token = stop.Token;
+        listening = true;
         new Thread(() =>
         {
             var handles = new WaitHandle[] { show, settings, testAlert, token.WaitHandle };
-            while (!token.IsCancellationRequested)
+            try
             {
-                var index = WaitHandle.WaitAny(handles);
-                if (index == 0) onSignal(Signal.Show);
-                else if (index == 1) onSignal(Signal.Settings);
-                else if (index == 2) onSignal(Signal.TestAlert);
+                while (!token.IsCancellationRequested)
+                {
+                    var index = WaitHandle.WaitAny(handles);
+                    if (index == 0) onSignal(Signal.Show);
+                    else if (index == 1) onSignal(Signal.Settings);
+                    else if (index == 2) onSignal(Signal.TestAlert);
+                }
             }
+            finally { DisposeEvents(); }
         }) { IsBackground = true, Name = "single-instance" }.Start();
     }
 
     public void Dispose()
     {
         stop.Cancel();
+        if (!listening) DisposeEvents();
+        try { mutex.ReleaseMutex(); } catch (ApplicationException) { }
+        mutex.Dispose();
+    }
+
+    private void DisposeEvents()
+    {
         show.Dispose();
         settings.Dispose();
         testAlert.Dispose();
-        try { mutex.ReleaseMutex(); } catch (ApplicationException) { }
-        mutex.Dispose();
     }
 }

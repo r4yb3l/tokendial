@@ -21,7 +21,7 @@ purpose. Do not propose extracting a cross-platform UI library.
 | `windows/Tokendial.App/` | the WPF app |
 | `macos/` | the AppKit app and `TokendialCore`, its Swift package |
 | `linux/Tokendial.Avalonia/` | the Avalonia app, referencing `windows/Tokendial.Core` directly |
-| `site/` | the Astro site at tokendial.app — its own npm project, its own locales, its own CI job |
+| `site/` | the Astro site, served at tokendial.vercel.app until a domain is bought — its own npm project, its own locales, its own CI job |
 | `tools/` | PowerShell helpers that drive a remote build over SSH. `mac.ps1` works; **`linux.ps1` points at a VM that no longer exists**. `LinuxDisplayProbe/` opens the real dock with fixture readings; its `nested-checks.sh` runs hotplug, scale, hover-card and Wayland-notice checks on a nested X server |
 | `tasks/lessons.md` | **read this before a second attempt at anything.** Every entry is a mistake that reached a user or burned an afternoon |
 
@@ -71,9 +71,12 @@ npx --yes -p ajv-cli@5 -p ajv-formats@3 ajv validate --spec=draft2020 -c ajv-for
 - **Nothing runs without the user pressing Run.** The install assistant shows the vendor's own command, from
   the spec, in full, before a terminal opens. There is a test asserting the generated script contains
   nothing beyond the recipe's own text and the fixed template — no stray `curl`, `sudo`, `rm` or `$(`.
-- **Install recipes never use a distribution's package manager.** The names collide: brew's `grok` is a
-  regex tool and its `glm` a C++ maths library; apt has the same trap. Only the vendor's own script at a
-  host the spec already names, a vendor-scoped npm package, or a download page.
+- **Linux install recipes never use a distribution's package manager.** The names collide: brew's `grok`
+  is a regex tool and its `glm` a C++ maths library; apt has the same trap. Only the vendor's own script at
+  a host the spec already names, a vendor-scoped npm package, or a download page — `PathTableTests`
+  enforces it. macOS and Windows recipes do use Homebrew and winget, but only under a cask or package id
+  checked to be the vendor's own (`claude-code`, `Anysphere.Cursor`); Grok stays on xAI's installer for
+  the reason above.
 - **A provider that cannot be read somewhere says so**, via `status.platforms` in its spec. Reporting
   "sign in" to somebody who is signed in is the failure this exists to prevent.
 - **Paths go through `Roots`, not `Environment.SpecialFolder`.** On Unix .NET maps `ApplicationData` to
@@ -103,17 +106,24 @@ Current state:
 - **Do not replace `UsePlatformDetect()` with `UseX11()`** in `Program.Builder`. It drops the renderer and
   text shaper and every start aborts, which the headless tests cannot see. CI's Xvfb probe step can.
 - Antigravity's usage cannot be read: its token lives behind Secret Service. Its sessions work.
-- Packaged as a self-updating AppImage by Velopack, built on ubuntu-22.04 so it runs on Mint 21 and
-  Debian 12. An AppImage has no installer, so the app carries its own — first run asks before it writes
-  anything, and Settings has an Uninstall that removes all of it.
+- Packaged as an AppImage by Velopack, built on ubuntu-22.04 so it runs on Mint 21 and Debian 12. The
+  release publishes the `linux` update channel, but the app does not read it yet: there is no `Updater` on
+  Linux, so a user stays on the AppImage they downloaded and Settings does not offer the update switch.
+  Porting `windows/Tokendial.App/Updates/Updater.cs` is what is missing. An AppImage has no installer, so
+  the app carries its own — first run asks before it writes anything, and Settings has an Uninstall that
+  removes all of it.
 
 ## The site
 
 `site/` is an Astro project with its own toolchain, and CI grades it separately from the apps:
 
 ```sh
-cd site && npm ci && npm run check-posts && npm run check-locales && npm run build
+cd site && npm ci && npm run check-posts && npm run check-locales && npm run build && npm run check-csp
 ```
+
+`check-csp` reads the build output, because the content security policy says `script-src 'self'` and an
+inline script is refused in production while working everywhere else. The landing shipped with every
+script dead that way; write processed `<script>` tags, never `is:inline`.
 
 `check-locales` exists because a missing key there is **silent** — `t()` falls back to English and the page
 renders in the wrong language instead of breaking. `check-posts` asserts what the frontmatter schema
@@ -124,10 +134,17 @@ site's locales are its own, separate from `docs/i18n/`; adding a string to one d
 
 Releases are cut by **pushing a tag `vX.Y.Z` that matches the `VERSION` file at the repo root**. All three
 platform jobs re-read `VERSION` and fail the build if the tag disagrees, so bump `VERSION` in a commit
-first, then tag that commit. There is no other trigger and no manual upload step.
+first, then tag that commit. There is no manual upload step; the only other trigger is a manual run that
+rebuilds the macOS assets of a tag that already exists.
+
+**Never create the release from GitHub's web interface.** Doing that for v0.1.4 made the tag on a commit
+whose `VERSION` still said 0.1.3, so the Windows job failed its first gate, macOS and Linux never ran, and
+an empty release became "latest" — the page every download link on the site points at. Tags cannot be
+moved or deleted (a ruleset forbids it), so a burned version number stays burned: the next release is the
+next number.
 
 What each job produces: Windows a `Setup.exe`, a portable zip and an MSI, macOS a universal `.zip`
-and `.dmg`, Linux a self-updating AppImage on the `linux` channel built on **ubuntu-22.04** so it
+and `.dmg`, Linux an AppImage on the `linux` channel built on **ubuntu-22.04** so it
 runs on glibc 2.35 and later. The Windows job creates the GitHub release; macOS and Linux attach to
 it with `gh release upload`, because `vpk upload` would try to create a release of its own.
 

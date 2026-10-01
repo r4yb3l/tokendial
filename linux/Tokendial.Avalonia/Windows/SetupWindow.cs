@@ -17,8 +17,9 @@ namespace Tokendial.Linux.Windows;
 /// An AppImage that simply appears as a running application, with an Install button hidden in Settings, is
 /// indistinguishable from something that let itself in. Windows has Setup.exe and macOS has a disk image you
 /// drag into Applications; both are a visible, deliberate step before the app exists on the machine, and both
-/// tell the user what is about to happen. This is that step. Installing ends with the installed copy running
-/// and this one gone, so what the user is left with is the application, not the file they downloaded.
+/// tell the user what is about to happen. This is that step. Installing leaves this process running as the
+/// application and every later start coming from the installed copy, so what the user is left with is the
+/// application, not the file they downloaded.
 /// </remarks>
 public sealed class SetupWindow : Window
 {

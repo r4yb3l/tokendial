@@ -8,13 +8,13 @@
       "kind": "file",
       "path": "~/.local/share/opencode/auth.json",
       "fields": { "token": "$['opencode-go'] as string, or its key | apiKey | api_key | token | accessToken" },
-      "notes": "Only the opencode-go entry. Every other entry (openai, google…) is that vendor's key and is never claimed."
+      "notes": "Only the opencode-go entry. Every other entry (openai, google…) is that vendor's key and is never claimed. OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves it."
     },
     "windows": {
       "kind": "file",
       "path": "~/.local/share/opencode/auth.json",
       "fields": { "token": "same" },
-      "notes": "Unverified on Windows; OpenCode may also use %APPDATA%/opencode/auth.json."
+      "notes": "Unverified on Windows; OpenCode may also use %APPDATA%/opencode/auth.json. $XDG_DATA_HOME moves it here too."
     },
     "linux": {
       "kind": "file",

@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — deine KI-Limits auf einer Anzeige, bevor sie dich stoppen",
-  "meta.description": "Gemacht für Vibecoder: ein Dock am Bildschirmrand mit einer Anzeige pro KI-Coding-Assistent (Claude Code, Codex, Cursor, Copilot und mehr). Es warnt dich, bevor ein Fenster zurückgesetzt wird, wenn ein Limit erreicht ist und wenn ein Agent auf dein Ja wartet. Frei und Open Source, macOS und Windows.",
-  "nav.why": "Warum Tokendial",
+  "meta.description": "Gemacht für Vibecoder: ein Dock am Bildschirmrand mit einer Anzeige pro KI-Coding-Assistent (Claude Code, Codex, Cursor, Copilot und mehr). Es warnt dich, bevor ein Fenster zurückgesetzt wird, wenn ein Limit erreicht ist und wenn ein Agent auf dein Ja wartet. Frei und Open Source, für macOS, Windows und Linux.",
   "nav.how": "So funktioniert es",
   "nav.providers": "Anbieter",
   "nav.alerts": "Warnungen",
@@ -117,7 +116,7 @@
   "unsigned.windows": "Windows zeigt „Der Computer wurde durch Windows geschützt“. Wählen Sie Weitere Informationen und dann Trotzdem ausführen.",
   "unsigned.macos": "macOS meldet, die App sei beschädigt. Klicken Sie mit der rechten Maustaste auf Tokendial im Ordner Programme, wählen Sie Öffnen und dann erneut Öffnen — oder entfernen Sie die Quarantänemarkierung selbst:",
   "cta.title": "Der Vibe geht weiter.",
-  "cta.lead": "Frei und Open Source, Windows und macOS, aus einer gemeinsamen Spezifikation gebaut.",
+  "cta.lead": "Frei und Open Source, Windows, macOS und Linux, aus einer gemeinsamen Spezifikation gebaut.",
   "footer.made": "Von Raybel Hernández · MIT-Lizenz",
   "footer.disclaimer": "Tokendial ist ein unabhängiges Projekt. Es ist weder mit Anthropic, OpenAI, GitHub, Cursor, Google, Z.ai, xAI noch dem OpenCode-Projekt verbunden, noch von ihnen unterstützt oder gesponsert. Produktnamen und Marken gehören ihren Inhabern.",
   "footer.source": "Quellcode",

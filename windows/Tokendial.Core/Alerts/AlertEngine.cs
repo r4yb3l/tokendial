@@ -19,14 +19,20 @@ public sealed class AlertEngine
 
     private readonly AlertConfig config;
     private readonly AlertState state;
+    private readonly Func<AlertKind, bool> wants;
 
-    public AlertEngine(AlertConfig? config = null, AlertState? state = null)
+    /// <param name="wants">
+    /// The kinds the user left on. The others are dropped before hover and cooldown, so a switched-off kind can
+    /// never hold back or swallow one the user asked for.
+    /// </param>
+    public AlertEngine(AlertConfig? config = null, AlertState? state = null, Func<AlertKind, bool>? wants = null)
     {
         this.config = config ?? AlertConfig.Default;
         this.state = state ?? new AlertState();
+        this.wants = wants ?? (_ => true);
     }
 
-    public static AlertEngine Load(string json, AlertConfig? config = null)
+    public static AlertEngine Load(string json, AlertConfig? config = null, Func<AlertKind, bool>? wants = null)
     {
         AlertState? state = null;
         try
@@ -36,7 +42,7 @@ public sealed class AlertEngine
         catch (JsonException)
         {
         }
-        return new AlertEngine(config, state?.Schema == 1 ? state : null);
+        return new AlertEngine(config, state?.Schema == 1 ? state : null, wants);
     }
 
     public string Save() => JsonSerializer.Serialize(state, Json);
@@ -62,6 +68,7 @@ public sealed class AlertEngine
                 break;
             case AlertEvent.Restart restart:
                 Prune(restart.At);
+                ForgetTheLastRun();
                 break;
         }
         candidates.AddRange(TimeChecks(e.At));
@@ -72,7 +79,7 @@ public sealed class AlertEngine
     {
         var key = $"{usage.Provider}|{usage.Window}";
         var epoch = state.Epochs.FirstOrDefault(x => x.Key == key);
-        var fresh = epoch is null || epoch.Closed || !SameReset(epoch.ResetsAt, usage.ResetsAt) || epoch.LastPct - usage.UsedPct > 10;
+        var fresh = epoch is null || !SameReset(epoch.ResetsAt, usage.ResetsAt) || epoch.LastPct - usage.UsedPct > 10;
         if (fresh)
         {
             state.Epochs.RemoveAll(x => x.Key == key);
@@ -81,6 +88,10 @@ public sealed class AlertEngine
         }
         epoch!.LastPct = usage.UsedPct;
         epoch.ResetsAt = usage.ResetsAt;
+
+        // A closed window that is still reported with the same reset is the reading from before the rollover,
+        // re-delivered while the next poll runs; reopening on it fired the limit and reset-done pair a second time.
+        if (epoch.Closed) yield break;
 
         if (usage.Limited || usage.UsedPct >= 100)
         {
@@ -144,6 +155,7 @@ public sealed class AlertEngine
     private IReadOnlyList<Alert> Gate(List<Alert> candidates, DateTimeOffset now)
     {
         var emitted = new List<Alert>();
+        state.Held.RemoveAll(a => !wants(a.Kind));
 
         if (!state.HoverOn)
         {
@@ -155,7 +167,7 @@ public sealed class AlertEngine
             }
         }
 
-        foreach (var alert in candidates)
+        foreach (var alert in candidates.Where(a => wants(a.Kind)))
         {
             if (alert.Kind == AlertKind.Threshold)
             {
@@ -187,6 +199,18 @@ public sealed class AlertEngine
 
     private void Prune(DateTimeOffset now) =>
         state.Epochs.RemoveAll(x => x.ResetsAt is DateTimeOffset at && at < now - TimeSpan.FromHours(24));
+
+    /// <summary>
+    /// What described the moment the app stopped rather than the one it starts in. A session may have ended
+    /// while nothing watched it, and the host re-reports the ones still waiting; a pointer that was over the
+    /// panel at a crash or a quit is not there now, and leaving hover on silenced every threshold.
+    /// </summary>
+    private void ForgetTheLastRun()
+    {
+        state.Waiting.Clear();
+        state.Held.RemoveAll(a => a.Kind == AlertKind.Waiting);
+        state.HoverOn = false;
+    }
 }
 
 /// <summary>Everything the engine remembers, shaped for JSON.</summary>

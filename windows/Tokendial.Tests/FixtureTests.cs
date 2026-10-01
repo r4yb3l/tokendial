@@ -1,6 +1,9 @@
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Data.Sqlite;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
@@ -12,6 +15,7 @@ using Tokendial.Core.Providers.Cursor;
 using Tokendial.Core.Providers.Glm;
 using Tokendial.Core.Providers.Grok;
 using Tokendial.Core.Providers.OpenCode;
+using Tokendial.Core.Store;
 
 namespace Tokendial.Tests;
 
@@ -91,10 +95,190 @@ public class FixtureTests
     }
 }
 
+/// <summary>
+/// What a provider says when it cannot get a usable answer right now. None of these is a sign-out: a sign-out
+/// erases the last reading and sends a signed-in user to sign in again.
+/// </summary>
+public class CredentialReadTests : IDisposable
+{
+    private const string CopilotApps = """{"github.com:Iv1.x":{"oauth_token":"gho_test","user":"ada"}}""";
+    private readonly string root = Path.Combine(Path.GetTempPath(), "tokendial-tests", Guid.NewGuid().ToString("N"));
+
+    public CredentialReadTests() => Directory.CreateDirectory(root);
+
+    public void Dispose() => Directory.Delete(root, recursive: true);
+
+    private string Write(string name, string content)
+    {
+        var path = Path.Combine(root, name);
+        File.WriteAllText(path, content);
+        return path;
+    }
+
+    private CopilotProvider Copilot(string apps, HttpStatusCode status = HttpStatusCode.OK, params (string Name, string Value)[] headers) =>
+        new(new Answering(status, headers), new ReadingArchive(root), new CopilotCredential.Files(apps, Path.Combine(root, "hosts.json"), Path.Combine(root, "hosts.yml")));
+
+    private sealed class Answering : HttpMessageHandler
+    {
+        private readonly HttpStatusCode status;
+        private readonly (string Name, string Value)[] headers;
+
+        public Answering(HttpStatusCode status, (string Name, string Value)[] headers)
+        {
+            this.status = status;
+            this.headers = headers;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var response = new HttpResponseMessage(status) { RequestMessage = request, Content = new StringContent("{}") };
+            foreach (var (name, value) in headers) response.Headers.TryAddWithoutValidation(name, value);
+            return Task.FromResult(response);
+        }
+    }
+
+    /// <summary>The owner rewrites its file in place when it refreshes the token, so a read can land on an empty or half-written one.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("""{"claudeAiOauth":{"accessTo""")]
+    public void AhalfWrittenCredentialIsTransientNotASignOut(string content)
+    {
+        var file = Write("credential.json", content);
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => ClaudeCredential.Read(file)).Kind);
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => CodexCredential.Read(file)).Kind);
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => GrokCredential.Read(file, DateTimeOffset.UnixEpoch)).Kind);
+    }
+
+    [Fact]
+    public void AnAbsentOrSignedOutCredentialIsStillASignIn()
+    {
+        var missing = Path.Combine(root, "missing.json");
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => ClaudeCredential.Read(missing)).Kind);
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => CodexCredential.Read(missing)).Kind);
+        var signedOut = Write("signed-out.json", "{}");
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => ClaudeCredential.Read(signedOut)).Kind);
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => CodexCredential.Read(signedOut)).Kind);
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => GrokCredential.Read(signedOut, DateTimeOffset.UnixEpoch)).Kind);
+    }
+
+    /// <summary>A file the owner holds locked is transient, and must not fall through to the next file's token, another account's.</summary>
+    [Fact]
+    public async Task ALockedCopilotFileIsTransient()
+    {
+        var apps = Write("apps.json", CopilotApps);
+        using var provider = Copilot(apps);
+        using (new FileStream(apps, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            Assert.Null(provider.Account());
+            Assert.Equal(UsageErrorKind.CredentialExpired, (await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync())).Kind);
+        }
+    }
+
+    /// <summary>
+    /// A refused read used to escape Account() as UnauthorizedAccessException, which the settings window calls
+    /// unguarded. Only stageable where a file mode can refuse the owner; root reads anything, so it says so and stops.
+    /// </summary>
+    [Fact]
+    public async Task ArefusedCopilotReadIsTransientAndTheAccountRowSurvivesIt()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        var apps = Write("apps.json", CopilotApps);
+        using var provider = Copilot(apps);
+        File.SetUnixFileMode(apps, UnixFileMode.None);
+        try
+        {
+            try { File.ReadAllBytes(apps); return; }
+            catch (UnauthorizedAccessException) { }
+            Assert.Null(provider.Account());
+            Assert.Equal(UsageErrorKind.CredentialExpired, (await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync())).Kind);
+        }
+        finally { File.SetUnixFileMode(apps, UnixFileMode.UserRead | UnixFileMode.UserWrite); }
+    }
+
+    /// <summary>GitHub answers an exhausted rate limit with 403 as often as 429; only the headers tell it from a missing seat.</summary>
+    [Theory]
+    [InlineData("x-ratelimit-remaining", "0", UsageErrorKind.RateLimited)]
+    [InlineData("Retry-After", "30", UsageErrorKind.RateLimited)]
+    [InlineData("x-ratelimit-remaining", "4999", UsageErrorKind.NothingMetered)]
+    public async Task ACopilot403IsARateLimitOnlyWhenGitHubSaysSo(string header, string value, UsageErrorKind kind)
+    {
+        using var provider = Copilot(Write("apps.json", CopilotApps), HttpStatusCode.Forbidden, (header, value));
+        Assert.Equal(kind, (await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync())).Kind);
+    }
+
+    /// <summary>
+    /// While the editor writes, its store answers busy. The immutable fallback then read the token as of the last
+    /// checkpoint, one the editor had already replaced: a 401, and a signed-in user told to sign in.
+    /// </summary>
+    [Fact]
+    public void ACursorStoreTheEditorHoldsBusyIsTransientNotAStaleToken()
+    {
+        var store = Path.Combine(root, "state.vscdb");
+        var connection = new SqliteConnectionStringBuilder { DataSource = store, Pooling = false }.ToString();
+        using (var setup = new SqliteConnection(connection))
+        {
+            setup.Open();
+            using var create = setup.CreateCommand();
+            create.CommandText = "CREATE TABLE ItemTable (key TEXT UNIQUE, value BLOB); INSERT INTO ItemTable VALUES ('cursorAuth/accessToken', 'token'), ('cursorAuth/stripeMembershipAuthId', 'account');";
+            create.ExecuteNonQuery();
+        }
+        Assert.Equal("token", CursorCredential.Read(store).AccessToken);
+
+        using var editor = new SqliteConnection(connection);
+        editor.Open();
+        using (var begin = editor.CreateCommand())
+        {
+            begin.CommandText = "BEGIN EXCLUSIVE";
+            begin.ExecuteNonQuery();
+        }
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => CursorCredential.Read(store)).Kind);
+    }
+}
+
+/// <summary>Json's lenient readers answer null for what they cannot use; they never throw.</summary>
+public class JsonTests
+{
+    [Theory]
+    [InlineData("""{"t":1e300}""")]
+    [InlineData("""{"t":-1e20}""")]
+    [InlineData("""{"t":"Infinity"}""")]
+    [InlineData("""{"t":"NaN"}""")]
+    public void AnEpochOutsideTheCalendarIsNullNotAnException(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        Assert.Null(document.RootElement.EpochMillis("t"));
+        Assert.Null(document.RootElement.EpochSeconds("t"));
+    }
+
+    [Theory]
+    [InlineData("""{"n":"NaN"}""")]
+    [InlineData("""{"n":"-Infinity"}""")]
+    public void AnumberThatIsNotFiniteIsNoNumber(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        Assert.Null(document.RootElement.Num("n"));
+    }
+
+    [Fact]
+    public void AnEpochInsideTheCalendarStillReads()
+    {
+        using var document = JsonDocument.Parse("""{"ms":1788940800000,"s":"1788940800"}""");
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1788940800000), document.RootElement.EpochMillis("ms"));
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1788940800), document.RootElement.EpochSeconds("s"));
+    }
+}
+
+/// <summary>
+/// The expectations are English, and dates are formatted through Strings.Culture, which starts as the
+/// machine's own; without pinning the language these failed on any machine not set to English.
+/// </summary>
 [Collection("language")]
-public class CopyTests
+public class CopyTests : IDisposable
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.FromUnixTimeSeconds(1_700_000_000);
+
+    public CopyTests() => Strings.Use("en");
+    public void Dispose() => Strings.Use("en");
 
     [Fact]
     public void ResetCopyFollowsTheRules()

@@ -21,15 +21,17 @@ public static class Json
     public static string? Str(this JsonElement e, string name) =>
         e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(v.GetString()) ? v.GetString() : null;
 
+    /// <summary>A finite number, or a string holding one; "NaN" and "Infinity" parse as doubles but are not numbers anything can use.</summary>
     public static double? Num(this JsonElement e, string name)
     {
         if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty(name, out var v)) return null;
-        return v.ValueKind switch
+        double? value = v.ValueKind switch
         {
-            JsonValueKind.Number => v.GetDouble(),
+            JsonValueKind.Number when v.TryGetDouble(out var n) => n,
             JsonValueKind.String when double.TryParse(v.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var d) => d,
             _ => null
         };
+        return value is double finite && double.IsFinite(finite) ? finite : null;
     }
 
     public static bool? Bool(this JsonElement e, string name) =>
@@ -40,11 +42,42 @@ public static class Json
     public static DateTimeOffset? Iso(string? text) =>
         text is not null && DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var d) ? d : null;
 
-    public static DateTimeOffset? EpochMillis(this JsonElement e, string name) =>
-        e.Num(name) is double ms ? DateTimeOffset.FromUnixTimeMilliseconds((long)ms) : null;
+    private static readonly double MinMillis = DateTimeOffset.MinValue.ToUnixTimeMilliseconds();
+    private static readonly double MaxMillis = DateTimeOffset.MaxValue.ToUnixTimeMilliseconds();
+    private static readonly double MinSeconds = DateTimeOffset.MinValue.ToUnixTimeSeconds();
+    private static readonly double MaxSeconds = DateTimeOffset.MaxValue.ToUnixTimeSeconds();
 
+    /// <summary>Null outside the years 1 to 9999, where FromUnixTimeMilliseconds would throw instead.</summary>
+    public static DateTimeOffset? EpochMillis(this JsonElement e, string name) =>
+        e.Num(name) is double ms && ms >= MinMillis && ms <= MaxMillis ? DateTimeOffset.FromUnixTimeMilliseconds((long)ms) : null;
+
+    /// <summary>Null outside the years 1 to 9999, where FromUnixTimeSeconds would throw instead.</summary>
     public static DateTimeOffset? EpochSeconds(this JsonElement e, string name) =>
-        e.Num(name) is double s ? DateTimeOffset.FromUnixTimeSeconds((long)s) : null;
+        e.Num(name) is double s && s >= MinSeconds && s <= MaxSeconds ? DateTimeOffset.FromUnixTimeSeconds((long)s) : null;
+}
+
+/// <summary>A credential file another tool owns, and rewrites whenever it refreshes the token.</summary>
+public static class CredentialFile
+{
+    /// <summary>
+    /// The file's text, or null when there is no file. One that is there but cannot be read now - locked
+    /// mid-rewrite, or a read we were refused - throws CredentialExpired: it is transient, and it is not a
+    /// sign-out, which would erase the last reading and send a signed-in user to sign in again.
+    /// </summary>
+    public static string? Text(string path)
+    {
+        if (!File.Exists(path)) return null;
+        try { return File.ReadAllText(path); }
+        catch (Exception e) when (e is FileNotFoundException or DirectoryNotFoundException) { return null; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw UsageError.CredentialExpired(); }
+    }
+
+    /// <summary>
+    /// The file as JSON. No file is a sign-in; a file that is empty or not yet whole JSON is the owner caught
+    /// mid-rewrite, and transient for the same reason as an unreadable one.
+    /// </summary>
+    public static JsonDocument Document(string path) =>
+        Json.Parse(Text(path) ?? throw UsageError.NeedsSignIn()) ?? throw UsageError.CredentialExpired();
 }
 
 /// <summary>Shared HTTP plumbing: one client per provider, standard status mapping.</summary>

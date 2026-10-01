@@ -41,7 +41,7 @@
       "headers": { "Content-Type": "application/json", "x-codeium-csrf-token": "{csrfToken}" },
       "body": "{\"forceRefresh\":true}",
       "timeoutSeconds": 10,
-      "notes": "Preferred source. The server is launched with --https_server_port 0 and writes nothing down: find the language_server process, read --csrf_token from its command line, list the ports it listens on (two; only one serves this RPC, try all). Self-signed certificate: trust it only for 127.0.0.1, localhost, ::1 on a dedicated client. forceRefresh is essential or the answer is served from the server's cache. Once this source has ever answered, a silent bridge means Antigravity was closed: keep the last percentage stale rather than fall back."
+      "notes": "Preferred source. The server is launched with --https_server_port 0 and writes nothing down: find the language_server process (Antigravity's own first, its command line naming antigravity through the install path, then one that names no product; Windsurf and the Codeium extensions ship the same binary with the same flags, so one naming windsurf or codeium is never taken), read --csrf_token from its command line, list the ports it listens on (two; only one serves this RPC, try all). Self-signed certificate: trust it only for 127.0.0.1, localhost, ::1 on a dedicated client. forceRefresh is essential or the answer is served from the server's cache. Once this source has ever answered, a silent bridge means Antigravity was closed: keep the last percentage stale rather than fall back."
     },
     {
       "name": "retrieveUserQuotaSummary",

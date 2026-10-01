@@ -1,0 +1,17 @@
+{
+  "name": "19-closed-epoch-ignores-same-reset",
+  "config": {},
+  "steps": [
+    { "t": 0, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 100, "resetsAt": 1000 } },
+    { "t": 1000, "event": { "kind": "tick" } },
+    { "t": 1015, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 100, "resetsAt": 1000 } },
+    { "t": 1100, "event": { "kind": "tick" } },
+    { "t": 1200, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 5, "resetsAt": 19000 } },
+    { "t": 1300, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 55, "resetsAt": 19000 } }
+  ],
+  "expected": [
+    { "t": 0, "kind": "limit", "provider": "claude", "window": "session" },
+    { "t": 1000, "kind": "resetDone", "provider": "claude", "window": "session" },
+    { "t": 1300, "kind": "threshold", "provider": "claude", "window": "session", "pct": 50 }
+  ]
+}

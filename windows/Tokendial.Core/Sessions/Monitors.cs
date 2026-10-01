@@ -89,7 +89,7 @@ public sealed class ClaudeSessions : PolledMonitor
         return DateTimeOffset.TryParseExact(collapsed, "ddd MMM d HH:mm:ss yyyy", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var d) ? d : null;
     }
 
-    public new void Dispose()
+    public override void Dispose()
     {
         watcher?.Dispose();
         debounce?.Dispose();

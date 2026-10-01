@@ -148,7 +148,7 @@ public sealed class SettingsWindow
         words.Children.Add(license);
         bar.Children.Add(words);
         var links = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.app")));
+        links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.vercel.app")));
         links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
         var folder = Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Paths.Data));
         links.Children.Add(folder);
@@ -271,7 +271,9 @@ public sealed class SettingsWindow
         var modes = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3, Margin = new Thickness(0, 12, -8, 0) };
         void AddMode(PanelMode mode, string key, UIElement diagram)
         {
-            modes.Children.Add(Chrome.Tile("panel", diagram, Strings.T(key), settings.Panel == mode, () => SetPanel(mode)));
+            var tile = Chrome.Tile("panel", diagram, Strings.T(key), settings.Panel == mode, () => SetPanel(mode));
+            tile.Click += (_, _) => SetPanel(mode);
+            modes.Children.Add(tile);
         }
         AddMode(PanelMode.ExpandOnHover, "settings.panel.hover", Chrome.CompactDiagram(wide: false));
         AddMode(PanelMode.AlwaysExpanded, "settings.panel.always", Chrome.CompactDiagram(wide: true));
@@ -419,11 +421,15 @@ public sealed class SettingsWindow
         return element;
     }
 
+    /// <summary>Picking the mode already chosen still applies it, so pressing Hidden puts away a dock that a flash is holding open.</summary>
     private void SetPanel(PanelMode mode)
     {
-        if (building || settings.Panel == mode) return;
-        settings.Panel = mode;
-        Save();
+        if (building) return;
+        if (settings.Panel != mode)
+        {
+            settings.Panel = mode;
+            Save();
+        }
         PanelModeChanged?.Invoke(mode);
         if (panelHint is not null) panelHint.Text = PanelHint(mode);
     }
@@ -595,7 +601,7 @@ public sealed class SettingsWindow
 
     public static void Open(string target)
     {
-        try { Process.Start(new ProcessStartInfo(target) { UseShellExecute = true }); }
+        try { Process.Start(new ProcessStartInfo(target) { UseShellExecute = true })?.Dispose(); }
         catch (Exception error) { Core.Diagnostics.Log.Ui.Error($"open {target}: {error.Message}"); }
     }
 }

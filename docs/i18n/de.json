@@ -212,7 +212,7 @@
     "setup.title": "Tokendial installieren",
     "setup.step.copy": "Kopiert diese Datei nach ~/.local/bin, damit Tokendial auch nach dem Leeren der Downloads läuft.",
     "setup.step.menu": "Nimmt Tokendial ins Anwendungsmenü auf, mit seinem Symbol.",
-    "setup.step.launch": "Startet die installierte Kopie und schließt diese hier.",
+    "setup.step.launch": "Öffnet Tokendial sofort. Danach startet das Anwendungsmenü die installierte Kopie.",
     "setup.safe": "Alles wird in Ihrem persönlichen Ordner abgelegt. Es wird nichts systemweit installiert, nach keinem Passwort gefragt, und in den Einstellungen entfernt eine Schaltfläche „Deinstallieren“ all das wieder.",
     "setup.install": "Installieren",
     "setup.justRun": "Nur ausführen",

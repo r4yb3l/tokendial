@@ -23,10 +23,19 @@ public final class ReadingArchive {
     private static let decoder: JSONDecoder = { let d = JSONDecoder(); d.dateDecodingStrategy = .iso8601; return d }()
     private static let encoder: JSONEncoder = { let e = JSONEncoder(); e.dateEncodingStrategy = .iso8601; e.outputFormatting = [.prettyPrinted, .sortedKeys]; return e }()
 
+    /// Every reading comes back stale since it was taken, whatever it was saved as. The first change after
+    /// launch fires before any provider has answered, and a reading still marked live would reach the alert
+    /// engine and the panel as news however many days old it is.
     public func load() -> [String: Remembered] {
         lock.lock(); defer { lock.unlock() }
         guard let data = try? Data(contentsOf: readingsFile), let list = try? Self.decoder.decode([Remembered].self, from: data) else { return [:] }
-        return Dictionary(list.map { ($0.reading.providerId, $0) }, uniquingKeysWith: { a, _ in a })
+        return Dictionary(list.map { ($0.reading.providerId, Self.dated($0)) }, uniquingKeysWith: { a, _ in a })
+    }
+
+    private static func dated(_ remembered: Remembered) -> Remembered {
+        var reading = remembered.reading
+        reading.status = .stale(since: remembered.takenAt)
+        return Remembered(reading: reading, takenAt: remembered.takenAt)
     }
 
     public func save(_ readings: [String: Remembered]) {

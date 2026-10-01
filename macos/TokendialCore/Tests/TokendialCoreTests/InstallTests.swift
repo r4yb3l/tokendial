@@ -249,6 +249,28 @@ final class InstallWatcherTests: XCTestCase {
         XCTAssertEqual(outcomes, [.success])
     }
 
+    /// The sign-in check can wait on a keychain prompt, and the settings window asks `running` from the main
+    /// thread meanwhile. The check asking for itself proves no lock is held around it.
+    func testTheChecksRunOutsideTheLock() {
+        final class Probe {
+            var watcher: InstallWatcher?
+            var runningDuringCheck: Bool?
+        }
+        let probe = Probe()
+        let watcher = InstallWatcher(providerId: "codex", installed: { true },
+                                     signedIn: { probe.runningDuringCheck = probe.watcher?.running; return true },
+                                     now: { self.clock })
+        probe.watcher = watcher
+        let ticked = expectation(description: "tick returns")
+        DispatchQueue.global().async {
+            watcher.tick()
+            ticked.fulfill()
+        }
+        wait(for: [ticked], timeout: 5)
+        XCTAssertEqual(true, probe.runningDuringCheck)
+        XCTAssertFalse(watcher.running)
+    }
+
     func testAnAppThatNeverInstalledEndsWithTheMarker() {
         var outcomes: [InstallOutcome] = []
         let watcher = InstallWatcher(providerId: "cursor", installed: { false }, signedIn: { false },

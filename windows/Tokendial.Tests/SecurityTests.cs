@@ -1,14 +1,30 @@
 using System.Net;
+using System.Text.Json;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
 using Tokendial.Core.Providers.Claude;
+using Tokendial.Core.Providers.Copilot;
+using Tokendial.Core.Providers.Grok;
 using Tokendial.Core.Store;
 
 namespace Tokendial.Tests;
 
 /// <summary>Credentials go to the host the spec names and nowhere else.</summary>
-public class SecurityTests
+public class SecurityTests : IDisposable
 {
+    private readonly string scratch = Path.Combine(Path.GetTempPath(), "tokendial-tests", Guid.NewGuid().ToString("N"));
+
+    public SecurityTests() => Directory.CreateDirectory(scratch);
+
+    public void Dispose() => Directory.Delete(scratch, recursive: true);
+
+    private string Scratch(string name, string content)
+    {
+        var path = Path.Combine(scratch, name);
+        File.WriteAllText(path, content);
+        return path;
+    }
+
     private sealed class Redirecting : HttpMessageHandler
     {
         public List<Uri> Seen { get; } = new();
@@ -57,5 +73,112 @@ public class SecurityTests
         Assert.True(Bridge.IsLoopback(new Uri("https://[::1]:4321/x")));
         Assert.False(Bridge.IsLoopback(new Uri("https://cloudcode-pa.googleapis.com/x")));
         Assert.False(Bridge.IsLoopback(new Uri("https://127.0.0.1.evil.example/x")));
+    }
+
+    /// <summary>
+    /// gh keeps one block per host and, since 2.40, every signed-in account's token under users:. The first
+    /// oauth_token in the file used to win, which here is an Enterprise host's; only github.com's own token,
+    /// the active account's, may reach api.github.com.
+    /// </summary>
+    [Fact]
+    public void OnlyGitHubDotComsActiveTokenLeavesTheGhHostsFile()
+    {
+        var hosts = Scratch("hosts.yml", """
+            ghe.corp.example:
+                users:
+                    ada-corp:
+                        oauth_token: ghe_enterprise
+                git_protocol: https
+                user: ada-corp
+                oauth_token: ghe_enterprise
+            github.com:
+                users:
+                    ada:
+                        oauth_token: gho_personal
+                    ada-work:
+                        oauth_token: gho_work
+                git_protocol: https
+                user: ada-work
+                oauth_token: gho_work
+            """);
+        var credential = CopilotCredential.FromGhHosts(hosts);
+        Assert.NotNull(credential);
+        Assert.Equal("gho_work", credential.Token);
+        Assert.Equal("ada-work", credential.User);
+    }
+
+    /// <summary>With the github.com token in the keyring, the file holds no token for it at all - and the Enterprise one is still not it.</summary>
+    [Fact]
+    public void AnEnterpriseTokenIsNeverTakenForGitHubDotCom()
+    {
+        var hosts = Scratch("hosts.yml", """
+            ghe.corp.example:
+                oauth_token: ghe_enterprise
+                user: ada-corp
+            github.com:
+                users:
+                    ada:
+                git_protocol: https
+                user: ada
+            """);
+        Assert.Null(CopilotCredential.FromGhHosts(hosts));
+    }
+
+    /// <summary>A bare "github.com" prefix also matched github.company.com, an Enterprise host.</summary>
+    [Fact]
+    public void ACopilotPluginEntryIsGitHubDotComsOnlyWhenItsKeySaysSoWhole()
+    {
+        Assert.Null(CopilotCredential.FromPluginFile(Scratch("enterprise.json", """{"github.company.com:Iv1.x":{"oauth_token":"ghe_token","user":"ada-corp"}}""")));
+        var both = Scratch("apps.json", """{"github.company.com:Iv1.x":{"oauth_token":"ghe_token"},"github.com:Iv1.y":{"oauth_token":"gho_token","user":"ada"}}""");
+        Assert.Equal("gho_token", CopilotCredential.FromPluginFile(both)?.Token);
+    }
+
+    /// <summary>
+    /// Each editor signs in through its own OAuth app, so apps.json can hold a token per account with nothing
+    /// in it naming the active one. The lowest client id used to win, which showed one person the other's quota;
+    /// an ambiguous file answers for nobody and hosts.yml, which does name the active account, is asked instead.
+    /// </summary>
+    [Fact]
+    public void TwoCopilotAccountsInOnePluginFileAnswerForNeither()
+    {
+        var rivals = Scratch("rivals.json", """{"github.com:Iv1.a":{"oauth_token":"gho_ada","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace","user":"grace"}}""");
+        Assert.Null(CopilotCredential.FromPluginFile(rivals));
+        var unnamed = Scratch("unnamed.json", """{"github.com:Iv1.a":{"oauth_token":"gho_ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace"}}""");
+        Assert.Null(CopilotCredential.FromPluginFile(unnamed));
+        var sameAccount = Scratch("same.json", """{"github.com:Iv1.a":{"oauth_token":"gho_editor","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_cli","user":"ada"}}""");
+        Assert.Equal("gho_editor", CopilotCredential.FromPluginFile(sameAccount)?.Token);
+
+        var ghHosts = Scratch("hosts.yml", """
+            github.com:
+                user: grace
+                oauth_token: gho_active
+            """);
+        var credential = CopilotCredential.Read(new CopilotCredential.Files(rivals, Path.Combine(scratch, "absent.json"), ghHosts));
+        Assert.Equal("gho_active", credential.Token);
+        Assert.Equal("GitHub CLI", credential.Source);
+    }
+
+    /// <summary>The issuer is matched whole: a lookalike host is a customer IdP like any other, and its token never reaches the public endpoint.</summary>
+    [Fact]
+    public void OnlyAuthXaiItselfIsATrustedGrokIssuer()
+    {
+        using var lookalike = JsonDocument.Parse("""{"https://auth.x.ai.evil.example::cli":{"key":"foreign","expires_at":"2099-01-01T00:00:00Z"}}""");
+        Assert.Null(GrokCredential.Pick(lookalike.RootElement, DateTimeOffset.UnixEpoch));
+        using var genuine = JsonDocument.Parse("""{"https://auth.x.ai::cli":{"key":"xai-key","expires_at":"2099-01-01T00:00:00Z"}}""");
+        Assert.Equal("xai-key", GrokCredential.Pick(genuine.RootElement, DateTimeOffset.UnixEpoch)?.Key);
+    }
+
+    /// <summary>
+    /// Windsurf and the Codeium extensions run the same language_server with the same --csrf_token flag. The
+    /// first one found used to win, and its quota would have been shown as Antigravity's.
+    /// </summary>
+    [Fact]
+    public void TheBridgeIsAntigravitysOwnLanguageServerAndNeverAnotherProducts()
+    {
+        (int, string) windsurf = (1, "C:/Programs/Windsurf/resources/app/extensions/windsurf/bin/language_server_windows_x64.exe --csrf_token w");
+        (int, string) codeium = (2, "/home/ada/.vscode/extensions/codeium.codeium-1.2.3/dist/language_server_linux_x64 --csrf_token c");
+        (int, string) unnamed = (3, "/opt/tools/language_server_linux_x64 --csrf_token u");
+        (int, string) antigravity = (4, "C:/Programs/Antigravity/resources/app/extensions/antigravity/bin/language_server_windows_x64.exe --csrf_token a");
+        Assert.Equal([4, 3], Bridge.Candidates([windsurf, codeium, unnamed, antigravity]).Select(p => p.Pid));
     }
 }

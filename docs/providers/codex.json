@@ -8,7 +8,7 @@
       "path": "~/.codex/auth.json",
       "fields": { "accessToken": "$.tokens.access_token", "accountId": "$.tokens.account_id", "idToken": "$.tokens.id_token" },
       "expiry": "exp claim of the access token JWT, epochSeconds; a local hint only",
-      "notes": "The id_token's claims carry email and https://api.openai.com/auth.chatgpt_plan_type for the account row."
+      "notes": "The id_token's claims carry email and https://api.openai.com/auth.chatgpt_plan_type for the account row. A file that is there but empty or not yet whole JSON is the CLI mid-rewrite: credentialExpired, not needsAuth."
     },
     "windows": {
       "kind": "file",
@@ -22,10 +22,10 @@
       "fields": {
         "accessToken": "$.tokens.access_token",
         "accountId": "$.tokens.account_id",
-        "planType": "$.tokens.id_token.chatgpt_plan_type"
+        "idToken": "$.tokens.id_token"
       },
-      "expiry": "$.tokens.id_token.exp as epochSeconds",
-      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
+      "expiry": "exp claim of the access token JWT, epochSeconds; a local hint only",
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged: the id_token is a JWT whose claims carry email and https://api.openai.com/auth.chatgpt_plan_type for the account row."
     }
   },
   "endpoints": [

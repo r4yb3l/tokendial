@@ -84,18 +84,37 @@ public class ShellScriptTests
 
     /// <summary>
     /// A profile's sign-in has to be written for the shell that will run it: PowerShell assigns $env:NAME,
-    /// sh prefixes the command, and ~ does not expand inside quotes there.
+    /// sh prefixes the command, and neither expands ~ inside quotes - the old PowerShell line handed the tool
+    /// a literal relative path. PowerShell's carries no double quotes either: the install assistant passes it
+    /// to powershell.exe -Command, and Windows PowerShell strips them from an argument to a program.
     /// </summary>
     [Fact]
     public void AprofileNamesItsDirectoryTheWayTheShellWillUnderstand()
     {
         var claude = new ClaudeProfile("work", "/home/ada/.claude-work");
-        Assert.Equal("$env:CLAUDE_CONFIG_DIR='~/.claude-work'; claude", claude.SignInFor(Desktop.Windows));
+        Assert.Equal("$env:CLAUDE_CONFIG_DIR = Join-Path $env:USERPROFILE '.claude-work'; claude", claude.SignInFor(Desktop.Windows));
         Assert.Equal("CLAUDE_CONFIG_DIR=\"$HOME/.claude-work\" claude", claude.SignInFor(Desktop.Linux));
 
         var codex = new CodexProfile("work", "/home/ada/.codex-work");
         Assert.Equal("CODEX_HOME=\"$HOME/.codex-work\" codex login", codex.SignInFor(Desktop.MacOS));
         Assert.Equal("codex login", new CodexProfile(null, "/home/ada/.codex").SignInFor(Desktop.Linux));
+        Assert.DoesNotContain("~", codex.SignInFor(Desktop.Windows));
+        Assert.DoesNotContain("\"", codex.SignInFor(Desktop.Windows));
+    }
+
+    /// <summary>
+    /// A slug is whatever the user called a folder. Inside the quotes each shell gives it, nothing in it may be
+    /// read as code: a $ or a backtick in sh's double quotes, a quote - straight or curly - in PowerShell's single ones.
+    /// </summary>
+    [Fact]
+    public void AslugStaysInsideItsQuotes()
+    {
+        var hostile = new ClaudeProfile("""it's $(x) `y` "z" \""", "/home/ada/x");
+        Assert.Equal("""$env:CLAUDE_CONFIG_DIR = Join-Path $env:USERPROFILE '.claude-it''s $(x) `y` "z" \'; claude""", hostile.SignInFor(Desktop.Windows));
+        Assert.Equal("""CLAUDE_CONFIG_DIR="$HOME/.claude-it's \$(x) \`y\` \"z\" \\" claude""", hostile.SignInFor(Desktop.Linux));
+
+        var curly = new CodexProfile("a\u2019b", "/home/ada/x");
+        Assert.Equal("$env:CODEX_HOME = Join-Path $env:USERPROFILE '.codex-a\u2019\u2019b'; codex login", curly.SignInFor(Desktop.Windows));
     }
 
     [Fact]

@@ -11,7 +11,10 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        VelopackApp.Build().SetAppUserModelId(AppUserModelId).Run();
+        VelopackApp.Build()
+            .SetAppUserModelId(AppUserModelId)
+            .OnBeforeUninstallFastCallback(_ => OnUninstalling())
+            .Run();
         // Runs after Velopack, so an install or update has finished writing its own directory, and before
         // anything reads settings: versions up to 0.1.0 kept the user's state where the installer lives.
         Tokendial.Core.Paths.CarryOverLegacyState();
@@ -24,5 +27,17 @@ public static class Program
         if (ToastNotificationManagerCompat.WasCurrentProcessToastActivated() && args.Contains("--quit-after-toast")) return 0;
         var app = new App(instance);
         return app.Run();
+    }
+
+    /// <summary>
+    /// Update.exe runs this in a fresh process once it has stopped the app, before it deletes the install directory.
+    /// The login Run value and the toast registrations live outside that directory, so without this they outlived
+    /// the app; the data directory goes too when the user asked for it from Settings.
+    /// </summary>
+    private static void OnUninstalling()
+    {
+        LaunchAtLogin.Set(false);
+        Windows.Uninstall.RemoveDataIfAsked();
+        ToastNotificationManagerCompat.Uninstall();
     }
 }

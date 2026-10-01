@@ -45,13 +45,15 @@ public final class Strings {
         fill(lookup(key) ?? key, args)
     }
 
-    /// A plural form for n, chosen by the language's CLDR rules; {n} is filled with the number.
+    /// A plural form for n, chosen by the language's CLDR rules; {n} is filled with the number. A `zero`
+    /// form, where a catalogue gives one, wins for 0 in every language: CLDR files 0 under "other" in English
+    /// and under "one" in French, so "no requests today" could never have been reached through the rules alone.
     public static func plural(_ key: String, _ n: Int, _ args: [String: Any] = [:]) -> String {
         var merged = args
         merged["n"] = n
         guard let forms = lookupForms(key) else { return t(key, merged) }
         let category = pluralCategory(current.language, n)
-        return fill(forms[category] ?? forms["other"] ?? key, merged)
+        return fill((n == 0 ? forms["zero"] : nil) ?? forms[category] ?? forms["other"] ?? key, merged)
     }
 
     /// A provider-produced English window label in the current language; unknown labels pass through.

@@ -61,7 +61,7 @@ public abstract class PolledMonitor : IActivityMonitor
         timer = new Timer(_ => Poll(), null, interval, interval);
     }
 
-    public void Dispose() => timer?.Dispose();
+    public virtual void Dispose() => timer?.Dispose();
 
     protected abstract IReadOnlyList<AgentSession> Read();
 

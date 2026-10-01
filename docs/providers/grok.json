@@ -9,7 +9,7 @@
       "path": "~/.grok/auth.json",
       "fields": { "key": "$[entry].key", "email": "$[entry].email" },
       "expiry": "$[entry].expires_at as iso8601; absent counts as 30 days from now",
-      "notes": "An object keyed '{issuer}::{client_id}', one entry per signed-in CLI. Trust only entries whose key starts with https://auth.x.ai or whose oidc_issuer is https://auth.x.ai; any other issuer is a customer IdP whose token is meant for a private proxy and must never reach the public endpoint. Prefer an unexpired trusted entry."
+      "notes": "An object keyed '{issuer}::{client_id}', one entry per signed-in CLI. Trust only entries whose key is https://auth.x.ai followed by '::' or whose oidc_issuer is https://auth.x.ai; a bare prefix would also trust https://auth.x.ai.evil.example. Any other issuer is a customer IdP whose token is meant for a private proxy and must never reach the public endpoint. Prefer an unexpired trusted entry. A file that is there but empty or not yet whole JSON is the CLI mid-rewrite: credentialExpired, not needsAuth."
     },
     "windows": {
       "kind": "file",
@@ -21,9 +21,11 @@
       "kind": "file",
       "path": "~/.grok/auth.json",
       "fields": {
-        "accessToken": "$.access_token"
+        "key": "$[entry].key",
+        "email": "$[entry].email"
       },
-      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
+      "expiry": "$[entry].expires_at as iso8601; absent counts as 30 days from now",
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged, the auth.x.ai trust rule included."
     }
   },
   "endpoints": [

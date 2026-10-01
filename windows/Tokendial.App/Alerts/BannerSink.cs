@@ -241,9 +241,12 @@ public sealed class Banner : Border
 
         MouseLeftButtonUp += (_, _) => { open(); Leave(); };
         MouseEnter += (_, _) => timer.Stop();
-        MouseLeave += (_, _) => { timer.Interval = AfterHover; timer.Start(); };
+        // A clicked banner still gets a MouseLeave once it is leaving: hit-testing goes off and then the banner leaves
+        // the tree, both under the cursor. Restarted then, the timer ticked into a Leave with nothing left to do,
+        // every three seconds for as long as the app ran, and kept the whole banner alive with it.
+        MouseLeave += (_, _) => { if (leaving) return; timer.Interval = AfterHover; timer.Start(); };
         timer.Interval = Life;
-        timer.Tick += (_, _) => Leave();
+        timer.Tick += (_, _) => { timer.Stop(); Leave(); };
     }
 
     public event Action? Dismissed;

@@ -86,8 +86,9 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
       - name: The tag must match VERSION
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          TAG="${{ inputs.tag || github.ref_name }}"
           VERSION=$(tr -d '[:space:]' < VERSION)
           [ "${TAG}" = "v${VERSION}" ] || { echo "tag ${TAG} but VERSION is ${VERSION}"; exit 1; }
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
@@ -151,17 +152,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >
-          gh release upload ${{ env.TAG }} --clobber
+          gh release upload "${TAG}" --clobber
           macos/dist/Tokendial-${{ env.VERSION }}-macos.zip
           macos/dist/Tokendial-${{ env.VERSION }}-macos.dmg
           macos/dist/Tokendial-${{ env.VERSION }}-macos.sha256
 
   linux:
     name: Linux package
-    # Same reasoning as macOS: on a tag push the release is created by the Windows job, so this one waits
-    # rather than racing it. On a manual run the Windows job is skipped, which is not a failure.
+    # The release is created by the Windows job, so this one waits rather than racing it. A manual run
+    # rebuilds macOS only: tags before v0.1.3 have no linux/ to build, and a rebuild for a later one would
+    # replace the AppImage people already downloaded and checked against its published sum.
     needs: windows
-    if: always() && needs.windows.result != 'failure' && needs.windows.result != 'cancelled'
+    if: github.event_name == 'push' && needs.windows.result == 'success'
     # Not ubuntu-latest. The binary links against the runner's glibc, and 22.04 is what makes it run on
     # Mint 21, Mint 22 and Debian 12 as well as on newer distributions.
     runs-on: ubuntu-22.04
@@ -173,8 +175,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: The tag must match VERSION
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          TAG="${{ inputs.tag || github.ref_name }}"
           VERSION=$(tr -d '[:space:]' < VERSION)
           [ "${TAG}" = "v${VERSION}" ] || { echo "tag ${TAG} but VERSION is ${VERSION}"; exit 1; }
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
@@ -182,6 +185,20 @@ jobs:
       # The solution includes the WPF app, which does not build here; the tests are their own project.
       - name: Test
         run: dotnet test windows/Tokendial.Tests/Tokendial.Tests.csproj --configuration Release
+      - name: Linux dock and session tests
+        run: dotnet test linux/Tokendial.Linux.Tests/Tokendial.Linux.Tests.csproj --configuration Release
+      # The same gate as CI. A tag can sit on a commit CI never graded, and the headless tests pass an app
+      # whose every start aborts; only a real X server shows that.
+      - name: The dock starts on a real X server
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb x11-utils
+          dotnet build tools/LinuxDisplayProbe --configuration Release
+          for edge in Top Bottom Left Right; do
+            XDG_SESSION_TYPE=x11 xvfb-run -a -s "-screen 0 1920x1080x24" \
+              tools/LinuxDisplayProbe/bin/Release/net10.0/LinuxDisplayProbe $edge auto expanded 3 > probe-$edge.log 2>&1 \
+              || { cat probe-$edge.log; exit 1; }
+            grep -q '^window=0x' probe-$edge.log || { cat probe-$edge.log; echo "no window on $edge"; exit 1; }
+          done
       - name: Publish
         run: >
           dotnet publish linux/Tokendial.Avalonia/Tokendial.Avalonia.csproj --configuration Release
@@ -214,8 +231,9 @@ jobs:
           ls squashfs-root | grep -q "^${ICON}\." || { echo "entry names ${ICON} but no such icon"; exit 1; }
           rm -rf squashfs-root
       # Uploaded with gh rather than `vpk upload`, which wants to create or merge a release of its own -
-      # the Windows job already created and published this one. These are the three files the updater
-      # reads: it finds releases.linux.json on the release and fetches the package it names.
+      # the Windows job already created and published this one. These are the three files a Velopack
+      # updater reads: it finds releases.linux.json on the release and fetches the package it names. The
+      # Linux app does not carry that updater yet (AGENTS.md), so they wait for it.
       #
       # The AppImage keeps the name Velopack gave it. releases.linux.json references it by that name, and
       # renaming it to the house convention would break self-update; only the checksum file is named ours.
@@ -228,7 +246,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >
-          gh release upload ${{ env.TAG }} --clobber
+          gh release upload "${TAG}" --clobber
           linux/dist/Tokendial.AppImage
           linux/dist/releases.linux.json
           linux/dist/RELEASES-linux

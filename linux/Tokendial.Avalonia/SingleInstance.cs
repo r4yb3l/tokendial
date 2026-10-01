@@ -23,13 +23,10 @@ public static class SingleInstance
     /// <summary>False when another process already holds the claim, in which case this one has nothing to do.</summary>
     public static bool Claim()
     {
-        var directory = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR");
-        if (string.IsNullOrWhiteSpace(directory) || !Path.IsPathRooted(directory)) directory = Path.GetTempPath();
-
+        var path = LockPath(Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR"), Path.GetTempPath(), Environment.UserName);
         try
         {
-            held = new FileStream(Path.Combine(directory, "tokendial.lock"),
-                FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            held = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             return true;
         }
         catch (IOException)
@@ -37,9 +34,20 @@ public static class SingleInstance
             Log.Ui.Info("another Tokendial is already running");
             return false;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException error)
         {
+            Log.Ui.Error($"cannot open the instance lock {path}, so this copy is quitting: {error.Message}");
             return false;
         }
     }
+
+    /// <summary>
+    /// The runtime directory is the user's own. The temporary directory it falls back to is shared by every
+    /// account on the machine, so there the name carries the user: a lock left by another account cannot be
+    /// opened from this one, and every start here would quit as though Tokendial were already running.
+    /// </summary>
+    internal static string LockPath(string? runtime, string temp, string user) =>
+        !string.IsNullOrWhiteSpace(runtime) && Path.IsPathRooted(runtime)
+            ? Path.Combine(runtime, "tokendial.lock")
+            : Path.Combine(temp, $"tokendial-{user}.lock");
 }

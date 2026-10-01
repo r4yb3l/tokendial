@@ -67,6 +67,27 @@ public class CoordinatorTests
         Assert.Equal(AlertKind.Limit, sink.Alerts[0].Kind);
     }
 
+    /// <summary>
+    /// A reset-soon the user switched off used to start the provider's cooldown on its way to being filtered
+    /// out, and the 95 % alert that landed inside that minute was dropped for good.
+    /// </summary>
+    [Fact]
+    public void ASwitchedOffKindDoesNotSwallowTheNextAlert()
+    {
+        var clock = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var sink = new RecordingSink();
+        var settings = new Settings { AlertResetSoon = false };
+        var resetsAt = clock.AddHours(1);
+        using var coordinator = new AlertCoordinator(sink, settings.AlertConfig, now: () => clock, wants: settings.Wants);
+        coordinator.OnReadings([Reading(0.85, resetsAt)]);
+        clock = clock.AddMinutes(51);
+        coordinator.Tick();
+        clock = clock.AddSeconds(10);
+        coordinator.OnReadings([Reading(0.96, resetsAt)]);
+        Assert.Equal(new int?[] { 80, 95 }, sink.Alerts.Select(a => a.Pct));
+        Assert.All(sink.Alerts, a => Assert.Equal(AlertKind.Threshold, a.Kind));
+    }
+
     [Fact]
     public void WaitingSessionAlertsAfterDebounceAndStopsWhenGone()
     {
@@ -93,6 +114,11 @@ public class CoordinatorTests
         Assert.Single(sink.Alerts);
     }
 
+    /// <summary>
+    /// The session ended while the app was closed. The restart itself used to run the waiting deadline for
+    /// the persisted entry and announce a session that no longer existed, before the host could say so -
+    /// and a host with no sessions at all never says anything.
+    /// </summary>
     [Fact]
     public void AWaitingSessionThatVanishedAcrossARestartIsClosed()
     {
@@ -107,15 +133,22 @@ public class CoordinatorTests
                 {
                     ["claude"] = new(SessionState.Waiting, [new AgentSession("claude.1", "repo", "Terminal · repo", SessionState.Waiting, "needs you", clock)])
                 });
+                clock = clock.AddSeconds(25);
+                coordinator.Tick();
+                Assert.Single(sink.Alerts);
             }
-            clock = clock.AddSeconds(5);
+            Assert.Contains("claude.1", File.ReadAllText(file));
+
+            clock = clock.AddHours(3);
             using (var coordinator = new AlertCoordinator(sink, stateFile: file, now: () => clock))
             {
-                coordinator.OnActivities(new Dictionary<string, Activity>());
                 clock = clock.AddSeconds(30);
                 coordinator.Tick();
-                Assert.Empty(sink.Alerts);
+                coordinator.OnActivities(new Dictionary<string, Activity>());
+                clock = clock.AddMinutes(10);
+                coordinator.Tick();
             }
+            Assert.Single(sink.Alerts);
         }
         finally { File.Delete(file); }
     }
@@ -139,5 +172,30 @@ public class CoordinatorTests
             Assert.Equal(new Settings().AlertConfig.ResetLead, loaded.AlertConfig.ResetLead);
         }
         finally { File.Delete(file); }
+    }
+
+    /// <summary>
+    /// A value this build cannot read - here an edge a newer version added - falls back to the defaults, and
+    /// the first save after that used to write those defaults over the only copy of the user's settings.
+    /// </summary>
+    [Fact]
+    public void SettingsThatCannotBeReadAreSetAsideRatherThanOverwritten()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"tokendial-settings-{Guid.NewGuid():N}.json");
+        var original = """{ "Edge": "Diagonal", "FirstRunDone": true, "Display": "HDMI-1" }""";
+        try
+        {
+            File.WriteAllText(file, original);
+            var loaded = Settings.Load(file);
+            Assert.False(loaded.FirstRunDone);
+            Assert.Null(loaded.Display);
+            Assert.False(File.Exists(file));
+            Assert.Equal(original, File.ReadAllText(file + ".bad"));
+        }
+        finally
+        {
+            File.Delete(file);
+            File.Delete(file + ".bad");
+        }
     }
 }

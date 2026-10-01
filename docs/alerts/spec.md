@@ -26,8 +26,10 @@ sequence for each.
 ```json
 { "thresholds": [50, 80, 95], "resetLeadSeconds": 600, "resetLeadMinPct": 50,
   "waitingDebounceSeconds": 20, "waitingRepeatSeconds": 300,
-  "perProviderCooldownSeconds": 60 }
+  "perProviderCooldownSeconds": 60, "off": [] }
 ```
+
+`off` lists the kinds the user switched off, by the names used under Alerts below.
 
 ## Epochs
 
@@ -37,6 +39,11 @@ than 10 points from the last sample. Smaller moves are jitter: vendors compute
 `resets_at` on the fly, so consecutive polls differ by milliseconds while a real
 rollover moves it by hours. The epoch keeps the latest value. A new epoch clears every fired flag: thresholds re-arm,
 `limit` re-arms, `resetSoon` and `resetDone` re-arm.
+
+Closing an epoch (see `resetDone`) does not begin a new one. A closed epoch keeps
+the latest value and emits nothing; a sample with the same `resetsAt` after the
+reset is the reading from before the rollover, delivered again while the next
+poll runs, and only a new epoch by the rules above re-arms the window.
 
 ## Alerts
 
@@ -61,6 +68,11 @@ rollover moves it by hours. The epoch keeps the latest value. A new epoch clears
 
 ## Cross-cutting rules
 
+- **Switched off**: an alert whose kind is in `config.off` is dropped before
+  hover and cooldown. It keeps the flags it set (a switched-off threshold still
+  counts as fired), but it is never held, never emitted and never starts a
+  cooldown, so silencing one kind cannot swallow another. A held alert whose
+  kind is switched off afterwards is dropped too.
 - **Hover**: while `hover on`, `threshold` alerts are marked fired but not
   emitted (the user is looking). Every other kind is *held* and emitted, in
   order, on the next `hover off`.
@@ -73,7 +85,12 @@ rollover moves it by hours. The epoch keeps the latest value. A new epoch clears
   new cooldown.
 - **Restart**: state is persisted after every reduction and reloaded before the
   `restart` event, so nothing fires twice across a relaunch. Epochs whose
-  `resetsAt` is more than 24 h in the past are pruned on `restart`.
+  `resetsAt` is more than 24 h in the past are pruned on `restart`. What
+  described the last run rather than this one is dropped: `hover` is off (the
+  pointer that was over the panel at a quit or a crash is not there now), and
+  every waiting session is forgotten, with any `waiting` alert still held. A
+  session may have ended while the app was closed; the host reports again the
+  ones that still wait, and those alert again one debounce later.
 - **Ordering**: alerts emitted by one reduction are ordered `limit`, `threshold`,
   `resetSoon`, `resetDone`, `waiting`, then by provider id.
 
@@ -93,7 +110,7 @@ rollover moves it by hours. The epoch keeps the latest value. A new epoch clears
 
 ```json
 { "name": "…", "config": { … },
-  "steps": [ { "t": 0, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 40, "resetsAt": 18000 } } ],
+  "steps": [ { "t": 0, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 55, "resetsAt": 18000 } } ],
   "expected": [ { "t": 0, "kind": "threshold", "provider": "claude", "window": "session", "pct": 50 } ] }
 ```
 

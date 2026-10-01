@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — tus límites de IA en un dial, antes de que te frenen",
-  "meta.description": "Hecho para vibecoders: un dock en el borde de tu pantalla con un dial por asistente de código (Claude Code, Codex, Cursor, Copilot y más). Te avisa antes de que una ventana se reinicie, cuando llegas al límite y cuando un agente espera tu sí. Libre y de código abierto, macOS y Windows.",
-  "nav.why": "Por qué Tokendial",
+  "meta.description": "Hecho para vibecoders: un dock en el borde de tu pantalla con un dial por asistente de código (Claude Code, Codex, Cursor, Copilot y más). Te avisa antes de que una ventana se reinicie, cuando llegas al límite y cuando un agente espera tu sí. Libre y de código abierto, para macOS, Windows y Linux.",
   "nav.how": "Cómo funciona",
   "nav.providers": "Proveedores",
   "nav.alerts": "Alertas",
@@ -117,7 +116,7 @@
   "unsigned.windows": "Windows muestra «Windows protegió tu PC». Pulsa Más información y luego Ejecutar de todas formas.",
   "unsigned.macos": "macOS dice que la app está dañada. Haz clic derecho en Tokendial dentro de Aplicaciones, elige Abrir y vuelve a pulsar Abrir — o quita tú la marca de cuarentena:",
   "cta.title": "Que siga el vibe.",
-  "cta.lead": "Libre y de código abierto, Windows y macOS, construidos desde una misma especificación.",
+  "cta.lead": "Libre y de código abierto, Windows, macOS y Linux, construidos desde una misma especificación.",
   "footer.made": "Hecho por Raybel Hernández · Licencia MIT",
   "footer.disclaimer": "Tokendial es un proyecto independiente. No está afiliado a, ni respaldado o patrocinado por Anthropic, OpenAI, GitHub, Cursor, Google, Z.ai, xAI ni el proyecto OpenCode. Los nombres y marcas pertenecen a sus dueños.",
   "footer.source": "Código fuente",

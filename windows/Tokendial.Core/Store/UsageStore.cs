@@ -25,6 +25,7 @@ public sealed class UsageStore : IDisposable
     private List<ProviderReading> readings;
     private DateTimeOffset? lastAttempt;
     private bool polling;
+    private bool pollAgain;
     private Timer? timer;
 
     public UsageStore(IReadOnlyList<IUsageProvider> providers, ReadingArchive? archive = null, IEnumerable<string>? disconnected = null,
@@ -107,12 +108,22 @@ public sealed class UsageStore : IDisposable
         {
             if (polling) return;
             polling = true;
+            pollAgain = false;
             lastAttempt = now();
         }
         CurrentPoll = Task.Run(async () =>
         {
             try { await PollAsync().ConfigureAwait(false); }
-            finally { lock (gate) polling = false; }
+            finally
+            {
+                bool again;
+                lock (gate)
+                {
+                    polling = false;
+                    again = pollAgain;
+                }
+                if (again) PollNow();
+            }
         });
     }
 
@@ -141,7 +152,13 @@ public sealed class UsageStore : IDisposable
             lock (gate)
             {
                 inFlight = new HashSet<string>();
-                readings = next.Where(r => IsCurrent(r.ProviderId, generations.GetValueOrDefault(r.ProviderId))).ToList();
+                var polled = next.Where(r => IsCurrent(r.ProviderId, generations.GetValueOrDefault(r.ProviderId))).ToList();
+                // A provider connected after this poll took its list is not in it; its dial keeps what
+                // SetDisconnected gave it instead of vanishing until some later poll brings it back.
+                readings = providers.Where(p => !disconnected.Contains(p.Id))
+                    .Select(p => polled.FirstOrDefault(r => r.ProviderId == p.Id) ?? readings.FirstOrDefault(r => r.ProviderId == p.Id))
+                    .OfType<ProviderReading>()
+                    .ToList();
             }
             Changed?.Invoke();
         }
@@ -233,6 +250,9 @@ public sealed class UsageStore : IDisposable
                 if (provider is not null && readings.All(r => r.ProviderId != id)) readings.Add(Placeholder(provider));
             }
             readings = providers.Where(p => readings.Any(r => r.ProviderId == p.Id)).Select(p => readings.First(r => r.ProviderId == p.Id)).ToList();
+            // The poll already running took its provider list before this change and will not read a provider
+            // connected now, and PollNow below returns at once while it runs.
+            if (polling && changed.Any(id => !disconnected.Contains(id))) pollAgain = true;
         }
         Changed?.Invoke();
         PollNow();

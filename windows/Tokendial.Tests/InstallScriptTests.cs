@@ -78,6 +78,21 @@ public class InstallScriptTests
         Assert.Contains("-Command '$env:CLAUDE_CONFIG_DIR=''~/.claude-work''; claude'", script);
     }
 
+    /// <summary>
+    /// PowerShell ends a single-quoted string at any of the four typographic single quotes as well as at the
+    /// ASCII one, so each is doubled the same way or the rest of the text runs as code.
+    /// </summary>
+    [Theory]
+    [InlineData('\u2018')]
+    [InlineData('\u2019')]
+    [InlineData('\u201A')]
+    [InlineData('\u201B')]
+    public void TypographicSingleQuotesAreDoubledToo(char quote)
+    {
+        Assert.Equal($"'it{quote}{quote}s; calc'", InstallScript.Quote($"it{quote}s; calc"));
+        Assert.Equal($"'a''{quote}{quote}b'", InstallScript.Quote($"a'{quote}b"));
+    }
+
     [Fact]
     public void WritesUtf8WithAByteOrderMark()
     {

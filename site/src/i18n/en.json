@@ -1,7 +1,6 @@
 {
   "meta.title": "Tokendial — your AI coding limits on a dial, before they stop you",
-  "meta.description": "Made for vibecoders: a dock on the edge of your screen with one dial per AI coding assistant (Claude Code, Codex, Cursor, Copilot and more). It warns you before a window resets, when a limit hits, and when an agent is waiting for your yes. Free and open source, macOS and Windows.",
-  "nav.why": "Why Tokendial",
+  "meta.description": "Made for vibecoders: a dock on the edge of your screen with one dial per AI coding assistant (Claude Code, Codex, Cursor, Copilot and more). It warns you before a window resets, when a limit hits, and when an agent is waiting for your yes. Free and open source, for macOS, Windows and Linux.",
   "nav.how": "How it works",
   "nav.providers": "Providers",
   "nav.alerts": "Alerts",
@@ -117,7 +116,7 @@
   "unsigned.windows": "Windows shows \"Windows protected your PC\". Choose More info, then Run anyway.",
   "unsigned.macos": "macOS says the app is damaged. Right-click Tokendial in Applications, choose Open, then Open again — or clear the quarantine flag yourself:",
   "cta.title": "Keep the vibe going.",
-  "cta.lead": "Free and open source, Windows and macOS, built from one shared specification.",
+  "cta.lead": "Free and open source, Windows, macOS and Linux, built from one shared specification.",
   "footer.made": "Made by Raybel Hernández · MIT license",
   "footer.disclaimer": "Tokendial is an independent project. It is not affiliated with, endorsed by or sponsored by Anthropic, OpenAI, GitHub, Cursor, Google, Z.ai, xAI or the OpenCode project. Product names and marks belong to their owners.",
   "footer.source": "Source code",

@@ -16,9 +16,7 @@ public sealed record CodexProfile(string? Slug, string Directory)
     /// <summary>See ClaudeProfile.SignInFor: the same environment variable, written for the shell that will run it.</summary>
     public string SignInFor(Desktop desktop) => Slug is null
         ? "codex login"
-        : desktop == Desktop.Windows
-            ? $"$env:CODEX_HOME='~/.codex-{Slug}'; codex login"
-            : $"CODEX_HOME=\"$HOME/.codex-{Slug}\" codex login";
+        : Profiles.SignInLine(desktop, "CODEX_HOME", $".codex-{Slug}", "codex login");
 
     public static CodexProfile Default(string? home = null) => new(null, Path.Combine(home ?? Http.Home, ".codex"));
 

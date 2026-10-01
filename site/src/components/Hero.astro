@@ -72,14 +72,14 @@ const bands = [
         </ul>
       </div>
     </div>
-    <script is:inline>
+    <script>
       /* The reader's own platform leads. Moving the node keeps the tab order in step with what the eye
-         sees, which reordering by CSS would not; the green is picked by CSS from data-platform, before
-         first paint, so nothing flickers. */
+         sees, which reordering by CSS would not; the green is picked by CSS from data-platform, which
+         boot.js sets before first paint, so the colour never flickers. */
+      const here = document.documentElement.dataset.platform;
+      const want = here === 'mac' || here === 'linux' ? here : null;
       for (const row of document.querySelectorAll('[data-downloads]')) {
-        const here = document.documentElement.dataset.platform;
-        const want = here === 'mac' || here === 'linux' ? here : null;
-        const lead = want && row.querySelector('[data-download="' + want + '"]');
+        const lead = want ? row.querySelector(`[data-download="${want}"]`) : null;
         if (lead) row.prepend(lead);
       }
     </script>

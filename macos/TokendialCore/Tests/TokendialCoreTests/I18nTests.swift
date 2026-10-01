@@ -51,4 +51,17 @@ final class I18nTests: XCTestCase {
         XCTAssertEqual("11 جلسة خاملة", Strings.plural("panel.idle", 11))
         XCTAssertEqual("one", Strings.pluralCategory("fr", 0))
     }
+
+    /// English, Spanish and German give "copy.requests" a zero form, and CLDR files 0 under "other" in all three, so it never showed.
+    func testAZeroFormIsUsedForZeroWhereTheCatalogueHasOne() {
+        XCTAssertEqual("other", Strings.pluralCategory("en", 0))
+        XCTAssertEqual("no requests today", Strings.plural("copy.requests", 0))
+        XCTAssertEqual("~1 request today", Strings.plural("copy.requests", 1))
+        Strings.use("es")
+        XCTAssertEqual("sin peticiones hoy", Strings.plural("copy.requests", 0))
+        Strings.use("de")
+        XCTAssertEqual("heute keine Anfragen", Strings.plural("copy.requests", 0))
+        Strings.use("fr")
+        XCTAssertEqual("~0 requête aujourd'hui", Strings.plural("copy.requests", 0))
+    }
 }

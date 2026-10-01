@@ -4,11 +4,16 @@ import SQLite3
 /// Read-only access to a database another app owns in WAL mode: plain read-only first, immutable next.
 /// No copy is ever made: a copy of Cursor's store would hold its session token.
 public enum Sqlite {
-    public static func column(_ path: URL, _ sql: String, parameter: String? = nil) -> [String]? {
-        rows(path, sql, parameter: parameter)?.compactMap { $0.first ?? nil }
+    /// The owner held the database busy past the timeout: what it says right now is unknown, which is not the same
+    /// as empty. Thrown instead of falling back to the immutable read, which answers from the last checkpoint - for
+    /// Cursor a token already replaced, a 401, and a signed-in user told to sign in.
+    public struct Busy: Error {}
+
+    public static func column(_ path: URL, _ sql: String, parameter: String? = nil) throws -> [String]? {
+        try rows(path, sql, parameter: parameter)?.compactMap { $0.first ?? nil }
     }
 
-    public static func rows(_ path: URL, _ sql: String, parameter: String? = nil) -> [[String?]]? {
+    public static func rows(_ path: URL, _ sql: String, parameter: String? = nil) throws -> [[String?]]? {
         guard FileManager.default.fileExists(atPath: path.path) else { return nil }
         let candidates = ["file:\(path.path)?mode=ro", "file:\(path.path)?immutable=1"]
         for uri in candidates {
@@ -17,23 +22,34 @@ public enum Sqlite {
             defer { sqlite3_close(db) }
             sqlite3_busy_timeout(db, 1000)
             var statement: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { continue }
+            let prepared = sqlite3_prepare_v2(db, sql, -1, &statement, nil)
+            guard prepared == SQLITE_OK, let statement else {
+                if contended(prepared) { throw Busy() }
+                continue
+            }
             defer { sqlite3_finalize(statement) }
             if let parameter { sqlite3_bind_text(statement, 1, parameter, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self)) }
             var result: [[String?]] = []
-            var failed = false
+            var failure: Int32?
             loop: while true {
-                switch sqlite3_step(statement) {
+                let code = sqlite3_step(statement)
+                switch code {
                 case SQLITE_ROW:
                     let count = Int(sqlite3_column_count(statement))
                     result.append((0..<count).map { i in sqlite3_column_text(statement, Int32(i)).map { String(cString: $0) } })
                 case SQLITE_DONE: break loop
-                default: failed = true; break loop
+                default: failure = code; break loop
                 }
             }
-            if !failed { return result }
+            guard let failure else { return result }
+            if contended(failure) { throw Busy() }
         }
         return nil
+    }
+
+    /// SQLITE_BUSY or SQLITE_LOCKED, extended codes included: the owner is writing, which is not a failure to open.
+    private static func contended(_ code: Int32) -> Bool {
+        (code & 0xFF) == SQLITE_BUSY || (code & 0xFF) == SQLITE_LOCKED
     }
 }
 
@@ -45,18 +61,23 @@ public struct CursorCredential: Equatable {
     public static var defaultStore: URL { Paths.under("Library", "Application Support", "Cursor", "User", "globalStorage", "state.vscdb") }
     public var cookie: String { "WorkosCursorSessionToken=\(accountId)::\(accessToken)" }
 
+    /// Read as of the editor's latest write; a store the editor holds busy is transient, never a sign-out.
     public static func read(store: URL = defaultStore) throws -> CursorCredential {
-        guard let token = value(store, "cursorAuth/accessToken"), let account = value(store, "cursorAuth/stripeMembershipAuthId") else { throw UsageError.needsSignIn() }
-        return CursorCredential(accessToken: token, accountId: account)
+        do {
+            guard let token = try value(store, "cursorAuth/accessToken"), let account = try value(store, "cursorAuth/stripeMembershipAuthId") else { throw UsageError.needsSignIn() }
+            return CursorCredential(accessToken: token, accountId: account)
+        } catch is Sqlite.Busy {
+            throw UsageError.credentialExpired()
+        }
     }
 
     public static func account(store: URL = defaultStore) -> ProviderAccount? {
-        guard let email = value(store, "cursorAuth/cachedEmail") else { return nil }
-        return ProviderAccount(label: email, plan: value(store, "cursorAuth/stripeMembershipType"), source: "Cursor", manageURL: URL(string: "https://cursor.com/dashboard"))
+        guard let email = try? value(store, "cursorAuth/cachedEmail") else { return nil }
+        return ProviderAccount(label: email, plan: try? value(store, "cursorAuth/stripeMembershipType"), source: "Cursor", manageURL: URL(string: "https://cursor.com/dashboard"))
     }
 
-    private static func value(_ store: URL, _ key: String) -> String? {
-        Sqlite.column(store, "SELECT value FROM ItemTable WHERE key = ?", parameter: key)?.first.flatMap { $0.isEmpty ? nil : $0 }
+    private static func value(_ store: URL, _ key: String) throws -> String? {
+        try Sqlite.column(store, "SELECT value FROM ItemTable WHERE key = ?", parameter: key)?.first.flatMap { $0.isEmpty ? nil : $0 }
     }
 }
 
@@ -92,15 +113,26 @@ public struct Bridge {
     public var csrf: String
 
     public static func discover() -> Bridge? {
-        let processes = shell("/bin/ps", ["-axo", "pid=,command="])
-        for line in processes.split(separator: "\n") {
-            let text = line.trimmingCharacters(in: .whitespaces)
-            guard text.contains("language_server"), text.contains("--csrf_token"), let csrf = csrfToken(text) else { continue }
+        let processes = shell("/bin/ps", ["-axo", "pid=,command="]).split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { $0.contains("language_server") && $0.contains("--csrf_token") }
+        for text in candidates(processes) {
+            guard let csrf = csrfToken(text) else { continue }
             let pid = text.prefix { $0.isNumber }
             let ports = listeningPorts(pid: String(pid))
             if !ports.isEmpty { return Bridge(ports: ports, csrf: csrf) }
         }
         return nil
+    }
+
+    /// Windsurf and the Codeium extensions ship a language_server with the same flags, and the first one with a CSRF
+    /// token used to win, so another product's quota could be shown as Antigravity's. Antigravity's own comes first,
+    /// known by its install path; one that names no product is the fallback; one that names another product is never taken.
+    public static func candidates(_ processes: [String]) -> [String] {
+        func names(_ text: String, _ product: String) -> Bool { text.range(of: product, options: .caseInsensitive) != nil }
+        let own = processes.filter { names($0, "antigravity") }
+        let unnamed = processes.filter { text in !names(text, "antigravity") && !["windsurf", "codeium"].contains(where: { names(text, $0) }) }
+        return own + unnamed
     }
 
     public static func csrfToken(_ commandLine: String) -> String? {
@@ -184,7 +216,13 @@ public final class AntigravityProvider: UsageProvider {
     private let discover: () -> Bridge?
     private let requestsToday: () -> Int
     private let now: () -> Date
+    private static let quietAfterRefusal: TimeInterval = 15 * 60
+    /// The poll timer, a refresh the user asked for and the account lookup reach the credential from different threads.
+    private let state = NSLock()
+    /// Two callers that both find nothing held would otherwise raise two keychain prompts at once.
+    private let reading = NSLock()
     private var held: AntigravityUsage.Credential?
+    private var refusedAt: Date?
     private var bridge: Bridge?
     private var everBridged = false
 
@@ -197,29 +235,57 @@ public final class AntigravityProvider: UsageProvider {
         self.requestsToday = requestsToday ?? { AntigravityTranscripts.requestsToday(now: now()) }
     }
 
-    /// Go's keyring on macOS: a generic password with service "gemini" and account "antigravity".
+    /// Go's keyring on macOS: a generic password with service "gemini" and account "antigravity". Only a
+    /// missing item means signed out; a read the keychain turned away throws `Keychain.Refused`.
     public static func keychainCredential() throws -> AntigravityUsage.Credential {
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "gemini", kSecAttrAccount as String: "antigravity", kSecMatchLimit as String: kSecMatchLimitOne, kSecReturnData as String: true]
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess, let data = item as? Data, let text = String(data: data, encoding: .utf8) else { throw UsageError.needsSignIn() }
-        guard let credential = AntigravityUsage.Credential.decode(text) else { throw UsageError.needsSignIn() }
+        guard let data = try Keychain.genericPassword(service: "gemini", account: "antigravity"), let text = String(data: data, encoding: .utf8),
+              let credential = AntigravityUsage.Credential.decode(text) else { throw UsageError.needsSignIn() }
         return credential
     }
 
     public var id: String { "antigravity" }
     public var displayName: String { "Antigravity" }
     public var signIn: SignInRoute { .openApp(appKey: "antigravity", name: "Antigravity") }
-    public func forgetCredential() { held = nil }
+
+    public func forgetCredential() {
+        state.withLock {
+            held = nil
+            refusedAt = nil
+        }
+    }
 
     public func account() -> ProviderAccount? {
-        guard let c = held ?? (try? readCredential()) else { return nil }
+        guard let c = try? load() else { return nil }
         return ProviderAccount(label: nil, plan: c.authMethod == "consumer" ? "Personal" : (c.authMethod.isEmpty ? nil : c.authMethod), source: "Antigravity", manageURL: URL(string: "https://antigravity.google"))
     }
 
+    /// A refusal is held for a while: without that, one "Deny" would raise the same dialog every poll.
+    private func load() throws -> AntigravityUsage.Credential {
+        reading.lock()
+        defer { reading.unlock() }
+        let (current, refused) = state.withLock { (held, refusedAt) }
+        if let current { return current }
+        if let refused, now().timeIntervalSince(refused) < Self.quietAfterRefusal { throw Keychain.Refused() }
+        do {
+            let fresh = try readCredential()
+            state.withLock {
+                held = fresh
+                refusedAt = nil
+            }
+            return fresh
+        } catch is Keychain.Refused {
+            state.withLock { refusedAt = now() }
+            Log.usage.info("antigravity: the keychain read was refused, asking again in \(Int(Self.quietAfterRefusal / 60)) min")
+            throw Keychain.Refused()
+        }
+    }
+
     public func read() async throws -> ProviderReading {
-        let credential = try held ?? readCredential()
-        held = credential
-        if credential.expiresAt <= now() { held = nil; throw UsageError.credentialExpired() }
+        let credential = try load()
+        if credential.expiresAt <= now() {
+            state.withLock { held = nil }
+            throw UsageError.credentialExpired()
+        }
         try await passGate(credential)
         let bridged = await localQuota()
         if !bridged.isEmpty {
@@ -238,7 +304,9 @@ public final class AntigravityProvider: UsageProvider {
         Log.usage.debug("antigravity: gate \(response.statusCode)")
         switch response.statusCode {
         case 200: return
-        case 401: held = nil; throw UsageError.needsSignIn()
+        case 401:
+            state.withLock { held = nil }
+            throw UsageError.needsSignIn()
         case 403: throw UsageError.needsSignIn()
         case 429: throw UsageError.rateLimited(RetryAfterHeader.from(response, now: now()) ?? 0)
         default: throw UsageError.badResponse(response.statusCode)

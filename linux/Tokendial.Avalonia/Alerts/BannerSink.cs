@@ -270,7 +270,9 @@ public sealed class Banner : Border
 /// <remarks>
 /// The third mode is "both" on Windows because it can ask whether Focus Assist swallowed the toast. There is
 /// no portable equivalent of that question on Linux, so it means what it can honestly mean here: send it to
-/// the desktop, and draw a banner as well when no notification daemon answered.
+/// the desktop, and draw a banner as well when no notification daemon took this alert. The answer arrives
+/// when the send ends, which is why it is a callback rather than a flag read straight after sending, and
+/// the banner sink marshals its own drawing onto the UI thread from wherever that callback runs.
 /// </remarks>
 public sealed class AlertRouter : IAlertSink
 {
@@ -296,8 +298,7 @@ public sealed class AlertRouter : IAlertSink
                 banners.Deliver(alert);
                 break;
             default:
-                notifications.Deliver(alert);
-                if (!notifications.Available) banners.Deliver(alert);
+                notifications.Deliver(alert, failed: () => banners.Deliver(alert));
                 break;
         }
     }

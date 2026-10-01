@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Tokendial.Core.Diagnostics;
 using Tokendial.Core.Model;
+using Tokendial.Core.Providers.OpenCode;
 using Tokendial.Core.Store;
 
 namespace Tokendial.Core.Providers.Glm;
@@ -11,8 +12,10 @@ public sealed record GlmCredential(string Token, Uri Console, string Source)
 {
     public sealed record Paths(string ClaudeSettings, string ZcodeConfig, string ZcodeCredentials, string OpenCodeAuth)
     {
-        public static Paths Default => new(Http.Under(".claude", "settings.json"), Http.Under(".zcode", "v2", "config.json"),
-            Http.Under(".zcode", "v2", "credentials.json"), Http.Under(".local", "share", "opencode", "auth.json"));
+        public static Paths Default => For(Roots.Here);
+
+        public static Paths For(Roots roots) => new(roots.UnderHome(".claude", "settings.json"), roots.UnderHome(".zcode", "v2", "config.json"),
+            roots.UnderHome(".zcode", "v2", "credentials.json"), OpenCodeCredential.FileFor(roots));
     }
 
     private static readonly string[] OpenCodeIds = ["zai-coding-plan", "zai", "z-ai", "z.ai", "zhipu", "zhipuai"];

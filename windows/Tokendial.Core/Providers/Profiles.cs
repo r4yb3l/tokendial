@@ -23,6 +23,29 @@ public static class Profiles
         extras.Sort((a, b) => string.CompareOrdinal(a.Slug, b.Slug));
         return [(null, Path.Combine(home, prefix)), .. extras];
     }
+
+    /// <summary>
+    /// The line that signs one profile in: the tool's directory variable, set for the shell that will run it,
+    /// then the tool's own command. PowerShell assigns $env:NAME; a POSIX shell prefixes the command.
+    /// </summary>
+    /// <remarks>
+    /// Neither shell expands ~ inside quotes, so the directory is built from the home the profile was found
+    /// under, and the directory name is whatever the user called a folder, so it is quoted for each shell.
+    /// sh gets double quotes so $HOME expands, with the four characters those quotes still interpret escaped.
+    /// PowerShell gets none: the install assistant hands the line to powershell.exe -Command, and Windows
+    /// PowerShell strips embedded double quotes from an argument it passes to a program. In single quotes only
+    /// the quote itself is special, straight or curly, and doubling it is the escape.
+    /// </remarks>
+    public static string SignInLine(Desktop desktop, string variable, string directoryName, string command) =>
+        desktop == Desktop.Windows
+            ? $"$env:{variable} = Join-Path $env:USERPROFILE '{PowerShellSingleQuoted(directoryName)}'; {command}"
+            : $"{variable}=\"$HOME/{PosixDoubleQuoted(directoryName)}\" {command}";
+
+    private static string PowerShellSingleQuoted(string text) =>
+        string.Concat(text.Select(c => c is '\'' or '\u2018' or '\u2019' or '\u201A' or '\u201B' ? $"{c}{c}" : c.ToString()));
+
+    private static string PosixDoubleQuoted(string text) =>
+        string.Concat(text.Select(c => c is '\\' or '"' or '$' or '`' ? $"\\{c}" : c.ToString()));
 }
 
 /// <summary>A provider that is one profile of a tool and knows the exact command that signs that profile in.</summary>

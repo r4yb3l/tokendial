@@ -6,17 +6,21 @@ import Foundation
 public final class AlertEngine {
     private let config: AlertConfig
     private var state: AlertState
+    private let wants: (AlertKind) -> Bool
 
-    public init(config: AlertConfig = .default, state: AlertState? = nil) {
+    /// `wants` names the kinds the user left on. The others are dropped before hover and cooldown, so a
+    /// switched-off kind can never hold back or swallow one the user asked for.
+    public init(config: AlertConfig = .default, state: AlertState? = nil, wants: @escaping (AlertKind) -> Bool = { _ in true }) {
         self.config = config
         self.state = state ?? AlertState()
+        self.wants = wants
     }
 
-    public static func load(_ json: Data, config: AlertConfig = .default) -> AlertEngine {
+    public static func load(_ json: Data, config: AlertConfig = .default, wants: @escaping (AlertKind) -> Bool = { _ in true }) -> AlertEngine {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let state = try? decoder.decode(AlertState.self, from: json)
-        return AlertEngine(config: config, state: state?.schema == 1 ? state : nil)
+        return AlertEngine(config: config, state: state?.schema == 1 ? state : nil, wants: wants)
     }
 
     public func save() -> Data {
@@ -40,6 +44,7 @@ public final class AlertEngine {
             state.hoverOn = on
         case .restart(let at):
             prune(now: at)
+            forgetTheLastRun()
         case .tick:
             break
         }
@@ -51,7 +56,7 @@ public final class AlertEngine {
         let key = "\(provider)|\(window)"
         var index = state.epochs.firstIndex { $0.key == key }
         let existing = index.map { state.epochs[$0] }
-        let fresh = existing == nil || existing!.closed || !Self.sameReset(existing!.resetsAt, resetsAt) || existing!.lastPct - usedPct > 10
+        let fresh = existing == nil || !Self.sameReset(existing!.resetsAt, resetsAt) || existing!.lastPct - usedPct > 10
         if fresh {
             state.epochs.removeAll { $0.key == key }
             state.epochs.append(Epoch(key: key, provider: provider, window: window, resetsAt: resetsAt))
@@ -60,6 +65,10 @@ public final class AlertEngine {
         let i = index!
         state.epochs[i].lastPct = usedPct
         state.epochs[i].resetsAt = resetsAt
+
+        // A closed window that is still reported with the same reset is the reading from before the rollover,
+        // re-delivered while the next poll runs; reopening on it fired the limit and reset-done pair a second time.
+        if state.epochs[i].closed { return [] }
 
         if limited || usedPct >= 100 {
             for threshold in config.thresholds { state.epochs[i].fired.insert(String(threshold)) }
@@ -115,6 +124,7 @@ public final class AlertEngine {
     /// Hover and cooldown decide what goes out now, what waits, and what is dropped.
     private func gate(_ candidates: [Alert], now: Date) -> [Alert] {
         var emitted: [Alert] = []
+        state.held.removeAll { !wants($0.kind) }
         if !state.hoverOn {
             for held in state.held {
                 if inCooldown(held.provider, now: now) { continue }
@@ -122,7 +132,7 @@ public final class AlertEngine {
                 emitted.append(held)
             }
         }
-        for alert in candidates {
+        for alert in candidates where wants(alert.kind) {
             if alert.kind == .threshold {
                 if state.hoverOn || inCooldown(alert.provider, now: now) { continue }
                 emitted.append(alert)
@@ -160,6 +170,15 @@ public final class AlertEngine {
             if let at = epoch.resetsAt { return at < now.addingTimeInterval(-24 * 3600) }
             return false
         }
+    }
+
+    /// What described the moment the app stopped rather than the one it starts in. A session may have ended
+    /// while nothing watched it, and the host re-reports the ones still waiting; a pointer that was over the
+    /// panel at a crash or a quit is not there now, and leaving hover on silenced every threshold.
+    private func forgetTheLastRun() {
+        state.waiting.removeAll()
+        state.held.removeAll { $0.kind == .waiting }
+        state.hoverOn = false
     }
 }
 

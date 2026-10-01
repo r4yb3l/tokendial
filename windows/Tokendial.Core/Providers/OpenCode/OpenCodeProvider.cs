@@ -10,7 +10,10 @@ namespace Tokendial.Core.Providers.OpenCode;
 public static class OpenCodeCredential
 {
     private static readonly string[] Keys = ["key", "apiKey", "api_key", "token", "accessToken"];
-    public static string DefaultFile => Http.Under(".local", "share", "opencode", "auth.json");
+    public static string DefaultFile => FileFor(Roots.Here);
+
+    /// <summary>OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves it there too.</summary>
+    public static string FileFor(Roots roots) => roots.In(roots.XdgData, "opencode", "auth.json");
 
     public static string? Read(string? file = null)
     {

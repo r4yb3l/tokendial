@@ -25,17 +25,31 @@ public static class Sqlite
         }
     }
 
+    /// <summary>The owner held the database busy past the timeout: what it says right now is unknown, which is not the same as empty.</summary>
+    public sealed class BusyException(string message, Exception inner) : Exception(message, inner);
+
     public static IReadOnlyList<string>? Column(string path, string sql, string? parameter = null) =>
-        Read(path, connection =>
-        {
-            using var command = connection.CreateCommand();
-            command.CommandText = sql;
-            if (parameter is not null) command.Parameters.AddWithValue("$p", parameter);
-            using var reader = command.ExecuteReader();
-            var rows = new List<string>();
-            while (reader.Read()) if (!reader.IsDBNull(0)) rows.Add(reader.GetString(0));
-            return (IReadOnlyList<string>)rows;
-        });
+        Read(path, ColumnQuery(sql, parameter), current: false);
+
+    /// <summary>
+    /// <see cref="Column"/> for a value only true as of the owner's latest write, such as a session token it
+    /// rotates. A database the owner holds busy throws <see cref="BusyException"/> instead of falling back to
+    /// the immutable read, which answers from the last checkpoint: a token already replaced, a 401, and a
+    /// signed-in user told to sign in.
+    /// </summary>
+    public static IReadOnlyList<string>? CurrentColumn(string path, string sql, string? parameter = null) =>
+        Read(path, ColumnQuery(sql, parameter), current: true);
+
+    private static Func<SqliteConnection, IReadOnlyList<string>> ColumnQuery(string sql, string? parameter) => connection =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        if (parameter is not null) command.Parameters.AddWithValue("$p", parameter);
+        using var reader = command.ExecuteReader();
+        var rows = new List<string>();
+        while (reader.Read()) if (!reader.IsDBNull(0)) rows.Add(reader.GetString(0));
+        return rows;
+    };
 
     public static IReadOnlyList<string?[]>? Rows(string path, string sql) =>
         Read(path, connection =>
@@ -51,7 +65,7 @@ public static class Sqlite
                 rows.Add(row);
             }
             return (IReadOnlyList<string?[]>)rows;
-        });
+        }, current: false);
 
     /// <summary>
     /// A path as a SQLite file URI. A Unix path already starts with a slash, so gluing it onto "file:///"
@@ -63,7 +77,7 @@ public static class Sqlite
         return slashes.StartsWith('/') ? "file://" + slashes : "file:///" + slashes;
     }
 
-    private static T? Read<T>(string path, Func<SqliteConnection, T> query) where T : class
+    private static T? Read<T>(string path, Func<SqliteConnection, T> query, bool current) where T : class
     {
         if (!File.Exists(path)) return null;
         foreach (var connectionString in new[]
@@ -78,6 +92,11 @@ public static class Sqlite
                 connection.Open();
                 return query(connection);
             }
+            catch (SqliteException error) when (current && Contended(error))
+            {
+                Log.Usage.Debug($"sqlite {Path.GetFileName(path)}: busy, {error.Message}");
+                throw new BusyException($"{Path.GetFileName(path)} is busy", error);
+            }
             catch (Exception error) when (error is SqliteException or IOException)
             {
                 Log.Usage.Debug($"sqlite {Path.GetFileName(path)}: {error.Message}");
@@ -85,6 +104,9 @@ public static class Sqlite
         }
         return ReadCopy(path, query);
     }
+
+    /// <summary>SQLITE_BUSY or SQLITE_LOCKED, extended codes included: the owner is writing, which is not a failure to open.</summary>
+    private static bool Contended(SqliteException error) => (error.SqliteErrorCode & 0xFF) is 5 or 6;
 
     private static SqliteConnectionStringBuilder Builder(string source) => new()
     {

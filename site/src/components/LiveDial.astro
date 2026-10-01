@@ -29,7 +29,7 @@ const others = [
 ] as const;
 ---
 
-<div class="flex flex-col items-center" data-live-dial data-length={length.toFixed(3)}>
+<div class="flex flex-col items-center" data-live-dial data-length={length.toFixed(3)} data-rest={rest * 100}>
   <div class="relative" style={`width:${size}px;height:${size}px`}>
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" focusable="false">
       <path d={path} fill="none" stroke="var(--color-ink-700)" stroke-width={stroke} stroke-linecap="round" />
@@ -71,30 +71,31 @@ const others = [
   </div>
 </div>
 
-<script is:inline>
+<script>
   /* The climb only runs while the dial is on screen and only when motion is welcome; everywhere else the
      markup above already shows a truthful resting reading, so nothing depends on this script having run. */
-  for (const root of document.querySelectorAll('[data-live-dial]')) {
-    const arc = root.querySelector('[data-arc]');
-    const out = root.querySelector('[data-pct]');
-    const banner = root.querySelector('[data-banner]');
-    const bar = root.querySelector('[data-banner-bar]');
+  for (const root of document.querySelectorAll<HTMLElement>('[data-live-dial]')) {
+    const arc = root.querySelector<SVGPathElement>('[data-arc]');
+    const out = root.querySelector<HTMLElement>('[data-pct]');
+    const banner = root.querySelector<HTMLElement>('[data-banner]');
+    const bar = root.querySelector<HTMLElement>('[data-banner-bar]');
     const length = Number(root.dataset.length);
     if (!arc || !out || !length) continue;
 
     const still = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let pct = 6;
-    let timer = null;
+    // The climb starts from the reading the markup already shows, and a gauge never reads past 100.
+    let pct = Number(root.dataset.rest) || 6;
+    let timer: number | undefined;
 
-    const band = (p) => (p >= 95 ? 'critical' : p >= 80 ? 'watch' : 'brand-400');
+    const band = (p: number) => (p >= 95 ? 'critical' : p >= 80 ? 'watch' : 'brand-400');
 
-    const paint = (p) => {
+    const paint = (p: number) => {
       const colour = 'var(--color-' + band(p) + ')';
       arc.setAttribute('stroke-dashoffset', (length * (1 - p / 100)).toFixed(3));
       arc.setAttribute('stroke', colour);
       out.textContent = Math.round(p) + '%';
       out.style.color = colour;
-      for (const word of document.querySelectorAll('[data-hero-accent]')) word.style.color = colour;
+      for (const word of document.querySelectorAll<HTMLElement>('[data-hero-accent]')) word.style.color = colour;
       if (banner && bar) {
         banner.style.opacity = p >= 80 ? '1' : '0';
         bar.style.background = colour;
@@ -102,16 +103,16 @@ const others = [
     };
 
     const tick = () => {
-      pct = pct > 101 ? 6 : pct + 0.9;
+      pct = pct >= 100 ? 6 : Math.min(100, pct + 0.9);
       paint(pct);
     };
 
     const watcher = new IntersectionObserver((entries) => {
       for (const entry of entries) {
-        if (entry.isIntersecting && !timer && !still.matches) timer = setInterval(tick, 70);
+        if (entry.isIntersecting && !timer && !still.matches) timer = window.setInterval(tick, 70);
         else if (!entry.isIntersecting && timer) {
-          clearInterval(timer);
-          timer = null;
+          window.clearInterval(timer);
+          timer = undefined;
         }
       }
     }, { threshold: 0.3 });

@@ -97,20 +97,67 @@ public sealed class Settings
 
     public static string DefaultFile => Paths.In("settings.json");
 
+    /// <summary>
+    /// The saved settings, or the defaults. The defaults are saved over the file the next time anything
+    /// changes, so a file that cannot be parsed - a value only a newer build knows, a truncated write - is
+    /// moved aside to <c>settings.json.bad</c> first rather than lost.
+    /// </summary>
     public static Settings Load(string? file = null)
     {
         file ??= DefaultFile;
+        string text;
         try
         {
             if (!File.Exists(file)) return new Settings();
-            var loaded = JsonSerializer.Deserialize<Settings>(File.ReadAllText(file), Json) ?? new Settings();
-            loaded.Schema = CurrentSchema;
-            return loaded;
+            text = ReadWithOneRetry(file);
         }
         catch (Exception error)
         {
             Diagnostics.Log.Ui.Error($"settings: {error.Message}");
             return new Settings();
+        }
+        try
+        {
+            var loaded = JsonSerializer.Deserialize<Settings>(text, Json) ?? new Settings();
+            loaded.Schema = CurrentSchema;
+            return loaded;
+        }
+        catch (JsonException error)
+        {
+            Diagnostics.Log.Ui.Error($"settings: {error.Message}");
+            SetAside(file);
+            return new Settings();
+        }
+        catch (Exception error)
+        {
+            Diagnostics.Log.Ui.Error($"settings: {error.Message}");
+            return new Settings();
+        }
+    }
+
+    /// <summary>An antivirus scan or a sync client can hold the file for a moment at login; one short wait outlasts most.</summary>
+    private static string ReadWithOneRetry(string file)
+    {
+        try
+        {
+            return File.ReadAllText(file);
+        }
+        catch (IOException)
+        {
+            Thread.Sleep(250);
+            return File.ReadAllText(file);
+        }
+    }
+
+    private static void SetAside(string file)
+    {
+        try
+        {
+            File.Move(file, file + ".bad", overwrite: true);
+        }
+        catch (Exception error)
+        {
+            Diagnostics.Log.Ui.Error($"settings: could not set aside: {error.Message}");
         }
     }
 

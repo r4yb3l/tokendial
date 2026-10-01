@@ -18,16 +18,12 @@ public sealed record ClaudeProfile(string? Slug, string Directory)
     public string SignInCommand => SignInFor(Roots.Current);
 
     /// <summary>
-    /// A profile signs in with its own directory named in the environment, which is written differently
-    /// per shell: PowerShell assigns $env:NAME, a POSIX shell prefixes the command. And ~ does not expand
-    /// inside quotes in sh, so there it has to be $HOME - a line that is a syntax error in the other shell
-    /// either way, which is why this is not one string.
+    /// A profile signs in with its own directory named in the environment, which is written differently per
+    /// shell - a line that is a syntax error in the other shell either way, which is why this is not one string.
     /// </summary>
     public string SignInFor(Desktop desktop) => Slug is null
         ? "claude"
-        : desktop == Desktop.Windows
-            ? $"$env:CLAUDE_CONFIG_DIR='~/.claude-{Slug}'; claude"
-            : $"CLAUDE_CONFIG_DIR=\"$HOME/.claude-{Slug}\" claude";
+        : Profiles.SignInLine(desktop, "CLAUDE_CONFIG_DIR", $".claude-{Slug}", "claude");
 
     public static ClaudeProfile Default(string? home = null) => new(null, Path.Combine(home ?? Http.Home, ".claude"));
 
@@ -45,11 +41,7 @@ public sealed record ClaudeCredential(string AccessToken, DateTimeOffset Expires
 
     public static ClaudeCredential Read(string file)
     {
-        if (!File.Exists(file)) throw UsageError.NeedsSignIn();
-        string text;
-        try { text = File.ReadAllText(file); }
-        catch (IOException) { throw UsageError.CredentialExpired(); }
-        using var document = Json.Parse(text) ?? throw UsageError.NeedsSignIn();
+        using var document = CredentialFile.Document(file);
         var oauth = document.RootElement.Obj("claudeAiOauth") ?? throw UsageError.NeedsSignIn();
         var token = oauth.Str("accessToken") ?? throw UsageError.NeedsSignIn();
         var expires = oauth.EpochMillis("expiresAt") ?? DateTimeOffset.MinValue;

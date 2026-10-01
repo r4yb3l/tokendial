@@ -11,7 +11,8 @@ namespace Tokendial.App.Windows;
 /// <summary>First run: say what will be read, show which tools were found, offer to install or sign in the rest, and let the user choose before anything is polled.</summary>
 public static class WelcomeWindow
 {
-    public static void Show(IReadOnlyList<ProviderSummary> detected, IReadOnlyList<ProviderSummary> absent, InstallAssistant assistant, Action<IReadOnlyList<string>> connect, Action openSettings)
+    /// <summary>Closing the window without pressing either button connects nothing: the boxes start ticked, and a choice nobody confirmed is not an opt-in.</summary>
+    public static void Show(IReadOnlyList<ProviderSummary> detected, IReadOnlyList<ProviderSummary> absent, InstallAssistant assistant, Action<IReadOnlyList<string>> connect, Action openSettings, Func<string, bool> openApp)
     {
         Window? window = null;
         var page = new StackPanel { Margin = new Thickness(24, 22, 24, 22) };
@@ -45,7 +46,7 @@ public static class WelcomeWindow
             void Rebuild()
             {
                 rows.Children.Clear();
-                foreach (var provider in absent) rows.Children.Add(AbsentRow(provider, assistant, window!));
+                foreach (var provider in absent) rows.Children.Add(AbsentRow(provider, assistant, window!, openApp));
             }
             assistant.Changed += Rebuild;
             page.Children.Add(Chrome.Section(Strings.T("welcome.notSignedIn"), Strings.T("welcome.notSignedInHint"), rows));
@@ -55,10 +56,17 @@ public static class WelcomeWindow
         }
         else window = Chrome.Frame(Strings.T("welcome.title"), 520, 580, Chrome.Scroll(page));
 
+        var decided = false;
+        void Decide(IReadOnlyList<string> ids)
+        {
+            decided = true;
+            connect(ids);
+        }
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-        buttons.Children.Add(Chrome.Button(detected.Count > 0 ? Strings.T("welcome.connectStart") : Strings.T("welcome.start"), () => { connect(chosen.ToList()); window?.Close(); }, primary: true));
-        buttons.Children.Add(Chrome.Button(Strings.T("welcome.openSettings"), () => { connect(chosen.ToList()); window?.Close(); openSettings(); }));
+        buttons.Children.Add(Chrome.Button(detected.Count > 0 ? Strings.T("welcome.connectStart") : Strings.T("welcome.start"), () => { Decide(chosen.ToList()); window?.Close(); }, primary: true));
+        buttons.Children.Add(Chrome.Button(Strings.T("welcome.openSettings"), () => { Decide(chosen.ToList()); window?.Close(); openSettings(); }));
         page.Children.Add(buttons);
+        window.Closed += (_, _) => { if (!decided) Decide([]); };
 
         window.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         window.Show();
@@ -66,7 +74,7 @@ public static class WelcomeWindow
     }
 
     /// <summary>A tool that is not signed in yet: its mark, where it stands, and the Install or Sign in button when a recipe exists.</summary>
-    private static UIElement AbsentRow(ProviderSummary provider, InstallAssistant assistant, Window owner)
+    private static UIElement AbsentRow(ProviderSummary provider, InstallAssistant assistant, Window owner, Func<string, bool> openApp)
     {
         var grid = new Grid { Margin = new Thickness(0, 5, 0, 5) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -86,7 +94,7 @@ public static class WelcomeWindow
             detail.FontSize = 11;
             text.Children.Add(detail);
             text.Children.Add(InstallSteps.Strip(state));
-            if (InstallSteps.Action(owner, provider, recipe, state, assistant, () => false) is Button next)
+            if (InstallSteps.Action(owner, provider, recipe, state, assistant, () => openApp(provider.Id)) is Button next)
             {
                 next.VerticalAlignment = VerticalAlignment.Center;
                 Grid.SetColumn(next, 2);

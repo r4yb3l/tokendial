@@ -125,7 +125,7 @@ final class CellView: NSView {
         dial.hollow = !tile.hasReading
         dial.color = Theme.color(tile.band)
         dial.set(tile.hasReading ? (tile.fraction ?? 0) : 0, animated: animated)
-        if tile.hasReading, let f = tile.fraction { percent.stringValue = "\(Int((f * 100).rounded()))%" }
+        if tile.hasReading, let f = tile.fraction, let pct = Int(exactly: (f * 100).rounded()) { percent.stringValue = "\(pct)%" }
         else if tile.hasReading, let c = tile.headline?.count { percent.stringValue = String(c) }
         else { percent.stringValue = "–" }
         percent.textColor = tile.hasReading ? Theme.textPrimary : Theme.textDisabled

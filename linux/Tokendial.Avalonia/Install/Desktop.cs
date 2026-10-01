@@ -104,6 +104,10 @@ public static class Desktop
             Directory.CreateDirectory(Applications);
             File.WriteAllText(Entry, EntryText(target, autostart: false));
             Refresh();
+
+            // Launch at login, turned on while this ran from the download folder, wrote an entry naming that
+            // file; it has to name the copy that survives emptying the folder, as the menu entry now does.
+            if (AutostartIsSet) SetAutostart(true);
             return true;
         }
         catch (Exception error)
@@ -187,10 +191,18 @@ public static class Desktop
     }
 
     /// <summary>
-    /// Exec quoting as the desktop entry specification defines it: the value is a double-quoted string in
-    /// which a backslash and a double quote are themselves escaped with a backslash.
+    /// One path as an <c>Exec=</c> value, in the three layers the desktop entry specification reads back in
+    /// reverse. The argument is double-quoted with <c>"</c>, <c>`</c>, <c>$</c> and <c>\</c> backslash-escaped
+    /// inside it; the key's value is itself a string, whose own escaping then doubles every backslash; and a
+    /// literal <c>%</c> becomes <c>%%</c>, since a lone one opens a field code. Without the middle layer the
+    /// string reader consumes or rejects the quoting escapes before the Exec parser sees them, so a path with
+    /// a backslash or a quote in it came back as a different path, or as no entry at all.
     /// </summary>
-    private static string Quote(string path) => "\"" + path.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+    internal static string Quote(string path)
+    {
+        var argument = string.Concat(path.Select(c => c is '"' or '`' or '$' or '\\' ? $"\\{c}" : c.ToString()));
+        return ("\"" + argument + "\"").Replace("\\", "\\\\").Replace("%", "%%");
+    }
 
     private static void WriteIcon(int size)
     {
@@ -209,14 +221,27 @@ public static class Desktop
     }
 
     /// <summary>
-    /// Asks the desktop to notice. Both tools are optional and absent on a minimal install, which is why
-    /// neither failing is treated as the install failing - the entry is on disk either way and the menu
-    /// picks it up on the next session.
+    /// Asks the desktop to notice. The tool is optional and absent on a minimal install, which is why its
+    /// failing is not treated as the install failing - the entry is on disk either way and the menu picks it
+    /// up on the next session.
     /// </summary>
     private static void Refresh()
     {
         Run("update-desktop-database", Applications);
-        Run("gtk-update-icon-cache", "-f", "-t", Icons);
+        Touch(Icons);
+    }
+
+    /// <summary>
+    /// Moves the icon theme's modification time forward, which is how GTK and the menus learn to look at it
+    /// again: an icon cache older than its theme directory is ignored. Writing a cache instead, with
+    /// gtk-update-icon-cache, left one in the user's theme that outlived Tokendial and hid the icons other
+    /// applications later installed beside it, because adding an icon changes only a subdirectory and the
+    /// cache went on looking current.
+    /// </summary>
+    internal static void Touch(string directory)
+    {
+        try { if (Directory.Exists(directory)) Directory.SetLastWriteTimeUtc(directory, DateTime.UtcNow); }
+        catch (Exception error) { Log.Ui.Error($"touch {directory}: {error.Message}"); }
     }
 
     private static void Run(string tool, params string[] arguments)

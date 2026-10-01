@@ -122,7 +122,7 @@ public sealed record Bridge(IReadOnlyList<int> Ports, string Csrf)
         if (!OperatingSystem.IsWindows()) return null;
         try
         {
-            foreach (var (pid, commandLine) in Processes())
+            foreach (var (pid, commandLine) in Candidates(Processes()))
             {
                 var csrf = CsrfToken(commandLine);
                 var ports = csrf is null ? [] : Tcp.ListeningPorts(pid);
@@ -132,6 +132,24 @@ public sealed record Bridge(IReadOnlyList<int> Ports, string Csrf)
         catch (Exception e) { Log.Usage.Debug($"antigravity discovery: {e.Message}"); }
         return null;
     }
+
+    private static readonly string[] OtherProducts = ["windsurf", "codeium"];
+
+    /// <summary>
+    /// Windsurf and the Codeium extensions ship a language_server with the same flags, and the first one with a
+    /// CSRF token used to win, so another product's quota could be shown as Antigravity's. Antigravity's own
+    /// comes first, known by its install path; one that names no product is the fallback; one that names
+    /// another product is never taken.
+    /// </summary>
+    public static IEnumerable<(int Pid, string CommandLine)> Candidates(IEnumerable<(int Pid, string CommandLine)> processes)
+    {
+        var all = processes.ToList();
+        var own = all.Where(p => Names(p.CommandLine, "antigravity"));
+        var unnamed = all.Where(p => !Names(p.CommandLine, "antigravity") && !OtherProducts.Any(other => Names(p.CommandLine, other)));
+        return own.Concat(unnamed).ToList();
+    }
+
+    private static bool Names(string commandLine, string product) => commandLine.Contains(product, StringComparison.OrdinalIgnoreCase);
 
     public static string? CsrfToken(string commandLine)
     {

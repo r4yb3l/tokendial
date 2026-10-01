@@ -100,14 +100,11 @@ public sealed class TokendialApp : Application
         Strings.Use(settings.Language);
         Sqlite.SweepCache();
 
-        // An update changes the path the autostart entry holds, so it is written again on every launch.
-        Desktop.SyncAutostart(settings.LaunchAtLogin);
-
         var providers = ProviderCatalog.Providers(archive);
         catalogue = providers;
         Adopt(providers);
 
-        store = new UsageStore(providers, archive, settings.Disconnected);
+        store = new UsageStore(providers, archive, settings.Disconnected, launcher: new AppLauncher());
         assistant = new InstallAssistant(providers);
         assistant.SignedIn += id => { settings.Disconnected.Remove(id); store!.Connect(id); Save(); Refresh(); };
         hub = new ActivityHub(ProviderCatalog.Monitors());
@@ -164,8 +161,9 @@ public sealed class TokendialApp : Application
     }
 
     /// <summary>
-    /// Becomes the running Tokendial: claims the session, shows the dock and starts reading. A copy that
-    /// cannot claim quits, because the two of them would draw two docks and poll the same accounts twice.
+    /// Becomes the running Tokendial: claims the session, puts the dock up in the mode the user chose and
+    /// starts reading. A copy that cannot claim quits, because the two of them would draw two docks and poll
+    /// the same accounts twice.
     /// </summary>
     private void Run(IClassicDesktopStyleApplicationLifetime desktop, bool justInstalled)
     {
@@ -176,8 +174,16 @@ public sealed class TokendialApp : Application
             return;
         }
 
-        desktop.MainWindow = panel;
-        panel.Show();
+        // Here rather than at startup: a downloaded AppImage still asking whether to install must not have
+        // written an autostart entry already. Written on every launch because an update changes the path
+        // the entry holds.
+        Desktop.SyncAutostart(settings.LaunchAtLogin);
+
+        // A hidden dock leaves no window open, so closing settings would close the last one and end the
+        // application; quitting is always asked for explicitly instead, by the tray or by Uninstall. For the
+        // same reason the dock is not the lifetime's main window, which the lifetime shows when it starts.
+        desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        panel.SetMode(settings.Panel);
 
         tray = new Tokendial.Linux.Tray.TrayIcon(this);
         tray.ShowRequested += () => panel.Flash(TimeSpan.FromSeconds(6));
@@ -234,10 +240,23 @@ public sealed class TokendialApp : Application
             window.Closed += (_, _) => window = null;
             window.Changed += Refresh;
             window.Changed += ApplyDisplay;
+            window.PanelModeChanged += mode => panel?.SetMode(mode);
+            window.LanguageChanged += ApplyLanguage;
             window.AlertsChanged += config => alerts?.Reconfigure(config, settings.Wants);
         }
         window.Show();
         window.Activate();
+    }
+
+    /// <summary>
+    /// The user picked a language: the tray menu and the settings window are rebuilt in it, and the dock
+    /// follows on the refresh, which reads its labels from the catalogue every time it applies a model.
+    /// </summary>
+    private void ApplyLanguage()
+    {
+        tray?.Relocalize();
+        window?.Relocalize();
+        Refresh();
     }
 
     /// <summary>Uninstalling removes the app from under itself, so it ends the session rather than lingering.</summary>

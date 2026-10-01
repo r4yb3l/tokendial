@@ -55,13 +55,17 @@ public static class Strings
 
     public static string T(string key, params (string Name, object? Value)[] args) => Fill(Lookup(key) is string s ? s : key, args);
 
-    /// <summary>A plural form for n, chosen by the language's CLDR rules; {n} is filled with the number.</summary>
+    /// <summary>
+    /// A plural form for n, chosen by the language's CLDR rules; {n} is filled with the number. A <c>zero</c>
+    /// form, where a catalogue gives one, wins for 0 in every language: CLDR files 0 under "other" in English
+    /// and under "one" in French, so "no requests today" could never have been reached through the rules alone.
+    /// </summary>
     public static string Plural(string key, int n, params (string Name, object? Value)[] args)
     {
         var forms = LookupForms(key);
         if (forms is null) return T(key, [.. args, ("n", n)]);
         var category = PluralCategory(current.Language, n);
-        var text = forms.GetValueOrDefault(category) ?? forms.GetValueOrDefault("other") ?? key;
+        var text = (n == 0 ? forms.GetValueOrDefault("zero") : null) ?? forms.GetValueOrDefault(category) ?? forms.GetValueOrDefault("other") ?? key;
         return Fill(text, [.. args, ("n", n)]);
     }
 

@@ -1,0 +1,16 @@
+{
+  "name": "21-restart-forgets-waiting-sessions",
+  "config": {},
+  "steps": [
+    { "t": 0, "event": { "kind": "session", "provider": "claude", "sessionId": "claude.1", "state": "waiting" } },
+    { "t": 20, "event": { "kind": "tick" } },
+    { "t": 10800, "event": { "kind": "restart" }, "persistAndRestart": true },
+    { "t": 11100, "event": { "kind": "tick" } },
+    { "t": 11110, "event": { "kind": "session", "provider": "claude", "sessionId": "claude.2", "state": "waiting" } },
+    { "t": 11130, "event": { "kind": "tick" } }
+  ],
+  "expected": [
+    { "t": 20, "kind": "waiting", "provider": "claude", "sessionId": "claude.1" },
+    { "t": 11130, "kind": "waiting", "provider": "claude", "sessionId": "claude.2" }
+  ]
+}

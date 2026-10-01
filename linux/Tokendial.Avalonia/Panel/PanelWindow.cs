@@ -41,7 +41,7 @@ public sealed class PanelWindow : Window
     private readonly Canvas expandedRow = new() { IsVisible = false };
 
     private readonly CardWindow card = new();
-    private readonly IReadOnlyList<string> providerIds;
+    private IReadOnlyList<string> providerIds;
 
     private readonly List<Dial> dials = [];
     private readonly List<MarkView> marks = [];
@@ -51,11 +51,12 @@ public sealed class PanelWindow : Window
     public event Action? SettingsRequested;
 
     /// <summary>
-    /// The dock opened or closed. The alert engine silences thresholds while it is open, on the reasoning
-    /// that someone reading the numbers does not need to be told them.
+    /// The pointer or a pin started or stopped holding the dock open. The alert engine silences thresholds
+    /// meanwhile, on the reasoning that someone reading the numbers does not need to be told them.
     /// </summary>
     public event Action<bool>? HoverChanged;
 
+    private readonly DispatcherTimer pin = new();
     private DispatcherTimer? poll;
     private EventHandler? screensHandler;
     private DockEdge edge;
@@ -64,10 +65,15 @@ public sealed class PanelWindow : Window
     private bool placing;
     private bool repositionQueued;
     private bool x11;
+    private bool built;
     private bool expanded;
+    private bool engaged;
+    private bool hovering;
+    private bool pinned;
     private int hovered = -1;
-    private DateTimeOffset pinnedUntil = DateTimeOffset.MinValue;
     private string? display;
+    private PanelMode mode = PanelMode.ExpandOnHover;
+    private PanelModel? model;
 
     public PanelWindow(IReadOnlyList<string> providerIds, string? display = null, DockEdge edge = DockEdge.Top)
     {
@@ -101,17 +107,33 @@ public sealed class PanelWindow : Window
             if (e.InitialPressMouseButton == Avalonia.Input.MouseButton.Right) SettingsRequested?.Invoke();
         };
 
+        pin.Tick += (_, _) => Unpin();
         Opened += OnOpened;
     }
 
     /// <summary>Which edge the dock hangs from.</summary>
     public DockEdge Edge => edge;
 
+    /// <summary>Whether the dock expands under the pointer, stays expanded, or stays off the screen.</summary>
+    public PanelMode Mode => mode;
+
+    /// <summary>Whether the capsule is open, for whatever reason: pointer, pin or mode.</summary>
+    public bool IsExpanded => expanded;
+
     internal DockGeometry.Layout? LastLayout => layout;
 
+    /// <summary>
+    /// Safe to run more than once: a hidden dock is shown again with the same window. What was built stays
+    /// built, and the window type and state are set again because EWMH lets the window manager drop the
+    /// state of a window that was unmapped.
+    /// </summary>
     private void OnOpened(object? sender, EventArgs e)
     {
-        Build();
+        if (!built)
+        {
+            Build();
+            if (model is not null) Update(model);
+        }
 
         var handle = TryGetPlatformHandle();
         x11 = handle is { HandleDescriptor: "XID", Handle: not 0 } && X11.Open();
@@ -123,14 +145,17 @@ public sealed class PanelWindow : Window
         alive = true;
         Reposition();
 
-        // Fires on XRandR reconfiguration and when the work area changes, already on the UI thread.
-        // Without it the dock stays where it was when a monitor arrives, leaves or a panel appears.
-        // Stored so close can unsubscribe: a dead window must not reposition itself.
-        screensHandler = (_, _) => { if (alive) Reposition(); };
-        Screens.Changed += screensHandler;
-        ScalingChanged += OnScalingChanged;
+        if (screensHandler is null)
+        {
+            // Fires on XRandR reconfiguration and when the work area changes, already on the UI thread.
+            // Without it the dock stays where it was when a monitor arrives, leaves or a panel appears.
+            // Stored so close can unsubscribe: a dead window must not reposition itself.
+            screensHandler = (_, _) => { if (alive) Reposition(); };
+            Screens.Changed += screensHandler;
+            ScalingChanged += OnScalingChanged;
+        }
 
-        StartPolling();
+        if (poll is null) StartPolling();
     }
 
     protected override void OnClosed(EventArgs e)
@@ -138,6 +163,7 @@ public sealed class PanelWindow : Window
         alive = false;
         poll?.Stop();
         poll = null;
+        pin.Stop();
         if (screensHandler is not null) Screens.Changed -= screensHandler;
         screensHandler = null;
         ScalingChanged -= OnScalingChanged;
@@ -148,7 +174,31 @@ public sealed class PanelWindow : Window
 
     private void Build()
     {
+        built = true;
         Orient();
+        Populate();
+
+        // The spring is the product's, not Avalonia's: three platforms solve the same damped spring so the
+        // capsule opens with the same weight everywhere.
+        capsule.Transitions =
+        [
+            new DoubleTransition { Property = WidthProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand },
+            new DoubleTransition { Property = HeightProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand }
+        ];
+        capsule.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == WidthProperty || e.Property == HeightProperty) Layout();
+        };
+
+        var at = Relayout(expanded: false);
+        capsule.Width = at.CapsuleWidth;
+        capsule.Height = at.CapsuleHeight;
+        Layout();
+    }
+
+    /// <summary>One dial in the compact row and one cell in the expanded capsule per provider, in order.</summary>
+    private void Populate()
+    {
         foreach (var id in providerIds)
         {
             var dial = new Dial(Tokens.CompactDial, Tokens.CompactStroke) { Hollow = true };
@@ -171,23 +221,25 @@ public sealed class PanelWindow : Window
             cells.Add(cell);
             expandedRow.Children.Add(cell.Root);
         }
+    }
 
-        // The spring is the product's, not Avalonia's: three platforms solve the same damped spring so the
-        // capsule opens with the same weight everywhere.
-        capsule.Transitions =
-        [
-            new DoubleTransition { Property = WidthProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand },
-            new DoubleTransition { Property = HeightProperty, Duration = Spring.Expand.SettleTime, Easing = Spring.Expand }
-        ];
-        capsule.PropertyChanged += (_, e) =>
-        {
-            if (e.Property == WidthProperty || e.Property == HeightProperty) Layout();
-        };
-
-        var at = Relayout(expanded: false);
-        capsule.Width = at.CapsuleWidth;
-        capsule.Height = at.CapsuleHeight;
-        Layout();
+    /// <summary>
+    /// The connected providers changed: every dial and cell is made again for the new list, and the window
+    /// is placed again because its size follows the count. Indexing the old controls by the new list is what
+    /// left a disconnected provider's numbers on screen and never showed a newly connected one.
+    /// </summary>
+    private void Rebuild()
+    {
+        hovered = -1;
+        card.HideCard();
+        compactRow.Children.Clear();
+        expandedRow.Children.Clear();
+        dials.Clear();
+        marks.Clear();
+        cells.Clear();
+        tiles.Clear();
+        Populate();
+        Reposition();
     }
 
     /// <summary>Rows run along horizontal edges and down vertical ones; cells stay upright either way.</summary>
@@ -395,10 +447,17 @@ public sealed class PanelWindow : Window
     /// </summary>
     public void Update(PanelModel model)
     {
+        this.model = model;
+        var ids = model.Tiles.Select(t => t.Id).ToList();
+        if (!ids.SequenceEqual(providerIds))
+        {
+            providerIds = ids;
+            if (built) Rebuild();
+        }
+
         for (var i = 0; i < tiles.Count && i < model.Tiles.Count; i++)
         {
-            var tile = model.Tiles.FirstOrDefault(t => t.Id == providerIds[i]);
-            if (tile is null) continue;
+            var tile = model.Tiles[i];
             tiles[i] = tile;
 
             var dial = dials[i];
@@ -430,16 +489,102 @@ public sealed class PanelWindow : Window
     /// Holds the dock open for a while with no pointer involved. The tray's Show does this rather than
     /// moving the cursor, because moving someone's cursor is not a thing an application should do.
     /// </summary>
+    /// <remarks>
+    /// A hidden dock comes out for the moment too and goes back when it passes: Show in the tray and a clicked
+    /// banner are both someone asking to see the numbers, and neither changes the mode they chose.
+    /// The moment runs on its own timer rather than as a deadline the pointer poll reads, because that poll
+    /// needs an X connection: under Wayland there is none, and a deadline nothing ever looks at would leave
+    /// the dock open and the alert engine silenced for good.
+    /// </remarks>
     public void Flash(TimeSpan? duration = null)
     {
-        pinnedUntil = DateTimeOffset.UtcNow + (duration ?? TimeSpan.FromSeconds(6));
-        if (!expanded) Reconcile(true);
+        pinned = true;
+        pin.Stop();
+        pin.Interval = duration ?? TimeSpan.FromSeconds(6);
+        pin.Start();
+        Reveal();
+        Settle();
+    }
+
+    /// <summary>The pin's moment has passed, so whatever is left holding the dock open decides.</summary>
+    internal void Unpin()
+    {
+        pin.Stop();
+        pinned = false;
+        Settle();
+    }
+
+    /// <summary>
+    /// Expanding under the pointer, open all the time, or off the screen with the tray and the alerts
+    /// carrying on. Applies at once, so changing it in settings changes the dock in front of the user.
+    /// </summary>
+    public void SetMode(PanelMode next)
+    {
+        mode = next;
+        if (mode == PanelMode.Hidden)
+        {
+            pin.Stop();
+            pinned = false;
+            Conceal();
+            return;
+        }
+        Reveal();
+        var open = engaged || mode == PanelMode.AlwaysExpanded;
+        if (open != expanded) Reconcile(open);
+    }
+
+    /// <summary>
+    /// Shows the window if it is not on screen, and places it, since a window manager may put a window it
+    /// maps again wherever it likes until a move request arrives.
+    /// </summary>
+    private void Reveal()
+    {
+        if (IsVisible) return;
+        Show();
+        Reposition();
+    }
+
+    /// <summary>Collapses the capsule first, so the dock that comes back later starts compact.</summary>
+    private void Conceal()
+    {
+        // A dock that is off the screen is under nothing, and the pointer poll stops reading while it is: the
+        // last reading has to be dropped here or it would still be holding the dock open when it comes back.
+        hovering = false;
+        Engage(false);
+        if (expanded) Reconcile(false);
+        if (IsVisible) Hide();
+    }
+
+    /// <summary>
+    /// The pointer or a pin is holding the dock open. Kept apart from <see cref="expanded"/> because an
+    /// always-expanded dock is open without anyone reading it, and the alert engine silences thresholds
+    /// only while someone is.
+    /// </summary>
+    private void Engage(bool on)
+    {
+        if (on == engaged) return;
+        engaged = on;
+        HoverChanged?.Invoke(on);
+    }
+
+    /// <summary>
+    /// The pointer and the pin hold the dock open independently of each other, so neither can decide alone:
+    /// this is the one place that reads both, and the only way a dock flashed out of hiding goes back.
+    /// </summary>
+    private void Settle()
+    {
+        var held = hovering || pinned;
+        Engage(held);
+        var open = held || mode == PanelMode.AlwaysExpanded;
+        if (open != expanded) Reconcile(open);
+        if (!open && mode == PanelMode.Hidden) Conceal();
     }
 
     private void Track()
     {
-        // No X connection - headless tests, or a session without one - means no pointer to read.
-        if (!x11 || layout is null) return;
+        // No X connection - headless tests, or a Wayland session - means no pointer to read. The pin keeps its
+        // own timer precisely because this tick is allowed never to run.
+        if (!x11 || layout is null || !IsVisible) return;
         var (x, y, sameScreen) = X11.Pointer();
         if (!sameScreen) return;
 
@@ -455,15 +600,15 @@ public sealed class PanelWindow : Window
         // stay on the capsule for the dock to remain open.
         var inside = layout.Hot.Contains(local);
 
-        // A pinned dock stays open until its moment passes, whatever the pointer is doing.
-        var open = inside || DateTimeOffset.UtcNow < pinnedUntil;
-        if (open != expanded) Reconcile(open);
+        hovering = inside;
+        Settle();
+        // Settling may have taken the dock off the screen, and there is no card to place on a dock that is gone.
+        if (!IsVisible) return;
         Card(inside, local, origin);
     }
 
     private void Reconcile(bool open)
     {
-        var changed = expanded != open;
         expanded = open;
         var at = Relayout(open);
         capsule.Width = at.CapsuleWidth;
@@ -477,7 +622,6 @@ public sealed class PanelWindow : Window
         Layout();
         if (x11) Shape(at);
         if (!open) { hovered = -1; card.HideCard(); }
-        if (changed) HoverChanged?.Invoke(open);
     }
 
     private void Card(bool inside, Point local, PixelPoint origin)

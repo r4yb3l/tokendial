@@ -23,8 +23,7 @@ public sealed record GeminiCredential(string AccessToken, DateTimeOffset Expires
         accountsFile ??= DefaultAccounts;
         var authType = AuthType(settingsFile);
         if (authType is not null && authType != "oauth-personal") throw UsageError.NothingMetered("Gemini CLI is signed in with " + authType + "; no quota is published for it");
-        if (!File.Exists(file)) throw UsageError.NeedsSignIn();
-        using var document = Json.Parse(File.ReadAllText(file)) ?? throw UsageError.NeedsSignIn();
+        using var document = CredentialFile.Document(file);
         var root = document.RootElement;
         var token = root.Str("access_token") ?? throw UsageError.NeedsSignIn();
         var expires = root.EpochMillis("expiry_date") ?? DateTimeOffset.MinValue;
@@ -76,6 +75,7 @@ public sealed class GeminiProvider : IUsageProvider, IDisposable
     private readonly Func<DateTimeOffset> now;
     private readonly ReadingArchive? archive;
     private string? plan;
+    private int consecutive429;
 
     public GeminiProvider(HttpMessageHandler? handler = null, Func<GeminiCredential>? read = null, Func<DateTimeOffset>? now = null, ReadingArchive? archive = null)
     {
@@ -122,6 +122,7 @@ public sealed class GeminiProvider : IUsageProvider, IDisposable
             Log.Usage.Debug($"gemini: quota {status}");
             Throw(status, response);
         }
+        consecutive429 = 0;
         var parsed = GeminiUsage.Parse(body);
         return new ProviderReading(Id, DisplayName, Fidelity.Official, ReadingStatus.LiveNow, parsed.Windows, parsed.Headline);
     }
@@ -131,7 +132,7 @@ public sealed class GeminiProvider : IUsageProvider, IDisposable
         if (status is 401 or 403) throw UsageError.NeedsSignIn();
         if (status == 429)
         {
-            var wait = RetryAfterHeader.From(response, now()) ?? Backoff.Floor;
+            var wait = Backoff.Exponential(consecutive429++, RetryAfterHeader.From(response, now()));
             archive?.SetBackoff(Id, now() + wait);
             throw UsageError.RateLimited(wait);
         }

@@ -34,6 +34,7 @@ public sealed class PanelWindow : Window
     private string? cardFor;
     private PanelModel model = PanelModel.Empty;
     private PanelMode mode = PanelMode.ExpandOnHover;
+    private PanelMode configured = PanelMode.ExpandOnHover;
     private DockEdge edge = DockEdge.Top;
     private bool hovering;
     private bool expanded;
@@ -87,7 +88,7 @@ public sealed class PanelWindow : Window
 
         hoverTimer.Interval = TimeSpan.FromMilliseconds(300);
         hoverTimer.Tick += (_, _) => PollHover();
-        pinTimer.Tick += (_, _) => { pinTimer.Stop(); pinned = false; Reconcile(); };
+        pinTimer.Tick += (_, _) => { pinTimer.Stop(); pinned = false; Settle(); };
         SourceInitialized += (_, _) => OnSourceReady();
     }
 
@@ -98,6 +99,17 @@ public sealed class PanelWindow : Window
 
     public bool IsExpanded => expanded;
     public Func<DateTimeOffset> Now { get; set; } = () => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// The reading direction of the tiles and the hover card. The window itself stays left to right: mirrored, a
+    /// side dock's capsule left its edge for the far side of the window, its open base faced the screen, and the
+    /// card landed between the capsule and the edge.
+    /// </summary>
+    public FlowDirection ContentDirection
+    {
+        get => capsuleContent.FlowDirection;
+        set => capsuleContent.FlowDirection = value;
+    }
 
     private bool Vertical => edge is DockEdge.Left or DockEdge.Right;
     private int Count => Math.Max(model.Tiles.Count, 0);
@@ -122,13 +134,27 @@ public sealed class PanelWindow : Window
         Reposition();
     }
 
+    /// <summary>The mode the user chose. A flash may lend a hidden dock hover behaviour for a while; this is what it returns to.</summary>
     public void SetMode(PanelMode next)
+    {
+        configured = next;
+        ApplyMode(next);
+    }
+
+    private void ApplyMode(PanelMode next)
     {
         mode = next;
         if (mode == PanelMode.Hidden) { hoverTimer.Stop(); Hide(); return; }
         if (!IsVisible) { Show(); Reposition(); }
         hoverTimer.Start();
         Reconcile();
+    }
+
+    /// <summary>Follow the cursor and the pin, and once neither holds a flashed dock open, hide it again if hidden is what the user chose.</summary>
+    private void Settle()
+    {
+        Reconcile();
+        if (configured == PanelMode.Hidden && mode != PanelMode.Hidden && !pinned && !hovering) ApplyMode(PanelMode.Hidden);
     }
 
     /// <summary>Move the dock to another edge: a row along the top or bottom, a column along the left or right, with the same tiles.</summary>
@@ -143,10 +169,10 @@ public sealed class PanelWindow : Window
         ShapeDock(new Size(capsule.Width, capsule.Height));
     }
 
-    /// <summary>A toast was clicked or a second instance launched: expand for a moment even without the cursor.</summary>
+    /// <summary>A toast was clicked or a second instance launched: expand for a moment even without the cursor, even when the dock is hidden.</summary>
     public void Flash(TimeSpan? duration = null)
     {
-        if (mode == PanelMode.Hidden) { SetMode(PanelMode.ExpandOnHover); }
+        if (mode == PanelMode.Hidden) ApplyMode(PanelMode.ExpandOnHover);
         pinned = true;
         pinTimer.Interval = duration ?? TimeSpan.FromSeconds(5);
         pinTimer.Stop();
@@ -256,19 +282,25 @@ public sealed class PanelWindow : Window
             hovering = inside;
             Log.Ui.Debug($"hover {(hovering ? "on" : "off")}");
             HoverChanged?.Invoke(hovering);
-            Reconcile();
+            Settle();
         }
         hoverTimer.Interval = TimeSpan.FromMilliseconds(expanded ? 120 : 300);
         if (expanded && hovering) UpdateCard(cursor);
         else if (card is not null) HideCard();
     }
 
-    /// <summary>Whether the cursor is over the element, with a strip of extra tolerance on the side facing the screen's interior.</summary>
+    /// <summary>
+    /// Whether the cursor is over the element, with a strip of extra tolerance on the side facing the screen's
+    /// interior. The corners are sorted because a right-to-left element's local origin is its top-right corner;
+    /// unsorted, nothing was ever inside an Arabic dock, so it never opened.
+    /// </summary>
     private bool Contains(FrameworkElement element, Native.POINT cursor, double extraInterior)
     {
         if (element.ActualWidth <= 0 || !element.IsVisible) return false;
-        var topLeft = element.PointToScreen(new Point(0, 0));
-        var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+        var origin = element.PointToScreen(new Point(0, 0));
+        var opposite = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+        var topLeft = new Point(Math.Min(origin.X, opposite.X), Math.Min(origin.Y, opposite.Y));
+        var bottomRight = new Point(Math.Max(origin.X, opposite.X), Math.Max(origin.Y, opposite.Y));
         var extra = extraInterior * (screen?.Scale ?? 1);
         switch (edge)
         {
@@ -345,17 +377,26 @@ public sealed class PanelWindow : Window
         if (hit != cardFor) ShowCard(hit);
     }
 
-    /// <summary>The detail card beside the hovered cell, on the interior side of the dock: below a top dock, above a bottom one, beside a column.</summary>
+    /// <summary>
+    /// The detail card beside the hovered cell, on the interior side of the dock: below a top dock, above a bottom
+    /// one, beside a column. Only a card for a newly hovered cell slides in; the card already showing is rebuilt in
+    /// place, or every reading, tick and session change would play its entrance again under the cursor.
+    /// </summary>
     private void ShowCard(string id)
     {
         var tile = model.Tiles.FirstOrDefault(t => t.Id == id);
         var cell = content.CellElements.FirstOrDefault(c => c.Id == id).Element;
         if (tile is null || cell is null) { HideCard(); return; }
+        var refresh = card is not null && cardFor == id;
         var fresh = HoverCard.Build(tile, Now());
+        fresh.FlowDirection = ContentDirection;
         fresh.IsHitTestVisible = true;
         fresh.Measure(new Size(Theme.CardWidth, double.PositiveInfinity));
         var cardHeight = fresh.DesiredSize.Height;
-        var cellOrigin = cell.TranslatePoint(new Point(0, 0), root);
+        // Right-to-left content sits in a left-to-right window, and there a cell's own origin is its right edge.
+        var near = cell.TranslatePoint(new Point(0, 0), root);
+        var far = cell.TranslatePoint(new Point(cell.ActualWidth, 0), root);
+        var cellOrigin = new Point(Math.Min(near.X, far.X), near.Y);
         var capsuleLeft = Canvas.GetLeft(capsule);
         var capsuleTop = Canvas.GetTop(capsule);
         double left, top;
@@ -375,7 +416,7 @@ public sealed class PanelWindow : Window
         Canvas.SetLeft(card, left);
         Canvas.SetTop(card, top);
         root.Children.Add(card);
-        if (!Theme.ReduceMotion)
+        if (!Theme.ReduceMotion && !refresh)
         {
             card.Opacity = 0;
             var (dx, dy) = edge switch { DockEdge.Top => (0.0, -6.0), DockEdge.Bottom => (0.0, 6.0), DockEdge.Left => (-6.0, 0.0), _ => (6.0, 0.0) };

@@ -144,7 +144,8 @@ final class SecurityTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let transport = Redirecting()
         let provider = ClaudeProvider(profile: ClaudeProfile(slug: nil, directory: directory), transport: transport, archive: ReadingArchive(directory: directory),
-                                      credentialReader: { _ in ClaudeCredential(accessToken: "sk-test", expiresAt: .distantFuture, plan: "pro") })
+                                      newestItem: { _ in nil },
+                                      credentialReader: { _, _ in ClaudeCredential(accessToken: "sk-test", expiresAt: .distantFuture, plan: "pro") })
         do {
             _ = try await provider.read()
             XCTFail("expected a bad response")
@@ -162,5 +163,163 @@ final class SecurityTests: XCTestCase {
         XCTAssertTrue(SessionTransport.isLoopback("::1"))
         XCTAssertFalse(SessionTransport.isLoopback("cloudcode-pa.googleapis.com"))
         XCTAssertFalse(SessionTransport.isLoopback("127.0.0.1.evil.example"))
+    }
+
+    /// gh keeps one block per host and, since 2.40, every signed-in account's token under users:. The first oauth_token
+    /// in the file used to win, which here is an Enterprise host's; only github.com's own, the active account's, may
+    /// reach api.github.com.
+    func testOnlyGitHubDotComsActiveTokenLeavesTheGhHostsFile() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tokendial-sec-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let hosts = directory.appendingPathComponent("hosts.yml")
+        try Data("""
+            ghe.corp.example:
+                oauth_token: ghe_enterprise
+                user: ada-corp
+            github.com:
+                users:
+                    ada:
+                        oauth_token: gho_personal
+                    ada-work:
+                        oauth_token: gho_work
+                git_protocol: https
+                user: ada-work
+                oauth_token: gho_work
+            """.utf8).write(to: hosts)
+        let credential = try XCTUnwrap(try CopilotCredential.fromGhHosts(hosts))
+        XCTAssertEqual("gho_work", credential.token)
+        XCTAssertEqual("ada-work", credential.user)
+
+        let keyring = directory.appendingPathComponent("keyring.yml")
+        try Data("""
+            ghe.corp.example:
+                oauth_token: ghe_enterprise
+            github.com:
+                user: ada
+            """.utf8).write(to: keyring)
+        XCTAssertNil(try CopilotCredential.fromGhHosts(keyring))
+    }
+
+    /// A bare "github.com" prefix also matched github.company.com, an Enterprise host.
+    func testACopilotPluginEntryIsGitHubDotComsOnlyWhenItsKeySaysSoWhole() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tokendial-sec-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let enterprise = directory.appendingPathComponent("enterprise.json")
+        try Data(#"{"github.company.com:Iv1.x":{"oauth_token":"ghe_token"}}"#.utf8).write(to: enterprise)
+        XCTAssertNil(try CopilotCredential.fromPluginFile(enterprise))
+        let both = directory.appendingPathComponent("apps.json")
+        try Data(#"{"github.company.com:Iv1.x":{"oauth_token":"ghe_token"},"github.com:Iv1.y":{"oauth_token":"gho_token","user":"ada"}}"#.utf8).write(to: both)
+        XCTAssertEqual("gho_token", try CopilotCredential.fromPluginFile(both)?.token)
+    }
+
+    /// Each editor signs in through its own OAuth app, so apps.json can hold a token per account with nothing in it
+    /// naming the active one. The lowest client id used to win, which showed one person the other's quota; an
+    /// ambiguous file answers for nobody and hosts.yml, which does name the active account, is asked instead.
+    func testTwoCopilotAccountsInOnePluginFileAnswerForNeither() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tokendial-sec-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let rivals = directory.appendingPathComponent("rivals.json")
+        try Data(#"{"github.com:Iv1.a":{"oauth_token":"gho_ada","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace","user":"grace"}}"#.utf8).write(to: rivals)
+        XCTAssertNil(try CopilotCredential.fromPluginFile(rivals))
+        let unnamed = directory.appendingPathComponent("unnamed.json")
+        try Data(#"{"github.com:Iv1.a":{"oauth_token":"gho_ada"},"github.com:Iv1.b":{"oauth_token":"gho_grace"}}"#.utf8).write(to: unnamed)
+        XCTAssertNil(try CopilotCredential.fromPluginFile(unnamed))
+        let sameAccount = directory.appendingPathComponent("same.json")
+        try Data(#"{"github.com:Iv1.a":{"oauth_token":"gho_editor","user":"ada"},"github.com:Iv1.b":{"oauth_token":"gho_cli","user":"ada"}}"#.utf8).write(to: sameAccount)
+        XCTAssertEqual("gho_editor", try CopilotCredential.fromPluginFile(sameAccount)?.token)
+
+        let ghHosts = directory.appendingPathComponent("hosts.yml")
+        try Data("""
+            github.com:
+                user: grace
+                oauth_token: gho_active
+            """.utf8).write(to: ghHosts)
+        let files = CopilotCredential.Files(apps: rivals, hosts: directory.appendingPathComponent("absent.json"), ghHosts: ghHosts)
+        let credential = try CopilotCredential.read(files)
+        XCTAssertEqual("gho_active", credential.token)
+        XCTAssertEqual("GitHub CLI", credential.source)
+    }
+
+    /// The issuer is matched whole: a lookalike host is a customer IdP like any other.
+    func testOnlyAuthXaiItselfIsATrustedGrokIssuer() {
+        let lookalike: JSONObject = ["https://auth.x.ai.evil.example::cli": ["key": "foreign"] as JSONObject]
+        XCTAssertNil(GrokCredential.pick(lookalike, now: Date(timeIntervalSince1970: 0)))
+        let genuine: JSONObject = ["https://auth.x.ai::cli": ["key": "xai-key"] as JSONObject]
+        XCTAssertEqual("xai-key", GrokCredential.pick(genuine, now: Date(timeIntervalSince1970: 0))?.key)
+    }
+
+    /// Windsurf and the Codeium extensions run the same language_server with the same flags; the first one found used to win.
+    func testTheBridgeIsAntigravitysOwnLanguageServerAndNeverAnotherProducts() {
+        let processes = [
+            "1 /Applications/Windsurf.app/Contents/Resources/app/extensions/windsurf/bin/language_server_macos_arm --csrf_token w",
+            "2 /Users/ada/.vscode/extensions/codeium.codeium-1.2.3/dist/language_server_macos_arm --csrf_token c",
+            "3 /opt/tools/language_server_macos_arm --csrf_token u",
+            "4 /Applications/Antigravity.app/Contents/Resources/app/extensions/antigravity/bin/language_server_macos_arm --csrf_token a"
+        ]
+        XCTAssertEqual(["4", "3"], Bridge.candidates(processes).map { String($0.prefix(1)) })
+    }
+
+    /// A profile's directory name is whatever the user called a folder; inside sh's double quotes it must stay text.
+    func testAProfileSignInKeepsItsSlugInsideTheQuotes() {
+        let home = URL(fileURLWithPath: "/tmp")
+        XCTAssertEqual(#"CLAUDE_CONFIG_DIR="$HOME/.claude-work" claude"#, ClaudeProfile(slug: "work", directory: home).signInCommand)
+        XCTAssertEqual(#"CLAUDE_CONFIG_DIR="$HOME/.claude-it's \$(x) \`y\` \"z\" \\" claude"#, ClaudeProfile(slug: #"it's $(x) `y` "z" \"#, directory: home).signInCommand)
+    }
+}
+
+/// What a provider says when it cannot get a usable answer right now. None of these is a sign-out: a sign-out erases
+/// the last reading and sends a signed-in user to sign in again.
+final class CredentialReadTests: XCTestCase {
+    private var directory: URL!
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory.appendingPathComponent("tokendial-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    private func kind(_ error: Error) -> UsageErrorKind? { (error as? UsageError)?.kind }
+
+    /// The owner rewrites its file in place when it refreshes the token, so a read can land on an empty one.
+    func testAHalfWrittenCredentialIsTransientNotASignOut() throws {
+        let empty = directory.appendingPathComponent("credential.json")
+        try Data().write(to: empty)
+        let none = directory.appendingPathComponent("none.json")
+        XCTAssertThrowsError(try CodexCredential.read(file: empty, now: Date())) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+        XCTAssertThrowsError(try GrokCredential.read(file: empty, now: Date())) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+        XCTAssertThrowsError(try GeminiCredential.read(file: empty, settings: none, accounts: none)) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+        XCTAssertThrowsError(try ClaudeCredential.parse(Data())) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+
+        XCTAssertThrowsError(try CodexCredential.read(file: none, now: Date())) { XCTAssertEqual(.needsSignIn, self.kind($0)) }
+        XCTAssertThrowsError(try ClaudeCredential.parse(Data("{}".utf8))) { XCTAssertEqual(.needsSignIn, self.kind($0)) }
+    }
+
+    /// GitHub answers an exhausted rate limit with 403 as often as 429; only the headers tell it from a missing seat.
+    func testACopilot403IsARateLimitOnlyWhenGitHubSaysSo() throws {
+        let url = try XCTUnwrap(URL(string: "https://api.github.com/copilot_internal/user"))
+        func forbidden(_ headers: [String: String]) throws -> HTTPURLResponse {
+            try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 403, httpVersion: nil, headerFields: headers))
+        }
+        let exhausted = try forbidden(["x-ratelimit-remaining": "0"])
+        let throttled = try forbidden(["Retry-After": "30"])
+        let seatless = try forbidden(["x-ratelimit-remaining": "4999"])
+        XCTAssertTrue(CopilotUsage.rateLimited(exhausted))
+        XCTAssertTrue(CopilotUsage.rateLimited(throttled))
+        XCTAssertFalse(CopilotUsage.rateLimited(seatless))
+    }
+
+    /// Double("nan") and Double("inf") parse, and Int(...) of either traps: one such field took the whole app down.
+    func testANumberThatIsNotFiniteIsNoNumber() throws {
+        let object: JSONObject = ["nan": "nan", "inf": "inf", "ok": "12.5"]
+        XCTAssertNil(object.num("nan"))
+        XCTAssertNil(object.num("inf"))
+        XCTAssertEqual(12.5, object.num("ok"))
+        XCTAssertNoThrow(try GlmUsage.parse(Data(#"{"code":"nan","success":false}"#.utf8)))
     }
 }

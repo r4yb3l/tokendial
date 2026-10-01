@@ -45,6 +45,8 @@ public sealed class App : Application
         this.instance = instance;
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
         DispatcherUnhandledException += (_, e) => { Log.Ui.Error($"unhandled: {e.Exception}"); e.Handled = true; };
+        // A throw on a timer or pool thread never reaches the dispatcher and ends the process; this line is all it leaves.
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => Log.Ui.Error($"unhandled: {e.ExceptionObject}");
     }
 
     public static string Version => typeof(App).Assembly.GetName().Version is Version v ? $"{v.Major}.{v.Minor}.{v.Build}" : "dev";
@@ -58,7 +60,10 @@ public sealed class App : Application
         Sqlite.SweepCache();
 
         var providers = ProviderCatalog.Providers(archive);
-        store = new UsageStore(providers, archive, settings.Disconnected, launcher: new AppLauncher());
+        // Until the welcome is answered every provider counts as disconnected. Treated as connected, a refresh from
+        // the tray, a wake from sleep or a switch in Settings read every tool's credential before the user opted in.
+        var disconnected = settings.FirstRunDone ? settings.Disconnected : providers.Select(p => p.Id);
+        store = new UsageStore(providers, archive, disconnected, launcher: new AppLauncher());
         installer = new InstallAssistant(providers, Dispatcher);
         installer.SignedIn += OnToolSignedIn;
         hub = new ActivityHub(ProviderCatalog.Monitors());
@@ -109,7 +114,7 @@ public sealed class App : Application
         };
 
         panel.Show();
-        panel.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        panel.ContentDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         panel.SetMode(settings.Panel);
         RefreshModel();
 
@@ -117,7 +122,7 @@ public sealed class App : Application
         clockTimer.Start();
 
         if (settings.FirstRunDone) { AdoptNewProviders(providers); Begin(); }
-        else FirstRun();
+        else FirstRun(providers);
     }
 
     /// <summary>A provider this install has never seen (an update added it) is connected only when its tool is already signed in.</summary>
@@ -143,9 +148,10 @@ public sealed class App : Application
         updater.Start();
     }
 
-    private void FirstRun()
+    /// <summary>The store holds every provider disconnected until the choice is made, so which tools are signed in is asked of the providers themselves.</summary>
+    private void FirstRun(IReadOnlyList<IUsageProvider> providers)
     {
-        var all = store.Summaries;
+        var all = providers.Select(p => new ProviderSummary(p.Id, p.DisplayName, p.Account(), p.SignIn, Connected: true)).ToList();
         var detected = all.Where(s => s.Account is not null).ToList();
         var absent = all.Where(s => s.Account is null).ToList();
         WelcomeWindow.Show(detected, absent, installer, chosen =>
@@ -158,7 +164,7 @@ public sealed class App : Application
             Save();
             store.Disconnected = settings.Disconnected;
             Begin();
-        }, ShowSettings);
+        }, ShowSettings, store.OpenSource);
     }
 
     /// <summary>The assistant saw the tool sign in: the provider joins the dial without another click. During the welcome it is kept for the choice being made there.</summary>
@@ -262,7 +268,7 @@ public sealed class App : Application
     private void ApplyLanguage(string? code)
     {
         Strings.Use(code);
-        panel.FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        panel.ContentDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         panel.Relocalize();
         tray.Relocalize();
         settingsWindow?.Relocalize();

@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
@@ -69,6 +70,33 @@ public sealed class SettingsWindow : Window
     /// <summary>The alert settings moved, so the running engine needs the new shape of them.</summary>
     public event Action<Core.Alerts.AlertConfig>? AlertsChanged;
 
+    /// <summary>The dock's mode was chosen: expand on hover, always expanded, or hidden.</summary>
+    public event Action<PanelMode>? PanelModeChanged;
+
+    /// <summary>The catalogue now speaks another language, and every surface built from it has to follow.</summary>
+    public event Action? LanguageChanged;
+
+    /// <summary>
+    /// Builds every section again in the current language, under the same window, with the flow turned
+    /// for a right-to-left one.
+    /// </summary>
+    public void Relocalize()
+    {
+        Title = Strings.T("settings.title");
+        FlowDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        Content = Build();
+    }
+
+    /// <summary>
+    /// A control this window keeps across rebuilds, taken out of the tree it was in first: a control has one
+    /// parent, and adding it to the new tree while the old one still holds it throws.
+    /// </summary>
+    private static T Detach<T>(T control) where T : Control
+    {
+        if (control.Parent is Avalonia.Controls.Panel parent) parent.Children.Remove(control);
+        return control;
+    }
+
     private Control Build()
     {
         var columns = new Grid
@@ -98,7 +126,7 @@ public sealed class SettingsWindow : Window
     private Control Providers()
     {
         RefreshProviders();
-        return Chrome.Section(Strings.T("settings.providers"), Strings.T("settings.providersSub"), providerList);
+        return Chrome.Section(Strings.T("settings.providers"), Strings.T("settings.providersSub"), Detach(providerList));
     }
 
     private void RefreshProviders()
@@ -214,7 +242,7 @@ public sealed class SettingsWindow : Window
         position.Margin = new Thickness(0, 18, 0, 8);
 
         var body = new StackPanel { Children = { modes, position, edges } };
-        body.Children.Add(displayChooser);
+        body.Children.Add(Detach(displayChooser));
         RefreshDisplays();
         return Chrome.Section(Strings.T("settings.panel"), Strings.T("settings.panelSub"), body);
     }
@@ -231,9 +259,10 @@ public sealed class SettingsWindow : Window
 
     private void SetPanel(PanelMode mode)
     {
+        if (settings.Panel == mode) return;
         settings.Panel = mode;
         save();
-        Changed?.Invoke();
+        PanelModeChanged?.Invoke(mode);
     }
 
     // ---- alerts -------------------------------------------------------------------------------------
@@ -327,7 +356,7 @@ public sealed class SettingsWindow : Window
         {
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 14, 0),
-            Children = { Chrome.Label(Strings.T("settings.addToMenu")), menuHint }
+            Children = { Chrome.Label(Strings.T("settings.addToMenu")), Detach(menuHint) }
         };
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 6, 0, 6) };
         grid.Children.Add(text);
@@ -355,20 +384,21 @@ public sealed class SettingsWindow : Window
                 settings.Language = code;
                 Strings.Use(code);
                 save();
-                Changed?.Invoke();
+                // Posted, because rebuilding the window replaces the chip that is still raising this.
+                Dispatcher.UIThread.Post(() => LanguageChanged?.Invoke());
             });
             chip.Margin = new Thickness(0, 0, 8, 8);
             languages.Children.Add(chip);
         }
 
+        // No "Check for updates" switch, although Windows and macOS have one: nothing in the Linux app checks
+        // for updates yet, and a switch that controls nothing tells the user something untrue.
         var body = new StackPanel
         {
             Children =
             {
                 Chrome.SwitchRow(Strings.T("settings.launchAtLogin"), Strings.T("settings.launchAtLoginHint"), settings.LaunchAtLogin,
                     on => { settings.LaunchAtLogin = on; Install.Desktop.SetAutostart(on); save(); }),
-                Chrome.SwitchRow(Strings.T("settings.checkForUpdates"), Strings.T("settings.checkForUpdatesHint"),
-                    settings.CheckForUpdates, on => { settings.CheckForUpdates = on; save(); }),
                 MenuEntry(),
                 Chrome.Rule(new Thickness(0, 10, 0, 10)),
                 Chrome.SmallTitle(Strings.T("settings.language")),
@@ -386,7 +416,7 @@ public sealed class SettingsWindow : Window
         links.Children.Add(Chrome.Button(Strings.T("settings.website"), () => Open("https://tokendial.vercel.app")));
         links.Children.Add(Chrome.Button(Strings.T("settings.source"), () => Open("https://github.com/r4yb3l/tokendial")));
         links.Children.Add(Chrome.Button(Strings.T("settings.dataFolder"), () => Open(Core.Paths.Data)));
-        links.Children.Add(Chrome.Button(Strings.T("settings.uninstall"), () => _ = Uninstall.Ask(this, quit)));
+        links.Children.Add(Chrome.Button(Strings.T("settings.uninstall"), () => _ = Uninstall.Ask(this, ForgetAutostart, quit)));
 
         var about = new StackPanel
         {
@@ -404,6 +434,16 @@ public sealed class SettingsWindow : Window
         grid.Children.Add(links);
 
         return new Border { Child = grid, Background = Chrome.TitleBarFill, BorderBrush = Chrome.Divider, BorderThickness = new Thickness(0, 1, 0, 0) };
+    }
+
+    /// <summary>
+    /// Uninstalling removes the autostart entry, so settings kept with the user's data must stop asking for
+    /// it: the next copy to start, a downloaded one included, would otherwise write it straight back.
+    /// </summary>
+    private void ForgetAutostart()
+    {
+        settings.LaunchAtLogin = false;
+        save();
     }
 
     /// <summary>xdg-open is the freedesktop way to ask the desktop what opens a URL or a folder.</summary>

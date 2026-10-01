@@ -64,22 +64,32 @@ public final class InstallWatcher {
     }
 
     /// One look at the world. Public so a test can drive it without a clock.
+    ///
+    /// The checks run outside the lock: whether a tool is signed in is a credential read, which on macOS can
+    /// sit behind a keychain prompt for as long as the user leaves it there, and the settings window asks
+    /// `running` from the main thread.
     public func tick() {
+        guard let seen = lock.withLock({ outcome == nil ? state : nil }) else { return }
+        let isSignedIn = signedIn()
+        let isInstalled = !isSignedIn && seen == .notInstalled && installed()
+        let terminalDone = !isSignedIn && terminalFinished()
+        let at = now()
+
         var advance: InstallState?
         var finish: InstallOutcome?
-        lock.lock()
-        if outcome == nil {
-            if signedIn() {
+        lock.withLock {
+            guard outcome == nil else { return }
+            if isSignedIn {
                 if state != .signedIn { state = .signedIn; advance = state }
                 finish = .success
-            } else if state == .notInstalled, installed() {
+            } else if state == .notInstalled, isInstalled {
                 state = .installed
                 advance = state
             }
-            if finish == nil, terminalFinished(), !(waitsAfterTerminal && state == .installed) {
+            if finish == nil, terminalDone, !(waitsAfterTerminal && state == .installed) {
                 finish = .terminalClosed
             }
-            if finish == nil, now().timeIntervalSince(started) >= timeout {
+            if finish == nil, at.timeIntervalSince(started) >= timeout {
                 finish = .timedOut
             }
             if let finish {
@@ -88,7 +98,6 @@ public final class InstallWatcher {
                 timer = nil
             }
         }
-        lock.unlock()
         if let advance { advanced?(advance) }
         if let finish { completed?(finish) }
     }

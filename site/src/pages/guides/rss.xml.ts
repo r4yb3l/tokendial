@@ -9,6 +9,7 @@ export async function GET(context: APIContext) {
     title: `Tokendial — ${t('blog.title')}`,
     description: t('blog.lead'),
     site: context.site ?? 'https://tokendial.app',
+    trailingSlash: false,
     items: (await posts('en')).map((post) => ({
       title: post.data.title,
       description: post.data.description,

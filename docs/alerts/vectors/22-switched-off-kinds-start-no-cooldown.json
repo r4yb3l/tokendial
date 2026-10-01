@@ -1,0 +1,13 @@
+{
+  "name": "22-switched-off-kinds-start-no-cooldown",
+  "config": { "off": ["resetSoon"] },
+  "steps": [
+    { "t": 0, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 85, "resetsAt": 3600 } },
+    { "t": 3000, "event": { "kind": "tick" } },
+    { "t": 3010, "event": { "kind": "usage", "provider": "claude", "window": "session", "usedPct": 96, "resetsAt": 3600 } }
+  ],
+  "expected": [
+    { "t": 0, "kind": "threshold", "provider": "claude", "window": "session", "pct": 80 },
+    { "t": 3010, "kind": "threshold", "provider": "claude", "window": "session", "pct": 95 }
+  ]
+}

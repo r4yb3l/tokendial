@@ -29,13 +29,22 @@ function Sync-Mac {
     if (Test-Path $bundle) { Remove-Item $bundle -Force }
     Push-Location $root
     try {
-        & tar -czf $bundle --exclude "macos/build" --exclude "macos/*.xcodeproj" --exclude ".build" --exclude "DerivedData" docs macos VERSION
+        # Windows' own tar, named absolutely, for the reason linux.ps1 gives.
+        $tar = Join-Path $env:SystemRoot "System32\tar.exe"
+        if (-not (Test-Path $tar)) { throw "no tar at $tar" }
+        & $tar -czf $bundle --exclude "macos/build" --exclude "macos/*.xcodeproj" --exclude ".build" --exclude "DerivedData" docs macos VERSION
         if ($LASTEXITCODE -ne 0) { throw "tar failed" }
     } finally { Pop-Location }
     Invoke-Mac "mkdir -p $MacDir"
     & scp -q -o BatchMode=yes -i $MacKey $bundle "$MacUser@${MacHost}:$MacDir/sync.tgz"
     if ($LASTEXITCODE -ne 0) { throw "scp failed" }
-    Invoke-Mac "cd $MacDir && rm -rf docs macos.new && mkdir macos.new && tar -xzf sync.tgz && rm sync.tgz && rmdir macos.new 2>/dev/null; true"
+    # Extracting over macos/ kept every file deleted or renamed here, and SwiftPM and xcodegen compile
+    # whatever the folder holds, so a test could pass or fail on code that no longer exists. The tree is
+    # mirrored with --delete instead; the build caches are excluded so a sync does not force a cold build.
+    Invoke-Mac ("cd $MacDir && rm -rf sync.new && mkdir sync.new && tar -xzf sync.tgz -C sync.new && rm sync.tgz" +
+        " && rm -rf docs && mv sync.new/docs docs && mv -f sync.new/VERSION VERSION && mkdir -p macos" +
+        " && rsync -a --delete --exclude build --exclude '*.xcodeproj' --exclude .build --exclude DerivedData sync.new/macos/ macos/" +
+        " && rm -rf sync.new")
     Write-Host "synced docs/ and macos/ to $MacUser@${MacHost}:$MacDir"
 }
 

@@ -72,6 +72,21 @@ public class I18nTests : IDisposable
         Assert.Equal("one", Strings.PluralCategory("fr", 0));
     }
 
+    /// <summary>English, Spanish and German give "copy.requests" a zero form, and CLDR files 0 under "other" in all three, so it never showed.</summary>
+    [Fact]
+    public void AZeroFormIsUsedForZeroWhereTheCatalogueHasOne()
+    {
+        Assert.Equal("other", Strings.PluralCategory("en", 0));
+        Assert.Equal("no requests today", Strings.Plural("copy.requests", 0));
+        Assert.Equal("~1 request today", Strings.Plural("copy.requests", 1));
+        Strings.Use("es");
+        Assert.Equal("sin peticiones hoy", Strings.Plural("copy.requests", 0));
+        Strings.Use("de");
+        Assert.Equal("heute keine Anfragen", Strings.Plural("copy.requests", 0));
+        Strings.Use("fr");
+        Assert.Equal("~0 requête aujourd'hui", Strings.Plural("copy.requests", 0));
+    }
+
     [Fact]
     public void UnknownLanguagesFallBackToEnglish()
     {
