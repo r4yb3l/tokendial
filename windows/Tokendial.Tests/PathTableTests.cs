@@ -2,6 +2,8 @@ using System.Text.Json;
 using Tokendial.Core;
 using Tokendial.Core.Providers.Copilot;
 using Tokendial.Core.Providers.Cursor;
+using Tokendial.Core.Providers.Glm;
+using Tokendial.Core.Providers.OpenCode;
 
 namespace Tokendial.Tests;
 
@@ -63,6 +65,19 @@ public class PathTableTests
         Assert.Equal(@"D:\Local", roots.Data);
     }
 
+    /// <summary>
+    /// A redirected profile keeps %APPDATA% on a share. Refusing a UNC path fell back to a local AppData that
+    /// holds nothing, so every credential under it read as signed out.
+    /// </summary>
+    [Fact]
+    public void AredirectedAppDataOnAshareIsWhereTheCredentialsAre()
+    {
+        var roots = RootsFor(Desktop.Windows, ("APPDATA", @"\\fileserver\profiles\ada\AppData\Roaming\"));
+        Assert.Equal(@"\\fileserver\profiles\ada\AppData\Roaming", roots.Config);
+        Assert.Equal(@"\\fileserver\profiles\ada\AppData\Roaming\Cursor\User\globalStorage\state.vscdb", CursorCredential.StorePath(roots));
+        Assert.Equal(@"C:\Users\ada\AppData\Roaming", RootsFor(Desktop.Windows, ("APPDATA", @"AppData\Roaming")).Config);
+    }
+
     // ---- the providers that do not simply live under the home ----------------------------------------
 
     [Theory]
@@ -81,6 +96,24 @@ public class PathTableTests
     {
         var files = CopilotCredential.Files.For(Desktop.Linux, RootsFor(Desktop.Linux), key => key == "GH_CONFIG_DIR" ? "/srv/gh" : null);
         Assert.Equal("/srv/gh/hosts.yml", files.GhHosts);
+    }
+
+    /// <summary>
+    /// OpenCode keeps its data in the XDG data directory on every platform, macOS included - not Application
+    /// Support - and GLM borrows a key from the same file, so both have to move together.
+    /// </summary>
+    [Theory]
+    [InlineData(Desktop.Windows, null, @"C:\Users\ada\.local\share\opencode\auth.json")]
+    [InlineData(Desktop.MacOS, null, "/home/ada/.local/share/opencode/auth.json")]
+    [InlineData(Desktop.Linux, null, "/home/ada/.local/share/opencode/auth.json")]
+    [InlineData(Desktop.Windows, @"D:\data", @"D:\data\opencode\auth.json")]
+    [InlineData(Desktop.MacOS, "/srv/data", "/srv/data/opencode/auth.json")]
+    [InlineData(Desktop.Linux, "/srv/data", "/srv/data/opencode/auth.json")]
+    public void XdgDataHomeMovesOpenCodeAndTheGlmKeyItHolds(Desktop desktop, string? xdg, string expected)
+    {
+        var roots = xdg is null ? RootsFor(desktop) : RootsFor(desktop, ("XDG_DATA_HOME", xdg));
+        Assert.Equal(expected, OpenCodeCredential.FileFor(roots));
+        Assert.Equal(expected, GlmCredential.Paths.For(roots).OpenCodeAuth);
     }
 
     [Theory]

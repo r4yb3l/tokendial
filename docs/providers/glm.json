@@ -7,12 +7,12 @@
     "macos": {
       "kind": "file",
       "path": "~/.claude/settings.json | ~/.zcode/v2/config.json | ~/.zcode/v2/credentials.json | ~/.local/share/opencode/auth.json",
-      "notes": "Four sources in this fixed order, re-read on every fetch. 1) Claude Code: $.env.ANTHROPIC_AUTH_TOKEN or $.env.ANTHROPIC_API_KEY, accepted only when $.env.ANTHROPIC_BASE_URL's host is api.z.ai, *.z.ai, open.bigmodel.cn or *.bigmodel.cn; otherwise it is an Anthropic key. 2) ZCode plan key: $.provider[*] whose key contains 'coding-plan', not enabled:false, with options.apiKey; console from options.baseURL's host. 3) ZCode OAuth: $['oauth:zai:access_token'], skipped when it starts with 'enc:v1:'. 4) OpenCode: ids zai-coding-plan, zai, z-ai, z.ai, zhipu, zhipuai; string or object with apiKey|api_key|token|key|accessToken|auth_token; zhipu* → open.bigmodel.cn. Only the console host survives: https://api.z.ai or https://open.bigmodel.cn."
+      "notes": "Four sources in this fixed order, re-read on every fetch. 1) Claude Code: $.env.ANTHROPIC_AUTH_TOKEN or $.env.ANTHROPIC_API_KEY, accepted only when $.env.ANTHROPIC_BASE_URL's host is api.z.ai, *.z.ai, open.bigmodel.cn or *.bigmodel.cn; otherwise it is an Anthropic key. 2) ZCode plan key: $.provider[*] whose key contains 'coding-plan', not enabled:false, with options.apiKey; console from options.baseURL's host. 3) ZCode OAuth: $['oauth:zai:access_token'], skipped when it starts with 'enc:v1:'. 4) OpenCode: ids zai-coding-plan, zai, z-ai, z.ai, zhipu, zhipuai; string or object with apiKey|api_key|token|key|accessToken|auth_token; zhipu* → open.bigmodel.cn; the same file the opencode provider reads, so $XDG_DATA_HOME moves it. Only the console host survives: https://api.z.ai or https://open.bigmodel.cn."
     },
     "windows": {
       "kind": "file",
       "path": "same four files under the user profile",
-      "notes": "Same rules."
+      "notes": "Same rules, $XDG_DATA_HOME for the OpenCode one included."
     },
     "linux": {
       "kind": "file",

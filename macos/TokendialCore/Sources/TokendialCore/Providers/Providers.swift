@@ -415,7 +415,8 @@ public final class GrokProvider: UsageProvider {
 /// Only the opencode-go entry; every other entry is another vendor's key.
 public enum OpenCodeCredential {
     private static let keys = ["key", "apiKey", "api_key", "token", "accessToken"]
-    public static var defaultFile: URL { Paths.under(".local", "share", "opencode", "auth.json") }
+    /// OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves it.
+    public static var defaultFile: URL { Paths.xdg("XDG_DATA_HOME", orUnder: ".local", "share").appendingPathComponent("opencode").appendingPathComponent("auth.json") }
 
     public static func read(file: URL = defaultFile) -> String? {
         guard let data = try? Data(contentsOf: file), let root = JSON.object(data) else { return nil }
@@ -486,7 +487,7 @@ public struct GlmCredential: Equatable {
         public var zcodeCredentials: URL
         public var opencodeAuth: URL
         public static var `default`: Files {
-            Files(claudeSettings: Paths.under(".claude", "settings.json"), zcodeConfig: Paths.under(".zcode", "v2", "config.json"), zcodeCredentials: Paths.under(".zcode", "v2", "credentials.json"), opencodeAuth: Paths.under(".local", "share", "opencode", "auth.json"))
+            Files(claudeSettings: Paths.under(".claude", "settings.json"), zcodeConfig: Paths.under(".zcode", "v2", "config.json"), zcodeCredentials: Paths.under(".zcode", "v2", "credentials.json"), opencodeAuth: OpenCodeCredential.defaultFile)
         }
     }
 

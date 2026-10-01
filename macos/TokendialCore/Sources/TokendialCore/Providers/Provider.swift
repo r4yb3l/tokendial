@@ -107,6 +107,13 @@ public struct Parsed: Equatable, Sendable {
 public enum Paths {
     public static var home: URL { FileManager.default.homeDirectoryForCurrentUser }
     public static func under(_ parts: String...) -> URL { parts.reduce(home) { $0.appendingPathComponent($1) } }
+
+    /// An XDG directory: the variable when it names an absolute path, as the specification requires, else the
+    /// conventional one under the home. gh, the Copilot plugins and OpenCode honour these on macOS too.
+    public static func xdg(_ variable: String, orUnder parts: String...) -> URL {
+        if let value = ProcessInfo.processInfo.environment[variable], value.hasPrefix("/") { return URL(fileURLWithPath: value) }
+        return parts.reduce(home) { $0.appendingPathComponent($1) }
+    }
     public static var appSupport: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Tokendial")
     }
