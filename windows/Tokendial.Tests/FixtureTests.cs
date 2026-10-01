@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Tokendial.Core.I18n;
 using Tokendial.Core.Model;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
@@ -91,10 +92,17 @@ public class FixtureTests
     }
 }
 
+/// <summary>
+/// The expectations are English, and dates are formatted through Strings.Culture, which starts as the
+/// machine's own; without pinning the language these failed on any machine not set to English.
+/// </summary>
 [Collection("language")]
-public class CopyTests
+public class CopyTests : IDisposable
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.FromUnixTimeSeconds(1_700_000_000);
+
+    public CopyTests() => Strings.Use("en");
+    public void Dispose() => Strings.Use("en");
 
     [Fact]
     public void ResetCopyFollowsTheRules()
