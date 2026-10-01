@@ -214,6 +214,14 @@ final class SecurityTests: XCTestCase {
         XCTAssertEqual("gho_token", try CopilotCredential.fromPluginFile(both)?.token)
     }
 
+    /// The issuer is matched whole: a lookalike host is a customer IdP like any other.
+    func testOnlyAuthXaiItselfIsATrustedGrokIssuer() {
+        let lookalike: JSONObject = ["https://auth.x.ai.evil.example::cli": ["key": "foreign"] as JSONObject]
+        XCTAssertNil(GrokCredential.pick(lookalike, now: Date(timeIntervalSince1970: 0)))
+        let genuine: JSONObject = ["https://auth.x.ai::cli": ["key": "xai-key"] as JSONObject]
+        XCTAssertEqual("xai-key", GrokCredential.pick(genuine, now: Date(timeIntervalSince1970: 0))?.key)
+    }
+
     /// Windsurf and the Codeium extensions run the same language_server with the same flags; the first one found used to win.
     func testTheBridgeIsAntigravitysOwnLanguageServerAndNeverAnotherProducts() {
         let processes = [
@@ -275,5 +283,14 @@ final class CredentialReadTests: XCTestCase {
         XCTAssertTrue(CopilotUsage.rateLimited(exhausted))
         XCTAssertTrue(CopilotUsage.rateLimited(throttled))
         XCTAssertFalse(CopilotUsage.rateLimited(seatless))
+    }
+
+    /// Double("nan") and Double("inf") parse, and Int(...) of either traps: one such field took the whole app down.
+    func testANumberThatIsNotFiniteIsNoNumber() throws {
+        let object: JSONObject = ["nan": "nan", "inf": "inf", "ok": "12.5"]
+        XCTAssertNil(object.num("nan"))
+        XCTAssertNil(object.num("inf"))
+        XCTAssertEqual(12.5, object.num("ok"))
+        XCTAssertNoThrow(try GlmUsage.parse(Data(#"{"code":"nan","success":false}"#.utf8)))
     }
 }

@@ -1,8 +1,10 @@
 using System.Net;
+using System.Text.Json;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Antigravity;
 using Tokendial.Core.Providers.Claude;
 using Tokendial.Core.Providers.Copilot;
+using Tokendial.Core.Providers.Grok;
 using Tokendial.Core.Store;
 
 namespace Tokendial.Tests;
@@ -129,6 +131,16 @@ public class SecurityTests : IDisposable
         Assert.Null(CopilotCredential.FromPluginFile(Scratch("enterprise.json", """{"github.company.com:Iv1.x":{"oauth_token":"ghe_token","user":"ada-corp"}}""")));
         var both = Scratch("apps.json", """{"github.company.com:Iv1.x":{"oauth_token":"ghe_token"},"github.com:Iv1.y":{"oauth_token":"gho_token","user":"ada"}}""");
         Assert.Equal("gho_token", CopilotCredential.FromPluginFile(both)?.Token);
+    }
+
+    /// <summary>The issuer is matched whole: a lookalike host is a customer IdP like any other, and its token never reaches the public endpoint.</summary>
+    [Fact]
+    public void OnlyAuthXaiItselfIsATrustedGrokIssuer()
+    {
+        using var lookalike = JsonDocument.Parse("""{"https://auth.x.ai.evil.example::cli":{"key":"foreign","expires_at":"2099-01-01T00:00:00Z"}}""");
+        Assert.Null(GrokCredential.Pick(lookalike.RootElement, DateTimeOffset.UnixEpoch));
+        using var genuine = JsonDocument.Parse("""{"https://auth.x.ai::cli":{"key":"xai-key","expires_at":"2099-01-01T00:00:00Z"}}""");
+        Assert.Equal("xai-key", GrokCredential.Pick(genuine.RootElement, DateTimeOffset.UnixEpoch)?.Key);
     }
 
     /// <summary>

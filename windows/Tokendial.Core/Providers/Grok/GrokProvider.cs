@@ -26,7 +26,7 @@ public sealed record GrokCredential(string Key, DateTimeOffset ExpiresAt, string
     {
         if (root.ValueKind != JsonValueKind.Object) return null;
         var trusted = root.EnumerateObject()
-            .Where(p => p.Value.ValueKind == JsonValueKind.Object && (p.Name.StartsWith(Issuer, StringComparison.Ordinal) || p.Value.Str("oidc_issuer") == Issuer))
+            .Where(p => p.Value.ValueKind == JsonValueKind.Object && (IssuedByXai(p.Name) || p.Value.Str("oidc_issuer") == Issuer))
             .Select(p => p.Value).ToList();
         if (trusted.Count == 0) return null;
         var entry = trusted.FirstOrDefault(e => e.Date("expires_at") is not DateTimeOffset at || at > now);
@@ -34,6 +34,9 @@ public sealed record GrokCredential(string Key, DateTimeOffset ExpiresAt, string
         var key = entry.Str("key");
         return key is null ? null : new GrokCredential(key, entry.Date("expires_at") ?? now.AddDays(30), entry.Str("email"));
     }
+
+    /// <summary>Entries are keyed "{issuer}::{client id}"; a bare prefix also trusted https://auth.x.ai.evil.example.</summary>
+    private static bool IssuedByXai(string key) => key == Issuer || key.StartsWith(Issuer + "::", StringComparison.Ordinal);
 }
 
 /// <summary>GET /v1/billing?format=credits: one credits window, labelled after the product.</summary>

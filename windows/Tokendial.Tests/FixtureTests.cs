@@ -235,6 +235,39 @@ public class CredentialReadTests : IDisposable
     }
 }
 
+/// <summary>Json's lenient readers answer null for what they cannot use; they never throw.</summary>
+public class JsonTests
+{
+    [Theory]
+    [InlineData("""{"t":1e300}""")]
+    [InlineData("""{"t":-1e20}""")]
+    [InlineData("""{"t":"Infinity"}""")]
+    [InlineData("""{"t":"NaN"}""")]
+    public void AnEpochOutsideTheCalendarIsNullNotAnException(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        Assert.Null(document.RootElement.EpochMillis("t"));
+        Assert.Null(document.RootElement.EpochSeconds("t"));
+    }
+
+    [Theory]
+    [InlineData("""{"n":"NaN"}""")]
+    [InlineData("""{"n":"-Infinity"}""")]
+    public void AnumberThatIsNotFiniteIsNoNumber(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        Assert.Null(document.RootElement.Num("n"));
+    }
+
+    [Fact]
+    public void AnEpochInsideTheCalendarStillReads()
+    {
+        using var document = JsonDocument.Parse("""{"ms":1788940800000,"s":"1788940800"}""");
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1788940800000), document.RootElement.EpochMillis("ms"));
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1788940800), document.RootElement.EpochSeconds("s"));
+    }
+}
+
 /// <summary>
 /// The expectations are English, and dates are formatted through Strings.Culture, which starts as the
 /// machine's own; without pinning the language these failed on any machine not set to English.

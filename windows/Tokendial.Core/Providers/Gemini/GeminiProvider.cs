@@ -75,6 +75,7 @@ public sealed class GeminiProvider : IUsageProvider, IDisposable
     private readonly Func<DateTimeOffset> now;
     private readonly ReadingArchive? archive;
     private string? plan;
+    private int consecutive429;
 
     public GeminiProvider(HttpMessageHandler? handler = null, Func<GeminiCredential>? read = null, Func<DateTimeOffset>? now = null, ReadingArchive? archive = null)
     {
@@ -121,6 +122,7 @@ public sealed class GeminiProvider : IUsageProvider, IDisposable
             Log.Usage.Debug($"gemini: quota {status}");
             Throw(status, response);
         }
+        consecutive429 = 0;
         var parsed = GeminiUsage.Parse(body);
         return new ProviderReading(Id, DisplayName, Fidelity.Official, ReadingStatus.LiveNow, parsed.Windows, parsed.Headline);
     }
@@ -130,7 +132,7 @@ public sealed class GeminiProvider : IUsageProvider, IDisposable
         if (status is 401 or 403) throw UsageError.NeedsSignIn();
         if (status == 429)
         {
-            var wait = RetryAfterHeader.From(response, now()) ?? Backoff.Floor;
+            var wait = Backoff.Exponential(consecutive429++, RetryAfterHeader.From(response, now()));
             archive?.SetBackoff(Id, now() + wait);
             throw UsageError.RateLimited(wait);
         }

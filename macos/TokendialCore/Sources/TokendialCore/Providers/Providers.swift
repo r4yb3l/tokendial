@@ -374,10 +374,11 @@ public struct GrokCredential: Equatable {
         return picked
     }
 
+    /// Entries are keyed "{issuer}::{client id}"; a bare prefix also trusted https://auth.x.ai.evil.example.
     public static func pick(_ root: JSONObject, now: Date) -> GrokCredential? {
         let trusted = root.keys.sorted().compactMap { key -> JSONObject? in
             guard let entry = root[key] as? JSONObject else { return nil }
-            return key.hasPrefix(issuer) || entry.str("oidc_issuer") == issuer ? entry : nil
+            return key == issuer || key.hasPrefix(issuer + "::") || entry.str("oidc_issuer") == issuer ? entry : nil
         }
         guard !trusted.isEmpty else { return nil }
         let entry = trusted.first { $0.date("expires_at").map { $0 > now } ?? true } ?? trusted[0]

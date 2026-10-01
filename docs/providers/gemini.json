@@ -36,7 +36,7 @@
       "headers": { "Authorization": "Bearer {accessToken}", "Content-Type": "application/json" },
       "body": "{\"metadata\":{\"ideType\":\"IDE_UNSPECIFIED\",\"platform\":\"PLATFORM_UNSPECIFIED\",\"pluginType\":\"GEMINI\"}}",
       "timeoutSeconds": 15,
-      "notes": "Gate and project lookup. 401/403 → needsAuth; 429 → rateLimited(Retry-After); other non-200 → badResponse. The account is eligible when currentTier is present or allowedTiers is non-empty; otherwise nothingMetered with ineligibleTiers[0].reasonMessage (since 2026-06-18 personal, AI Pro and AI Ultra accounts get UNSUPPORTED_CLIENT and are pointed to Antigravity). Project: GOOGLE_CLOUD_PROJECT, then GOOGLE_CLOUD_PROJECT_ID, then $.cloudaicompanionProject (a string, or an object with id or projectId); none → nothingMetered. paidTier.name ?? currentTier.name is the plan."
+      "notes": "Gate and project lookup. 401/403 → needsAuth; 429 → rateLimited, backing off exponentially, which Retry-After can only lengthen; other non-200 → badResponse. The account is eligible when currentTier is present or allowedTiers is non-empty; otherwise nothingMetered with ineligibleTiers[0].reasonMessage (since 2026-06-18 personal, AI Pro and AI Ultra accounts get UNSUPPORTED_CLIENT and are pointed to Antigravity). Project: GOOGLE_CLOUD_PROJECT, then GOOGLE_CLOUD_PROJECT_ID, then $.cloudaicompanionProject (a string, or an object with id or projectId); none → nothingMetered. paidTier.name ?? currentTier.name is the plan."
     },
     {
       "name": "retrieveUserQuota",

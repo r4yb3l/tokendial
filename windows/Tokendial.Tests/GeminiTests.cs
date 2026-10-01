@@ -1,6 +1,9 @@
+using System.Net;
+using System.Net.Http.Headers;
 using Tokendial.Core.Providers;
 using Tokendial.Core.Providers.Gemini;
 using Tokendial.Core.Providers.Google;
+using Tokendial.Core.Store;
 
 namespace Tokendial.Tests;
 
@@ -57,6 +60,51 @@ public class GeminiTests : IDisposable
         var creds = Write("oauth_creds.json", content);
         var error = Assert.Throws<UsageError>(() => GeminiCredential.Read(creds, Path.Combine(root, "settings.json"), Path.Combine(root, "accounts.json")));
         Assert.Equal(UsageErrorKind.CredentialExpired, error.Kind);
+    }
+
+    private sealed class Answering(HttpStatusCode status, Func<HttpContent>? content = null) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(status) { RequestMessage = request, Content = content?.Invoke() ?? new StringContent("{}") });
+    }
+
+    /// <summary>The spec says exponential, as for every other provider; a flat minute retried a throttled account every minute.</summary>
+    [Fact]
+    public async Task ConsecutiveRateLimitsBackOffExponentially()
+    {
+        var clock = DateTimeOffset.FromUnixTimeSeconds(1_790_000_000);
+        var archive = new ReadingArchive(root, () => clock);
+        using var provider = new GeminiProvider(new Answering(HttpStatusCode.TooManyRequests), () => new GeminiCredential("ya29.abc", clock.AddHours(1), null), () => clock, archive);
+        var first = await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync());
+        clock += first.RetryAfter + TimeSpan.FromSeconds(1);
+        var second = await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync());
+        Assert.Equal(UsageErrorKind.RateLimited, second.Kind);
+        Assert.Equal(first.RetryAfter * 2, second.RetryAfter);
+    }
+
+    private sealed class Tracked(byte[] bytes) : ByteArrayContent(bytes)
+    {
+        public bool Disposed { get; private set; }
+
+        protected override void Dispose(bool disposing)
+        {
+            Disposed = true;
+            base.Dispose(disposing);
+        }
+    }
+
+    /// <summary>
+    /// The caller owns the response only once it is handed one. A body that arrives whole but cannot be decoded
+    /// throws after HttpClient has let go of the response, and nothing else would dispose it.
+    /// </summary>
+    [Fact]
+    public async Task AbodyThatFailsToDecodeDoesNotLeakItsResponse()
+    {
+        var body = new Tracked("{}"u8.ToArray());
+        body.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json; charset=no-such-charset");
+        using var client = Http.Client(new Answering(HttpStatusCode.OK, () => body));
+        await Assert.ThrowsAnyAsync<Exception>(() => CodeAssist.PostAsync(client, CodeAssist.Gate, "ya29.abc", "{}", CancellationToken.None));
+        Assert.True(body.Disposed);
     }
 
     [Fact]

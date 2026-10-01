@@ -18,14 +18,22 @@ public static class CodeAssist
     public static readonly Uri Quota = new("https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota");
     public static readonly Uri QuotaSummary = new("https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary");
 
-    /// <summary>POST a JSON body with a bearer token; the caller maps the status.</summary>
+    /// <summary>POST a JSON body with a bearer token; the caller maps the status and owns the response it is handed.</summary>
     public static async Task<(int Status, string Body, HttpResponseMessage Response)> PostAsync(HttpClient client, Uri endpoint, string accessToken, string body, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        var text = response.IsSuccessStatusCode ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "";
-        return ((int)response.StatusCode, text, response);
+        try
+        {
+            var text = response.IsSuccessStatusCode ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : "";
+            return ((int)response.StatusCode, text, response);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
     /// <summary>The gate body: the project may be a string or an object, the tier a name; eligible means some tier is current or allowed.</summary>

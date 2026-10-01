@@ -69,12 +69,15 @@ public extension Dictionary where Key == String, Value == Any {
         return s
     }
 
+    /// A finite number, or a string holding one: Double("nan") and Double("inf") parse, and trap later in Int(...).
     func num(_ name: String) -> Double? {
+        let parsed: Double?
         switch self[name] {
-        case let n as NSNumber where CFGetTypeID(n) != CFBooleanGetTypeID(): return n.doubleValue
-        case let s as String: return Double(s)
-        default: return nil
+        case let n as NSNumber where CFGetTypeID(n) != CFBooleanGetTypeID(): parsed = n.doubleValue
+        case let s as String: parsed = Double(s)
+        default: parsed = nil
         }
+        return parsed.flatMap { $0.isFinite ? $0 : nil }
     }
 
     func bool(_ name: String) -> Bool? {

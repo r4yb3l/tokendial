@@ -73,6 +73,7 @@ public final class GeminiProvider: UsageProvider {
     private let archive: ReadingArchive?
     private let now: () -> Date
     private var plan: String?
+    private var consecutive429 = 0
 
     public init(transport: Transport = SessionTransport(),
                 readCredential: @escaping () throws -> GeminiCredential = { try GeminiCredential.read() },
@@ -113,6 +114,7 @@ public final class GeminiProvider: UsageProvider {
         let (body, response) = try await CodeAssist.post(transport, CodeAssist.quota, token: credential.accessToken, body: quotaBody)
         Log.usage.debug("gemini: quota \(response.statusCode)")
         try check(response)
+        consecutive429 = 0
         let parsed = try GeminiUsage.parse(body)
         return ProviderReading(providerId: id, displayName: displayName, fidelity: .official, status: .live,
                                windows: parsed.windows, headlineId: parsed.headline)
@@ -123,7 +125,8 @@ public final class GeminiProvider: UsageProvider {
         case 200: return
         case 401, 403: throw UsageError.needsSignIn()
         case 429:
-            let wait = RetryAfterHeader.from(response, now: now()) ?? Backoff.floor
+            let wait = Backoff.exponential(consecutive429, hint: RetryAfterHeader.from(response, now: now()))
+            consecutive429 += 1
             archive?.setBackoff(id, until: now().addingTimeInterval(wait))
             throw UsageError.rateLimited(wait)
         default: throw UsageError.badResponse(response.statusCode)
