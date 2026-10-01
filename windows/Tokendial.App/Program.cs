@@ -32,11 +32,12 @@ public static class Program
     /// <summary>
     /// Update.exe runs this in a fresh process once it has stopped the app, before it deletes the install directory.
     /// The login Run value and the toast registrations live outside that directory, so without this they outlived
-    /// the app.
+    /// the app; the data directory goes too when the user asked for it from Settings.
     /// </summary>
     private static void OnUninstalling()
     {
         LaunchAtLogin.Set(false);
+        Windows.Uninstall.RemoveDataIfAsked();
         ToastNotificationManagerCompat.Uninstall();
     }
 }

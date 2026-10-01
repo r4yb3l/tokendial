@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using Tokendial.Core;
+using Tokendial.Core.Diagnostics;
 using Tokendial.Core.I18n;
 
 namespace Tokendial.App.Windows;
@@ -14,12 +15,17 @@ namespace Tokendial.App.Windows;
 /// Installed apps: it kills the app, clears the shortcuts, the registry entry and the install directory.
 /// What it cannot do is ask the one question only this app knows to ask - whether the user wants to keep
 /// their settings and history, which now live outside the installer's directory and survive on purpose.
+/// The answer is left as a marker in the data directory and carried out by the uninstall hook, which Update.exe
+/// runs in a fresh process after it has stopped this one. Deleting from here could not work: this process
+/// holds its own log open, and its store and alert timers could write their files back before the kill.
 /// A portable copy has no Update.exe beside it, and says so rather than pretending to uninstall itself.
 /// </remarks>
 public static class Uninstall
 {
     private static string Updater =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tokendial", "Update.exe");
+
+    private static string RemovalMarker => Paths.In("remove-on-uninstall");
 
     public static bool Available => File.Exists(Updater);
 
@@ -36,17 +42,42 @@ public static class Uninstall
             MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Cancel) return;
 
-        if (answer == MessageBoxResult.Yes)
+        Remember(removeData: answer == MessageBoxResult.Yes);
+        try
         {
-            try
-            {
-                if (Directory.Exists(Paths.Data)) Directory.Delete(Paths.Data, recursive: true);
-            }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
+            Process.Start(new ProcessStartInfo(Updater, "--uninstall") { UseShellExecute = true });
         }
-
-        Process.Start(new ProcessStartInfo(Updater, "--uninstall") { UseShellExecute = true });
+        catch (Exception error)
+        {
+            Log.Ui.Error($"uninstall: {error.Message}");
+            Remember(removeData: false);
+            return;
+        }
         Application.Current.Shutdown();
+    }
+
+    /// <summary>The second half of <see cref="Ask"/>, from the uninstall hook: by then nothing holds a file in the data directory open or can write one back.</summary>
+    public static void RemoveDataIfAsked()
+    {
+        if (!File.Exists(RemovalMarker)) return;
+        try { Directory.Delete(Paths.Data, recursive: true); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    /// <summary>Only the latest answer counts, so a No after a Yes whose uninstall never ran keeps the data.</summary>
+    private static void Remember(bool removeData)
+    {
+        try
+        {
+            if (removeData)
+            {
+                Directory.CreateDirectory(Paths.Data);
+                File.WriteAllText(RemovalMarker, "");
+            }
+            else File.Delete(RemovalMarker);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 }
