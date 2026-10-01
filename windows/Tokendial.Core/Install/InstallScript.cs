@@ -166,8 +166,21 @@ public static class InstallScript
         return path;
     }
 
-    /// <summary>A PowerShell single-quoted literal: only the quote itself needs doubling.</summary>
-    public static string Quote(string text) => "'" + text.Replace("'", "''") + "'";
+    /// <summary>
+    /// A PowerShell single-quoted literal: only the quote itself needs doubling. PowerShell counts the
+    /// typographic single quotes as that quote too, so a name or hint with a curly apostrophe in it would
+    /// otherwise end the literal early and run the rest of the line as code.
+    /// </summary>
+    public static string Quote(string text)
+    {
+        var quoted = new StringBuilder(text.Length + 2).Append('\'');
+        foreach (var c in text)
+        {
+            if (c is '\'' or '\u2018' or '\u2019' or '\u201A' or '\u201B') quoted.Append(c);
+            quoted.Append(c);
+        }
+        return quoted.Append('\'').ToString();
+    }
 
     private static void Run(StringBuilder script, string command)
     {
