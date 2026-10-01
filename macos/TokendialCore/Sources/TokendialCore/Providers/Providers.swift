@@ -45,8 +45,14 @@ public struct ClaudeCredential: Equatable {
 
     public func expired(_ now: Date) -> Bool { expiresAt <= now }
 
+    /// Data that is not yet whole JSON is the owner caught mid-rewrite: transient, not a sign-out.
     public static func parse(_ data: Data) throws -> ClaudeCredential {
-        guard let root = JSON.object(data), let oauth = root.obj("claudeAiOauth"), let token = oauth.str("accessToken") else { throw UsageError.needsSignIn() }
+        guard let root = JSON.object(data) else { throw UsageError.credentialExpired() }
+        return try parse(root)
+    }
+
+    private static func parse(_ root: JSONObject) throws -> ClaudeCredential {
+        guard let oauth = root.obj("claudeAiOauth"), let token = oauth.str("accessToken") else { throw UsageError.needsSignIn() }
         return ClaudeCredential(accessToken: token, expiresAt: oauth.epochMillis("expiresAt") ?? .distantPast, plan: oauth.str("subscriptionType"))
     }
 
@@ -70,8 +76,7 @@ public struct ClaudeCredential: Equatable {
         if let item, let data = try Keychain.genericPassword(service: keychainService(profile), account: item.account) {
             return try parse(data)
         }
-        if let data = try? Data(contentsOf: profile.credentialsFile) { return try parse(data) }
-        throw UsageError.needsSignIn()
+        return try parse(JSON.credentialFile(profile.credentialsFile))
     }
 }
 
@@ -270,7 +275,8 @@ public struct CodexCredential: Equatable {
     public static var defaultFile: URL { Paths.under(".codex", "auth.json") }
 
     public static func read(file: URL = defaultFile, now: Date) throws -> CodexCredential {
-        guard let data = try? Data(contentsOf: file), let root = JSON.object(data), let tokens = root.obj("tokens"),
+        let root = try JSON.credentialFile(file)
+        guard let tokens = root.obj("tokens"),
               let access = tokens.str("access_token")?.trimmingCharacters(in: .whitespaces), let account = tokens.str("account_id")?.trimmingCharacters(in: .whitespaces) else { throw UsageError.needsSignIn() }
         let credential = CodexCredential(accessToken: access, accountId: account, idToken: tokens.str("id_token"))
         if credential.expired(now) { throw UsageError.credentialExpired() }
@@ -355,7 +361,7 @@ public struct GrokCredential: Equatable {
     public func expired(_ now: Date) -> Bool { expiresAt <= now }
 
     public static func read(file: URL = defaultFile, now: Date) throws -> GrokCredential {
-        guard let data = try? Data(contentsOf: file), let root = JSON.object(data) else { throw UsageError.needsSignIn() }
+        let root = try JSON.credentialFile(file)
         guard let picked = pick(root, now: now) else { throw UsageError.needsSignIn() }
         return picked
     }

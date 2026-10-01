@@ -45,11 +45,7 @@ public sealed record ClaudeCredential(string AccessToken, DateTimeOffset Expires
 
     public static ClaudeCredential Read(string file)
     {
-        if (!File.Exists(file)) throw UsageError.NeedsSignIn();
-        string text;
-        try { text = File.ReadAllText(file); }
-        catch (IOException) { throw UsageError.CredentialExpired(); }
-        using var document = Json.Parse(text) ?? throw UsageError.NeedsSignIn();
+        using var document = CredentialFile.Document(file);
         var oauth = document.RootElement.Obj("claudeAiOauth") ?? throw UsageError.NeedsSignIn();
         var token = oauth.Str("accessToken") ?? throw UsageError.NeedsSignIn();
         var expires = oauth.EpochMillis("expiresAt") ?? DateTimeOffset.MinValue;

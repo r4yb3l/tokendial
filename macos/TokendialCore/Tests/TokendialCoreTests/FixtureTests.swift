@@ -165,3 +165,34 @@ final class SecurityTests: XCTestCase {
         XCTAssertFalse(SessionTransport.isLoopback("127.0.0.1.evil.example"))
     }
 }
+
+/// What a provider says when it cannot get a usable answer right now. None of these is a sign-out: a sign-out erases
+/// the last reading and sends a signed-in user to sign in again.
+final class CredentialReadTests: XCTestCase {
+    private var directory: URL!
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory.appendingPathComponent("tokendial-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    private func kind(_ error: Error) -> UsageErrorKind? { (error as? UsageError)?.kind }
+
+    /// The owner rewrites its file in place when it refreshes the token, so a read can land on an empty one.
+    func testAHalfWrittenCredentialIsTransientNotASignOut() throws {
+        let empty = directory.appendingPathComponent("credential.json")
+        try Data().write(to: empty)
+        let none = directory.appendingPathComponent("none.json")
+        XCTAssertThrowsError(try CodexCredential.read(file: empty, now: Date())) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+        XCTAssertThrowsError(try GrokCredential.read(file: empty, now: Date())) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+        XCTAssertThrowsError(try GeminiCredential.read(file: empty, settings: none, accounts: none)) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+        XCTAssertThrowsError(try ClaudeCredential.parse(Data())) { XCTAssertEqual(.credentialExpired, self.kind($0)) }
+
+        XCTAssertThrowsError(try CodexCredential.read(file: none, now: Date())) { XCTAssertEqual(.needsSignIn, self.kind($0)) }
+        XCTAssertThrowsError(try ClaudeCredential.parse(Data("{}".utf8))) { XCTAssertEqual(.needsSignIn, self.kind($0)) }
+    }
+}

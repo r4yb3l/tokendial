@@ -93,6 +93,50 @@ public class FixtureTests
 }
 
 /// <summary>
+/// What a provider says when it cannot get a usable answer right now. None of these is a sign-out: a sign-out
+/// erases the last reading and sends a signed-in user to sign in again.
+/// </summary>
+public class CredentialReadTests : IDisposable
+{
+    private readonly string root = Path.Combine(Path.GetTempPath(), "tokendial-tests", Guid.NewGuid().ToString("N"));
+
+    public CredentialReadTests() => Directory.CreateDirectory(root);
+
+    public void Dispose() => Directory.Delete(root, recursive: true);
+
+    private string Write(string name, string content)
+    {
+        var path = Path.Combine(root, name);
+        File.WriteAllText(path, content);
+        return path;
+    }
+
+    /// <summary>The owner rewrites its file in place when it refreshes the token, so a read can land on an empty or half-written one.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("""{"claudeAiOauth":{"accessTo""")]
+    public void AhalfWrittenCredentialIsTransientNotASignOut(string content)
+    {
+        var file = Write("credential.json", content);
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => ClaudeCredential.Read(file)).Kind);
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => CodexCredential.Read(file)).Kind);
+        Assert.Equal(UsageErrorKind.CredentialExpired, Assert.Throws<UsageError>(() => GrokCredential.Read(file, DateTimeOffset.UnixEpoch)).Kind);
+    }
+
+    [Fact]
+    public void AnAbsentOrSignedOutCredentialIsStillASignIn()
+    {
+        var missing = Path.Combine(root, "missing.json");
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => ClaudeCredential.Read(missing)).Kind);
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => CodexCredential.Read(missing)).Kind);
+        var signedOut = Write("signed-out.json", "{}");
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => ClaudeCredential.Read(signedOut)).Kind);
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => CodexCredential.Read(signedOut)).Kind);
+        Assert.Equal(UsageErrorKind.NeedsSignIn, Assert.Throws<UsageError>(() => GrokCredential.Read(signedOut, DateTimeOffset.UnixEpoch)).Kind);
+    }
+}
+
+/// <summary>
 /// The expectations are English, and dates are formatted through Strings.Culture, which starts as the
 /// machine's own; without pinning the language these failed on any machine not set to English.
 /// </summary>

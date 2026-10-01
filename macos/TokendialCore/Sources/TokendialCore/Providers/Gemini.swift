@@ -24,8 +24,8 @@ public struct GeminiCredential: Equatable, Sendable {
         if let auth = authType(settings ?? defaultSettings), auth != "oauth-personal" {
             throw UsageError.nothingMetered("Gemini CLI is signed in with \(auth); no quota is published for it")
         }
-        guard let data = try? Data(contentsOf: file), let root = JSON.object(data),
-              let token = root.str("access_token") else { throw UsageError.needsSignIn() }
+        let root = try JSON.credentialFile(file)
+        guard let token = root.str("access_token") else { throw UsageError.needsSignIn() }
         return GeminiCredential(accessToken: token,
                                 expiresAt: root.epochMillis("expiry_date") ?? .distantPast,
                                 email: activeAccount(accounts ?? defaultAccounts))

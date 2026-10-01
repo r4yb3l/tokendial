@@ -17,7 +17,7 @@
       "path": "~/.claude/.credentials.json",
       "fields": { "accessToken": "$.claudeAiOauth.accessToken", "subscriptionType": "$.claudeAiOauth.subscriptionType" },
       "expiry": "$.claudeAiOauth.expiresAt as epochMillis",
-      "notes": "Profiles: every ~/.claude-<slug> directory containing sessions/, projects/, settings.json, history.jsonl or .claude.json is an account of its own with its own .credentials.json."
+      "notes": "Profiles: every ~/.claude-<slug> directory containing sessions/, projects/, settings.json, history.jsonl or .claude.json is an account of its own with its own .credentials.json. A file that is there but unreadable, empty or not yet whole JSON is Claude Code mid-rewrite: credentialExpired, not needsAuth."
     },
     "linux": {
       "kind": "file",

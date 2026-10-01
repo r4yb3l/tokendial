@@ -15,8 +15,7 @@ public sealed record CodexCredential(string AccessToken, string AccountId, strin
     public static CodexCredential Read(string? file = null, DateTimeOffset? now = null)
     {
         file ??= DefaultFile;
-        if (!File.Exists(file)) throw UsageError.NeedsSignIn();
-        using var document = Json.Parse(File.ReadAllText(file)) ?? throw UsageError.NeedsSignIn();
+        using var document = CredentialFile.Document(file);
         var tokens = document.RootElement.Obj("tokens") ?? throw UsageError.NeedsSignIn();
         var credential = new CodexCredential(
             tokens.Str("access_token")?.Trim() ?? throw UsageError.NeedsSignIn(),

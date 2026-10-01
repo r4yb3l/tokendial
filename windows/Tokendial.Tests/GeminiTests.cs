@@ -48,6 +48,17 @@ public class GeminiTests : IDisposable
         Assert.Equal(UsageErrorKind.NeedsSignIn, error.Kind);
     }
 
+    /// <summary>The CLI rewrites the file when it refreshes the token; landing on it half-written is not a sign-out.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData("""{"access_token":"ya29.ab""")]
+    public void AhalfWrittenCredentialIsTransient(string content)
+    {
+        var creds = Write("oauth_creds.json", content);
+        var error = Assert.Throws<UsageError>(() => GeminiCredential.Read(creds, Path.Combine(root, "settings.json"), Path.Combine(root, "accounts.json")));
+        Assert.Equal(UsageErrorKind.CredentialExpired, error.Kind);
+    }
+
     [Fact]
     public void GateYieldsProjectAndTierForAnEligibleAccount()
     {

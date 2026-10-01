@@ -18,8 +18,7 @@ public sealed record GrokCredential(string Key, DateTimeOffset ExpiresAt, string
     public static GrokCredential Read(string? file, DateTimeOffset now)
     {
         file ??= DefaultFile;
-        if (!File.Exists(file)) throw UsageError.NeedsSignIn();
-        using var document = Json.Parse(File.ReadAllText(file)) ?? throw UsageError.NeedsSignIn();
+        using var document = CredentialFile.Document(file);
         return Pick(document.RootElement, now) ?? throw UsageError.NeedsSignIn();
     }
 

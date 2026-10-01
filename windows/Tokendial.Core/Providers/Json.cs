@@ -47,6 +47,30 @@ public static class Json
         e.Num(name) is double s ? DateTimeOffset.FromUnixTimeSeconds((long)s) : null;
 }
 
+/// <summary>A credential file another tool owns, and rewrites whenever it refreshes the token.</summary>
+public static class CredentialFile
+{
+    /// <summary>
+    /// The file's text, or null when there is no file. One that is there but cannot be read now - locked
+    /// mid-rewrite, or a read we were refused - throws CredentialExpired: it is transient, and it is not a
+    /// sign-out, which would erase the last reading and send a signed-in user to sign in again.
+    /// </summary>
+    public static string? Text(string path)
+    {
+        if (!File.Exists(path)) return null;
+        try { return File.ReadAllText(path); }
+        catch (Exception e) when (e is FileNotFoundException or DirectoryNotFoundException) { return null; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw UsageError.CredentialExpired(); }
+    }
+
+    /// <summary>
+    /// The file as JSON. No file is a sign-in; a file that is empty or not yet whole JSON is the owner caught
+    /// mid-rewrite, and transient for the same reason as an unreadable one.
+    /// </summary>
+    public static JsonDocument Document(string path) =>
+        Json.Parse(Text(path) ?? throw UsageError.NeedsSignIn()) ?? throw UsageError.CredentialExpired();
+}
+
 /// <summary>Shared HTTP plumbing: one client per provider, standard status mapping.</summary>
 public static class Http
 {

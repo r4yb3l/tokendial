@@ -8,7 +8,7 @@
       "path": "~/.gemini/oauth_creds.json",
       "fields": { "accessToken": "$.access_token" },
       "expiry": "$.expiry_date as epochMillis",
-      "notes": "The directory follows GEMINI_CLI_HOME when set. ~/.gemini/settings.json → security.auth.selectedType must be oauth-personal: an API key or Vertex sign-in publishes no quota (nothingMetered). The active email comes from ~/.gemini/google_accounts.json ($.active). The access token lives about an hour and is never refreshed here; the CLI rewrites the file when it runs. With GEMINI_FORCE_ENCRYPTED_FILE_STORAGE the CLI keeps the token in the keychain instead and this provider reports needsAuth."
+      "notes": "The directory follows GEMINI_CLI_HOME when set. ~/.gemini/settings.json → security.auth.selectedType must be oauth-personal: an API key or Vertex sign-in publishes no quota (nothingMetered). The active email comes from ~/.gemini/google_accounts.json ($.active). The access token lives about an hour and is never refreshed here; the CLI rewrites the file when it runs. With GEMINI_FORCE_ENCRYPTED_FILE_STORAGE the CLI keeps the token in the keychain instead and this provider reports needsAuth. A file that is there but empty or not yet whole JSON is the CLI mid-rewrite: credentialExpired, not needsAuth."
     },
     "windows": {
       "kind": "file",

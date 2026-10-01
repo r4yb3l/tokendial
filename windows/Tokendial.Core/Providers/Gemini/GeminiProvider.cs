@@ -23,8 +23,7 @@ public sealed record GeminiCredential(string AccessToken, DateTimeOffset Expires
         accountsFile ??= DefaultAccounts;
         var authType = AuthType(settingsFile);
         if (authType is not null && authType != "oauth-personal") throw UsageError.NothingMetered("Gemini CLI is signed in with " + authType + "; no quota is published for it");
-        if (!File.Exists(file)) throw UsageError.NeedsSignIn();
-        using var document = Json.Parse(File.ReadAllText(file)) ?? throw UsageError.NeedsSignIn();
+        using var document = CredentialFile.Document(file);
         var root = document.RootElement;
         var token = root.Str("access_token") ?? throw UsageError.NeedsSignIn();
         var expires = root.EpochMillis("expiry_date") ?? DateTimeOffset.MinValue;
