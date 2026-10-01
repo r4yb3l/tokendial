@@ -21,11 +21,10 @@
       "kind": "file",
       "path": "~/.gemini/oauth_creds.json",
       "fields": {
-        "accessToken": "$.access_token",
-        "refreshToken": "$.refresh_token"
+        "accessToken": "$.access_token"
       },
       "expiry": "$.expiry_date as epochMillis",
-      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged: GEMINI_CLI_HOME, the oauth-personal rule and google_accounts.json included. The refresh token beside the access token is never read; the CLI refreshes."
     }
   },
   "endpoints": [

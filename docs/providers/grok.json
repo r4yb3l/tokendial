@@ -21,9 +21,11 @@
       "kind": "file",
       "path": "~/.grok/auth.json",
       "fields": {
-        "accessToken": "$.access_token"
+        "key": "$[entry].key",
+        "email": "$[entry].email"
       },
-      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
+      "expiry": "$[entry].expires_at as iso8601; absent counts as 30 days from now",
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged, the auth.x.ai trust rule included."
     }
   },
   "endpoints": [

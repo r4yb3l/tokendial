@@ -22,10 +22,10 @@
       "fields": {
         "accessToken": "$.tokens.access_token",
         "accountId": "$.tokens.account_id",
-        "planType": "$.tokens.id_token.chatgpt_plan_type"
+        "idToken": "$.tokens.id_token"
       },
-      "expiry": "$.tokens.id_token.exp as epochSeconds",
-      "notes": "Home-relative on every platform, so the macOS block applies unchanged."
+      "expiry": "exp claim of the access token JWT, epochSeconds; a local hint only",
+      "notes": "Home-relative on every platform, so the macOS block applies unchanged: the id_token is a JWT whose claims carry email and https://api.openai.com/auth.chatgpt_plan_type for the account row."
     }
   },
   "endpoints": [
