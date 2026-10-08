@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Tokendial.Core.Diagnostics;
@@ -19,12 +20,21 @@ public static class Program
 
     public static int Main(string[] args)
     {
+        if (args is ["dying-watcher"]) return DyingWatcher.Run().GetAwaiter().GetResult();
+        if (args is ["tray", var trayFor] && int.TryParse(trayFor, out var traySeconds) && traySeconds is >= 1 and <= 3600)
+        {
+            Seconds = traySeconds;
+            Log.Sink = (level, area, message) => Console.WriteLine($"{DateTimeOffset.UtcNow:O} [{level}] {area}: {message}");
+            return Tokendial.Linux.Program.Builder<TrayProbeApp>().StartWithClassicDesktopLifetime([], ShutdownMode.OnExplicitShutdown);
+        }
         if (args.Length is < 1 or > 4 || !Enum.TryParse<DockEdge>(args[0], true, out var edge)
             || !Enum.IsDefined(edge)
             || (args.Length > 2 && args[2] is not ("compact" or "expanded"))
             || (args.Length > 3 && (!int.TryParse(args[3], out _) || int.Parse(args[3]) is < 1 or > 3600)))
         {
             Console.Error.WriteLine("Usage: LinuxDisplayProbe <Top|Bottom|Left|Right> [display-name|auto] [compact|expanded] [seconds:1-3600]");
+            Console.Error.WriteLine("       LinuxDisplayProbe tray <seconds:1-3600>");
+            Console.Error.WriteLine("       LinuxDisplayProbe dying-watcher");
             return 2;
         }
         var rejection = Tokendial.Linux.SessionPolicy.Rejection(

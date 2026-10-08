@@ -291,3 +291,16 @@ where it was. That looked like the bug the chooser was meant to prevent. `xev -r
 never looked. `--output default --primary` does emit one; followed by that, fallback and return both worked.
 Rule: before believing a simulation showed a bug, check it delivered the same signal as the real event.
 `xev` is the one-line check for anything X11 is supposed to announce.
+
+## A crash that leaves no log line is still in the core (2026-10-08)
+Tokendial on Linux vanished a dozen times over three weeks and `tokendial.log` never said why: the log
+captured only `Log.Sink` calls, and neither a native segfault nor an exception from a library's `async void`
+goes through one. `dotnet-dump analyze` could not read the cores either, because the AppImage's runtime is
+self-contained and does not match the installed one. Two other routes worked. `strings -e l` on the core
+recovered the managed exception and its stack, UTF-16 as .NET keeps it: Avalonia 12.1.2's tray failed when
+`xapp-sn-watcher` died. And gdb on the extracted AppImage, with the crash's `/tmp/.mount_*` path symlinked
+to `squashfs-root`, resolved the segfault to Skia's PNG encoder.
+Rule: for a Linux crash, start at `coredumpctl list`, not the app log. Then make the next one leave a line:
+`FileLog` now writes unhandled exceptions. A dependency bug you can only see in a core also gets a replay
+that a plain run can trigger, like `tray-watcher-check.sh`, so a later version bump cannot bring it back
+unnoticed.

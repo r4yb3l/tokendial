@@ -28,9 +28,14 @@ public sealed class TrayIcon : IDisposable
     private readonly NativeMenuItem testItem = new();
     private readonly NativeMenuItem settingsItem = new();
     private readonly NativeMenuItem quitItem = new();
+    private readonly Func<TrayGlyph, WindowIcon> render;
+    private TrayGlyph? shown;
 
-    public TrayIcon(Application app)
+    public TrayIcon(Application app) : this(app, Render) { }
+
+    internal TrayIcon(Application app, Func<TrayGlyph, WindowIcon> render)
     {
+        this.render = render;
         var menu = new NativeMenu();
         menu.Items.Add(showItem);
         menu.Items.Add(refreshItem);
@@ -72,28 +77,36 @@ public sealed class TrayIcon : IDisposable
     public void Update(double? worstFraction, string tooltip)
     {
         icon.ToolTipText = tooltip.Length > 127 ? tooltip[..127] : tooltip;
-        icon.Icon = Render(worstFraction);
+        var glyph = TrayGlyph.Of(worstFraction);
+        if (glyph == shown) return;
+        icon.Icon = render(glyph);
+        shown = glyph;
     }
 
-    /// <summary>The same 240° arc the dock draws, at the size a panel wants it.</summary>
-    private static WindowIcon Render(double? fraction)
+    /// <summary>
+    /// The same 240° arc the dock draws, at the size a panel wants it. Encoded by <see cref="TrayPng"/>, not by
+    /// <c>RenderTargetBitmap.Save</c>: Skia's PNG encoder is what crashed the process.
+    /// </summary>
+    private static unsafe WindowIcon Render(TrayGlyph glyph)
     {
         const int size = 32;
-        var target = new RenderTargetBitmap(new PixelSize(size, size), new Vector(96, 96));
+        using var target = new RenderTargetBitmap(new PixelSize(size, size), new Vector(96, 96));
         using (var ctx = target.CreateDrawingContext())
         {
             var centre = new Point(size / 2.0, size / 2.0);
             const double radius = (size - 8) / 2.0;
             ctx.DrawGeometry(null, new Pen(Theme.TextDisabled, 4.5, lineCap: PenLineCap.Round),
                 Dial.Arc(centre, radius, Dial.StartAngle, Dial.Sweep));
-            if (fraction is double f && f > 0.01)
-                ctx.DrawGeometry(null, new Pen(Theme.Of(Bands.Of(f)), 4.5, lineCap: PenLineCap.Round),
-                    Dial.Arc(centre, radius, Dial.StartAngle, Dial.Sweep * Math.Clamp(f, 0, 1)));
+            if (glyph.Band is Band band)
+                ctx.DrawGeometry(null, new Pen(Theme.Of(band), 4.5, lineCap: PenLineCap.Round),
+                    Dial.Arc(centre, radius, Dial.StartAngle, Dial.Sweep * glyph.Percent / 100.0));
         }
-        using var stream = new MemoryStream();
-        target.Save(stream);
-        stream.Position = 0;
-        return new WindowIcon(stream);
+        var pixels = new byte[size * size * 4];
+        fixed (byte* address = pixels)
+            target.CopyPixels(new LockedFramebuffer((nint)address, new PixelSize(size, size), size * 4,
+                new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul, null));
+        using var png = new MemoryStream(TrayPng.Encode(size, size, pixels));
+        return new WindowIcon(png);
     }
 
     public void Dispose() => icon.IsVisible = false;
