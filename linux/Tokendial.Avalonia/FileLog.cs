@@ -11,6 +11,8 @@ namespace Tokendial.Linux;
 /// discarding, and an AppImage started from a menu entry has no terminal to print to either. So a failure
 /// inside a try/catch - an install that wrote nothing, a copy that never started - leaves no trace at all and
 /// the only way to find out what happened is to guess. Debug lines still need TOKENDIAL_DEBUG.
+/// An exception nothing caught is written too, before the runtime aborts: Avalonia 12.1.2's tray raised one
+/// from an <c>async void</c> when the StatusNotifier watcher died, and the process vanished without a line.
 /// </remarks>
 public sealed class FileLog : IDisposable
 {
@@ -27,7 +29,11 @@ public sealed class FileLog : IDisposable
         Rotate();
         writer = new StreamWriter(new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.ReadWrite)) { AutoFlush = true };
         Log.Sink = Write;
+        AppDomain.CurrentDomain.UnhandledException += Unhandled;
     }
+
+    private void Unhandled(object? sender, UnhandledExceptionEventArgs e) =>
+        Write(Level.Error, "ui", $"unhandled: {e.ExceptionObject}");
 
     private void Write(Level level, string area, string message)
     {
@@ -49,6 +55,7 @@ public sealed class FileLog : IDisposable
 
     public void Dispose()
     {
+        AppDomain.CurrentDomain.UnhandledException -= Unhandled;
         lock (gate)
         {
             writer?.Dispose();

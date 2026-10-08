@@ -199,6 +199,10 @@ jobs:
               || { cat probe-$edge.log; exit 1; }
             grep -q '^window=0x' probe-$edge.log || { cat probe-$edge.log; echo "no window on $edge"; exit 1; }
           done
+      # Avalonia 12.1.2 aborted the whole process when Cinnamon's tray watcher died while Tokendial was
+      # registering its icon. The check replays that on a private bus with a watcher that dies on purpose.
+      - name: The tray survives its watcher dying
+        run: xvfb-run -a tools/LinuxDisplayProbe/tray-watcher-check.sh
       - name: Publish
         run: >
           dotnet publish linux/Tokendial.Avalonia/Tokendial.Avalonia.csproj --configuration Release

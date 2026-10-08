@@ -122,6 +122,21 @@ These are simulations, and the script's header says of what: monitors are declar
 itself (checked with `xev -root -event randr`), so each change is followed by re-asserting the primary
 output, which does. The geometry the server reports back is real.
 
+### The tray watcher check
+
+`tools/LinuxDisplayProbe/tray-watcher-check.sh` replays the crash of 2026-10-07: Cinnamon's
+`xapp-sn-watcher` segfaulted while Tokendial registered its tray icon, and Avalonia 12.1.2 raised the
+resulting `NoReply` from an `async void`, which aborted the process. The script starts a private session
+bus with no auto-started services, puts a stand-in watcher on it (`LinuxDisplayProbe dying-watcher`) that
+dies without replying when an item registers, and runs the real tray icon (`LinuxDisplayProbe tray 6`). It
+passes only if the watcher received the registration call and the tray then exited cleanly. It shows
+nothing and touches neither the desktop's bus nor its tray, so it is safe on your own display; CI runs it
+under `xvfb-run -a`.
+
+```sh
+tools/LinuxDisplayProbe/tray-watcher-check.sh
+```
+
 ## Verification record
 
 2026-09-12, @M4ss1ck's machine: Cinnamon 6.6.9 on Xorg, two 1920×1080 monitors at 96 DPI (`DisplayPort-0`

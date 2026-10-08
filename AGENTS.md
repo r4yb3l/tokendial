@@ -22,7 +22,7 @@ purpose. Do not propose extracting a cross-platform UI library.
 | `macos/` | the AppKit app and `TokendialCore`, its Swift package |
 | `linux/Tokendial.Avalonia/` | the Avalonia app, referencing `windows/Tokendial.Core` directly |
 | `site/` | the Astro site, served at tokendial.vercel.app until a domain is bought — its own npm project, its own locales, its own CI job |
-| `tools/` | PowerShell helpers that drive a remote build over SSH. `mac.ps1` works; **`linux.ps1` points at a VM that no longer exists**. `LinuxDisplayProbe/` opens the real dock with fixture readings; its `nested-checks.sh` runs hotplug, scale, hover-card and Wayland-notice checks on a nested X server |
+| `tools/` | PowerShell helpers that drive a remote build over SSH. `mac.ps1` works; **`linux.ps1` points at a VM that no longer exists**. `LinuxDisplayProbe/` opens the real dock with fixture readings; its `nested-checks.sh` runs hotplug, scale, hover-card and Wayland-notice checks on a nested X server, and `tray-watcher-check.sh` checks the tray outlives a dying StatusNotifier watcher |
 | `tasks/lessons.md` | **read this before a second attempt at anything.** Every entry is a mistake that reached a user or burned an afternoon |
 
 ## Build and test
