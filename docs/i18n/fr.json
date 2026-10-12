@@ -180,6 +180,8 @@
     "settings.launchAtLoginHint": "Lancer Tokendial en arrière-plan au démarrage du système.",
     "settings.checkForUpdates": "Rechercher les mises à jour",
     "settings.checkForUpdatesHint": "Une fois par jour, Tokendial demande à GitHub Releases si une version plus récente existe. Rien vous concernant n'est envoyé ; le téléchargement attend que vous redémarriez.",
+    "settings.mascot": "Visage flottant",
+    "settings.mascotHint": "Un petit visage que vous pouvez faire glisser n'importe où à l'écran. Il montre le fournisseur le plus serré et si un agent travaille ou vous attend. Clic droit pour ouvrir les réglages.",
     "settings.license": "Logiciel libre sous licence MIT.",
     "settings.panelSub": "Affichage",
     "settings.panel.alwaysHint": "Reste déployé avec tous les cadrans et leur détail.",

@@ -69,6 +69,13 @@ public sealed class Settings
     public string? Language { get; set; }
     public Appearance Appearance { get; set; } = Appearance.Dark;
 
+    /// <summary>The floating face. Off by default: a window that sits over the desktop is opt-in, not something an update drops on someone.</summary>
+    public bool Mascot { get; set; }
+
+    /// <summary>Where the user last dragged the face, in device-independent points. Null places it near the dock's edge on first show.</summary>
+    public double? MascotX { get; set; }
+    public double? MascotY { get; set; }
+
     [JsonIgnore]
     public AlertConfig AlertConfig => AlertConfig.Default with
     {

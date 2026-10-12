@@ -10,19 +10,22 @@ public static class Theme
 {
     /// <summary>One look for the dock and the card: surfaces, text inks and the band colours.</summary>
     public sealed record Palette(Brush Surface, Brush SurfaceEdge, Brush CardSurface, Brush Track, Brush Ample, Brush Watch, Brush Critical, Brush Working,
-        Brush TextPrimary, Brush TextSecondary, Brush TextDisabled, Brush Hairline, Color AmpleColor, Color TextDisabledColor);
+        Brush TextPrimary, Brush TextSecondary, Brush TextDisabled, Brush Hairline, Color AmpleColor, Color TextDisabledColor,
+        Brush Sheen, Brush Eyes);
 
     public static readonly Palette DarkPalette = new(
         Surface: Rgba(16, 17, 20, 128), SurfaceEdge: Rgba(255, 255, 255, 20), CardSurface: Rgba(16, 17, 20, 235), Track: Rgba(255, 255, 255, 41),
         Ample: Rgb(0x34, 0xD3, 0x99), Watch: Rgb(0xFB, 0xBF, 0x24), Critical: Rgb(0xFB, 0x71, 0x85), Working: Rgb(0xF5, 0xF5, 0xF7),
         TextPrimary: Rgb(0xF5, 0xF5, 0xF7), TextSecondary: Rgb(0x9A, 0x9D, 0xA6), TextDisabled: Rgb(0x5C, 0x5F, 0x68), Hairline: Rgba(255, 255, 255, 28),
-        AmpleColor: Color.FromRgb(0x34, 0xD3, 0x99), TextDisabledColor: Color.FromRgb(0x5C, 0x5F, 0x68));
+        AmpleColor: Color.FromRgb(0x34, 0xD3, 0x99), TextDisabledColor: Color.FromRgb(0x5C, 0x5F, 0x68),
+        Sheen: Rgba(255, 255, 255, 107), Eyes: Rgb(0xE6, 0xE9, 0xEF));
 
     public static readonly Palette LightPalette = new(
         Surface: Rgba(248, 249, 251, 204), SurfaceEdge: Rgba(15, 23, 42, 26), CardSurface: Rgba(252, 252, 253, 245), Track: Rgba(15, 23, 42, 31),
         Ample: Rgb(0x10, 0xB9, 0x81), Watch: Rgb(0xF5, 0x9E, 0x0B), Critical: Rgb(0xF4, 0x3F, 0x5E), Working: Rgb(0x1B, 0x1F, 0x27),
         TextPrimary: Rgb(0x1B, 0x1F, 0x27), TextSecondary: Rgb(0x5B, 0x62, 0x70), TextDisabled: Rgb(0xA3, 0xA9, 0xB4), Hairline: Rgba(15, 23, 42, 26),
-        AmpleColor: Color.FromRgb(0x10, 0xB9, 0x81), TextDisabledColor: Color.FromRgb(0xA3, 0xA9, 0xB4));
+        AmpleColor: Color.FromRgb(0x10, 0xB9, 0x81), TextDisabledColor: Color.FromRgb(0xA3, 0xA9, 0xB4),
+        Sheen: Rgba(255, 255, 255, 140), Eyes: Rgb(0x2B, 0x31, 0x3C));
 
     private static Palette current = DarkPalette;
 
@@ -48,6 +51,8 @@ public static class Theme
     public static Brush TextSecondary => current.TextSecondary;
     public static Brush TextDisabled => current.TextDisabled;
     public static Brush Hairline => current.Hairline;
+    public static Brush Sheen => current.Sheen;
+    public static Brush Eyes => current.Eyes;
     public static Brush Transparent => Brushes.Transparent;
     public static Color AmpleColor => current.AmpleColor;
     public static Color TextDisabledColor => current.TextDisabledColor;

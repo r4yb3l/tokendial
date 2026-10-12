@@ -180,6 +180,8 @@
     "settings.launchAtLoginHint": "Iniciar Tokendial en segundo plano al arrancar el sistema.",
     "settings.checkForUpdates": "Buscar actualizaciones",
     "settings.checkForUpdatesHint": "Una vez al día Tokendial consulta en GitHub Releases si hay una versión más nueva. No se envía nada tuyo; la descarga espera a que reinicies.",
+    "settings.mascot": "Carita flotante",
+    "settings.mascotHint": "Una carita que puedes arrastrar a cualquier parte de la pantalla. Muestra el proveedor que tienes más apurado y si un agente está trabajando o esperándote. Pulsa con el botón derecho para abrir los ajustes.",
     "settings.license": "Software libre bajo licencia MIT.",
     "settings.panelSub": "Visualización",
     "settings.panel.alwaysHint": "Permanece desplegado con todos los diales y su detalle.",
