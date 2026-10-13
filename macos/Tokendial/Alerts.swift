@@ -273,18 +273,22 @@ final class BannerView: NSView {
 }
 
 /// Routes each alert to the notification centre, to Tokendial's banners, or to both when the system is silent.
+/// While the floating face is on, a waiting agent is said by the face's speech bubble instead.
 final class AlertRouter: AlertSink {
     private let notifications: NotificationSink
     private let banners: BannerSink
     private let mode: () -> AlertDelivery
+    private let faceSpeaks: () -> Bool
 
-    init(notifications: NotificationSink, banners: BannerSink, mode: @escaping () -> AlertDelivery) {
+    init(notifications: NotificationSink, banners: BannerSink, mode: @escaping () -> AlertDelivery, faceSpeaks: @escaping () -> Bool) {
         self.notifications = notifications
         self.banners = banners
         self.mode = mode
+        self.faceSpeaks = faceSpeaks
     }
 
     func deliver(_ alert: Alert) {
+        if alert.kind == .waiting && faceSpeaks() { return }
         switch mode() {
         case .systemNotifications: notifications.deliver(alert)
         case .tokendialBanners: banners.deliver(alert)

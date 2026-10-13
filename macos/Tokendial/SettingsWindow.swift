@@ -283,6 +283,7 @@ private struct GeneralSection: View {
             ChromeSmallTitle(Strings.t("settings.startup"))
             VStack(alignment: .leading, spacing: 0) {
                 ChromeCheck(label: Strings.t("settings.launchAtLogin"), hint: Strings.t("settings.launchAtLoginHint"), isOn: model.binding(\.launchAtLogin))
+                ChromeCheck(label: Strings.t("settings.mascot"), hint: Strings.t("settings.mascotHint"), isOn: model.binding(\.mascot))
                 ChromeRule().padding(.vertical, 12)
                 Text(Strings.t("settings.language")).font(Chrome.font(12, .medium)).foregroundStyle(Chrome.slate300)
                 ChromeWrap(spacing: 8) {
