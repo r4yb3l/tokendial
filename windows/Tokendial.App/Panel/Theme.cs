@@ -26,6 +26,9 @@ public static class Theme
 
     private static Palette current = DarkPalette;
 
+    /// <summary>The floating face's disc and speech bubble: the dark card's hue at full opacity, so nothing behind them shows through.</summary>
+    public static readonly Brush FaceGround = Rgb(16, 17, 20);
+
     public static bool Dark { get; private set; } = true;
 
     /// <summary>Switch the look. Elements built afterwards pick it up; live ones are rebuilt by their windows.</summary>

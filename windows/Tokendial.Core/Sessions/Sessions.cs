@@ -8,7 +8,8 @@ public enum SessionState
 }
 
 /// <summary>One agent session, in display terms; each monitor parses its own tool's format.</summary>
-public sealed record AgentSession(string Id, string Name, string Where, SessionState State, string? WaitingFor, DateTimeOffset Since);
+/// <param name="Pid">The agent's own process, when its tool records one: what "take me there" starts from.</param>
+public sealed record AgentSession(string Id, string Name, string Where, SessionState State, string? WaitingFor, DateTimeOffset Since, int? Pid = null);
 
 /// <summary>What a provider's sessions add up to. Waiting outranks working: it is the one state that wants something from you.</summary>
 public sealed record Activity(SessionState State, IReadOnlyList<AgentSession> Sessions)

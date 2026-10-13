@@ -35,6 +35,7 @@ public sealed class App : Application
     private BannerSink banners = null!;
     private AlertRouter router = null!;
     private PanelWindow panel = null!;
+    private MascotWindow? mascotWindow;
     private TrayIcon tray = null!;
     private SettingsWindow? settingsWindow;
     private DispatcherTimer? clockTimer;
@@ -71,7 +72,7 @@ public sealed class App : Application
         toasts = new ToastSink(id => store.Readings.FirstOrDefault(r => r.ProviderId == id), hub.For);
         banners = new BannerSink(Dispatcher, id => store.Readings.FirstOrDefault(r => r.ProviderId == id), hub.For);
         banners.Opened += _ => panel.Flash(TimeSpan.FromSeconds(8));
-        router = new AlertRouter(toasts, banners, () => settings.Delivery);
+        router = new AlertRouter(toasts, banners, () => settings.Delivery, faceSpeaks: () => settings.Mascot);
         alerts = new AlertCoordinator(router, settings.AlertConfig, AlertCoordinator.DefaultStateFile, wants: settings.Wants);
 
         panel = new PanelWindow();
@@ -116,6 +117,7 @@ public sealed class App : Application
         panel.Show();
         panel.ContentDirection = Strings.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         panel.SetMode(settings.Panel);
+        ApplyMascot();
         RefreshModel();
 
         clockTimer = new DispatcherTimer(TimeSpan.FromSeconds(30), DispatcherPriority.Background, (_, _) => RefreshModel(), Dispatcher);
@@ -197,6 +199,7 @@ public sealed class App : Application
             modelTimer!.Stop();
             var model = PanelModel.Build(store.Readings, store.Summaries, hub.Activities, store.InFlight, toasts.Muted, store.Forecasts);
             panel.Update(model);
+            mascotWindow?.Apply(model, animate: true);
             var worst = model.Tiles.Where(t => t.HasReading).Select(t => t.Fraction).Max();
             tray.Update(worst, Tooltip(model));
         }, Dispatcher);
@@ -246,6 +249,7 @@ public sealed class App : Application
             settingsWindow.LanguageChanged += ApplyLanguage;
             settingsWindow.AppearanceChanged += _ => ApplyAppearance(rebuild: true);
             settingsWindow.EdgeChanged += panel.SetEdge;
+            settingsWindow.MascotChanged += ApplyMascot;
             settingsWindow.Closed += () => settingsWindow = null;
         }
         settingsWindow.Show();
@@ -261,6 +265,26 @@ public sealed class App : Application
         if (!rebuild) return;
         panel.Retheme();
         settingsWindow?.Retheme();
+        RefreshModel();
+    }
+
+    /// <summary>Opens or closes the floating face. Its window is built on demand so an install that never turns it on never makes one.</summary>
+    private void ApplyMascot()
+    {
+        if (!settings.Mascot)
+        {
+            mascotWindow?.Close();
+            mascotWindow = null;
+            return;
+        }
+        if (mascotWindow is null)
+        {
+            mascotWindow = new MascotWindow();
+            mascotWindow.SettingsRequested += ShowSettings;
+            mascotWindow.Moved += (x, y) => { settings.MascotX = x; settings.MascotY = y; Save(); };
+            mascotWindow.Show();
+        }
+        mascotWindow.PlaceAt(settings.MascotX, settings.MascotY);
         RefreshModel();
     }
 

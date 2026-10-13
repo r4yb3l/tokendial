@@ -274,22 +274,28 @@ public sealed class Banner : Border
     }
 }
 
-/// <summary>Routes each alert to Windows, to Tokendial's banners, or to Windows with banners as the fallback when Windows is silenced.</summary>
+/// <summary>
+/// Routes each alert to Windows, to Tokendial's banners, or to Windows with banners as the fallback when Windows is
+/// silenced. While the floating face is on, a waiting agent is said by the face's speech bubble instead.
+/// </summary>
 public sealed class AlertRouter : IAlertSink
 {
     private readonly ToastSink toasts;
     private readonly BannerSink banners;
     private readonly Func<Core.Settings.AlertDelivery> mode;
+    private readonly Func<bool> faceSpeaks;
 
-    public AlertRouter(ToastSink toasts, BannerSink banners, Func<Core.Settings.AlertDelivery> mode)
+    public AlertRouter(ToastSink toasts, BannerSink banners, Func<Core.Settings.AlertDelivery> mode, Func<bool> faceSpeaks)
     {
         this.toasts = toasts;
         this.banners = banners;
         this.mode = mode;
+        this.faceSpeaks = faceSpeaks;
     }
 
     public void Deliver(Alert alert)
     {
+        if (alert.Kind == AlertKind.Waiting && faceSpeaks()) return;
         switch (mode())
         {
             case Core.Settings.AlertDelivery.WindowsToasts:

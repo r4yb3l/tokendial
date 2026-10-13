@@ -68,4 +68,7 @@ public sealed record PanelModel(IReadOnlyList<Tile> Tiles, IReadOnlyList<AgentSe
     }
 
     public bool AnyWaiting => Sessions.Any(s => s.State == SessionState.Waiting);
+
+    /// <summary>What the floating face shows. The rule lives in Core so the tests and the other platforms share it.</summary>
+    public Face Face => Face.Of(Tiles.Select(t => t.Reading), Sessions);
 }

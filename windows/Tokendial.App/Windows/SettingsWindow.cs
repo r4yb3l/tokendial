@@ -65,6 +65,7 @@ public sealed class SettingsWindow
     public event Action<string?>? LanguageChanged;
     public event Action<Appearance>? AppearanceChanged;
     public event Action<DockEdge>? EdgeChanged;
+    public event Action? MascotChanged;
 
     public void Show()
     {
@@ -212,6 +213,7 @@ public sealed class SettingsWindow
         var general = new StackPanel();
         general.Children.Add(Chrome.Check(Strings.T("settings.launchAtLogin"), settings.LaunchAtLogin, v => { settings.LaunchAtLogin = v; launchAtLogin(v); Save(); }, Strings.T("settings.launchAtLoginHint")));
         general.Children.Add(Chrome.Check(Strings.T("settings.checkForUpdates"), settings.CheckForUpdates, v => { settings.CheckForUpdates = v; Save(); }, Strings.T("settings.checkForUpdatesHint")));
+        general.Children.Add(Chrome.Check(Strings.T("settings.mascot"), settings.Mascot, v => { settings.Mascot = v; Save(); MascotChanged?.Invoke(); }, Strings.T("settings.mascotHint")));
         general.Children.Add(Chrome.Rule(new Thickness(0, 12, 0, 12)));
         general.Children.Add(Text.Make(Strings.T("settings.language"), 12, Chrome.Slate300, FontWeights.Medium));
         var chips = new WrapPanel { Margin = new Thickness(0, 8, 0, -8) };

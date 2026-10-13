@@ -78,7 +78,7 @@ public sealed class ClaudeSessions : PolledMonitor
         };
         var started = root.EpochMillis("startedAt") ?? ProcStart(root.Str("procStart"));
         var since = root.EpochMillis("statusUpdatedAt") ?? root.EpochMillis("updatedAt") ?? DateTimeOffset.UtcNow;
-        return ((int)pid, started, new AgentSession($"{providerId}.{(int)pid}", root.Str("name") ?? folder, $"{surface} · {folder}", state, root.Str("waitingFor") ?? root.Str("needs"), since));
+        return ((int)pid, started, new AgentSession($"{providerId}.{(int)pid}", root.Str("name") ?? folder, $"{surface} · {folder}", state, root.Str("waitingFor") ?? root.Str("needs"), since, (int)pid));
     }
 
     /// <summary>A UTC ctime string with a space-padded day.</summary>
