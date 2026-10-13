@@ -279,16 +279,20 @@ public sealed class AlertRouter : IAlertSink
     private readonly NotifySink notifications;
     private readonly BannerSink banners;
     private readonly Func<Core.Settings.AlertDelivery> mode;
+    private readonly Func<bool> faceSpeaks;
 
-    public AlertRouter(NotifySink notifications, BannerSink banners, Func<Core.Settings.AlertDelivery> mode)
+    public AlertRouter(NotifySink notifications, BannerSink banners, Func<Core.Settings.AlertDelivery> mode, Func<bool> faceSpeaks)
     {
         this.notifications = notifications;
         this.banners = banners;
         this.mode = mode;
+        this.faceSpeaks = faceSpeaks;
     }
 
+    /// <summary>While the floating face is on, a waiting agent is said by its speech bubble instead.</summary>
     public void Deliver(Alert alert)
     {
+        if (alert.Kind == AlertKind.Waiting && faceSpeaks()) return;
         switch (mode())
         {
             case Core.Settings.AlertDelivery.WindowsToasts:

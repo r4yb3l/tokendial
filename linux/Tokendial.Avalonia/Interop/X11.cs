@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Tokendial.Core.Sessions;
 
 namespace Tokendial.Linux.Interop;
 
@@ -34,8 +35,23 @@ public static unsafe class X11
     [DllImport(Xlib)] private static extern bool XTranslateCoordinates(nint display, nint srcW, nint destW,
         int srcX, int srcY, out int destX, out int destY, out nint child);
     [DllImport(Xlib)] private static extern nint XGetSelectionOwner(nint display, nint selection);
+    [DllImport(Xlib)] private static extern int XSendEvent(nint display, nint window, bool propagate, nint eventMask, ref XClientMessageEvent ev);
     [DllImport(Xext)] private static extern int XShapeCombineRectangles(nint display, nint window, int kind,
         int xOffset, int yOffset, XRectangle[] rectangles, int count, int operation, int ordering);
+
+    // XClientMessageEvent with 32-bit data, padded to sizeof(XEvent) because XSendEvent reads a whole XEvent.
+    [StructLayout(LayoutKind.Sequential, Size = 192)]
+    private struct XClientMessageEvent
+    {
+        public int Type;
+        public nint Serial;
+        public int SendEvent;
+        public nint Display;
+        public nint Window;
+        public nint MessageType;
+        public int Format;
+        public nint L0, L1, L2, L3, L4;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct XRectangle { public short X, Y; public ushort Width, Height; }
@@ -165,6 +181,68 @@ public static unsafe class X11
         var root = XDefaultRootWindow(Display);
         var ok = XTranslateCoordinates(Display, window, root, 0, 0, out var x, out var y, out _);
         return (x, y, ok);
+    }
+
+    private const int ClientMessage = 33;
+    private const nint XA_WINDOW = 33;
+    private const nint SubstructureNotifyMask = 1 << 19, SubstructureRedirectMask = 1 << 20;
+    private const nint SourcePager = 2;
+
+    /// <summary>
+    /// Activates the window a process runs inside: its own, or the first ancestor's that has one, which is the
+    /// terminal, editor or desktop app that started it. Windows are matched through <c>_NET_WM_PID</c> on the
+    /// window manager's client list, and activated by asking the window manager, which is the only way EWMH
+    /// allows: the request is marked as coming from a pager, the source a window manager honours over its
+    /// focus-stealing prevention, because it is a direct user action. False when nothing was found.
+    /// </summary>
+    public static bool ActivateOwnerOf(int pid)
+    {
+        if (Display == 0) return false;
+        var windows = ClientsByPid();
+        if (Ancestry.FirstAnswer(pid, ProcStat.ParentOf, id => windows.TryGetValue(id, out var window) ? window : (nint?)null) is not nint target)
+            return false;
+        var root = XDefaultRootWindow(Display);
+        var message = new XClientMessageEvent
+        {
+            Type = ClientMessage,
+            SendEvent = 1,
+            Display = Display,
+            Window = target,
+            MessageType = Atom("_NET_ACTIVE_WINDOW"),
+            Format = 32,
+            L0 = SourcePager
+        };
+        XSendEvent(Display, root, false, SubstructureRedirectMask | SubstructureNotifyMask, ref message);
+        XFlush(Display);
+        return true;
+    }
+
+    /// <summary>Each process's first managed window, in the order the window manager mapped them.</summary>
+    private static Dictionary<int, nint> ClientsByPid()
+    {
+        var found = new Dictionary<int, nint>();
+        var root = XDefaultRootWindow(Display);
+        foreach (nint window in Longs(root, "_NET_CLIENT_LIST", XA_WINDOW))
+        {
+            var pid = Longs(window, "_NET_WM_PID", XA_CARDINAL);
+            if (pid.Length > 0 && pid[0] > 0) found.TryAdd((int)pid[0], window);
+        }
+        return found;
+    }
+
+    /// <summary>A format-32 property, which Xlib hands back as C longs whatever the declared width.</summary>
+    private static long[] Longs(nint window, string property, nint type)
+    {
+        if (XGetWindowProperty(Display, window, Atom(property), 0, 1 << 16, false, type,
+                out _, out var format, out var items, out _, out var data) != 0 || data == 0) return [];
+        try
+        {
+            if (format != 32) return [];
+            var values = new long[(int)items];
+            for (var i = 0; i < values.Length; i++) values[i] = ((long*)data)[i];
+            return values;
+        }
+        finally { XFree(data); }
     }
 
     /// <summary>Whether a compositing manager owns the screen. Without one there is no per-pixel alpha at all.</summary>

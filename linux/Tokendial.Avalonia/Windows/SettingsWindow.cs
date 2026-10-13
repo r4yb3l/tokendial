@@ -76,6 +76,9 @@ public sealed class SettingsWindow : Window
     /// <summary>The catalogue now speaks another language, and every surface built from it has to follow.</summary>
     public event Action? LanguageChanged;
 
+    /// <summary>The floating face was turned on or off.</summary>
+    public event Action? MascotChanged;
+
     /// <summary>
     /// Builds every section again in the current language, under the same window, with the flow turned
     /// for a right-to-left one.
@@ -399,6 +402,8 @@ public sealed class SettingsWindow : Window
             {
                 Chrome.SwitchRow(Strings.T("settings.launchAtLogin"), Strings.T("settings.launchAtLoginHint"), settings.LaunchAtLogin,
                     on => { settings.LaunchAtLogin = on; Install.Desktop.SetAutostart(on); save(); }),
+                Chrome.SwitchRow(Strings.T("settings.mascot"), Strings.T("settings.mascotHint"), settings.Mascot,
+                    on => { settings.Mascot = on; save(); MascotChanged?.Invoke(); }),
                 MenuEntry(),
                 Chrome.Rule(new Thickness(0, 10, 0, 10)),
                 Chrome.SmallTitle(Strings.T("settings.language")),

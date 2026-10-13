@@ -74,6 +74,7 @@ public sealed class TokendialApp : Application
     private AlertRouter? router;
     private InstallAssistant? assistant;
     private PanelWindow? panel;
+    private MascotWindow? mascot;
     private Tokendial.Linux.Tray.TrayIcon? tray;
     private SettingsWindow? window;
     private IReadOnlyList<IUsageProvider> catalogue = [];
@@ -119,7 +120,7 @@ public sealed class TokendialApp : Application
         notifications = new NotifySink(Reading, hub.For);
         banners = new BannerSink(Reading, hub.For) { Display = settings.Display };
         banners.Opened += _ => panel.Flash(TimeSpan.FromSeconds(8));
-        router = new AlertRouter(notifications, banners, () => settings.Delivery);
+        router = new AlertRouter(notifications, banners, () => settings.Delivery, faceSpeaks: () => settings.Mascot);
         alerts = new AlertCoordinator(router, settings.AlertConfig, AlertCoordinator.DefaultStateFile, wants: settings.Wants);
 
         store.Changed += () => alerts.OnReadings(store.Readings);
@@ -184,6 +185,7 @@ public sealed class TokendialApp : Application
         // same reason the dock is not the lifetime's main window, which the lifetime shows when it starts.
         desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         panel.SetMode(settings.Panel);
+        ApplyMascot();
 
         tray = new Tokendial.Linux.Tray.TrayIcon(this);
         tray.ShowRequested += () => panel.Flash(TimeSpan.FromSeconds(6));
@@ -242,10 +244,31 @@ public sealed class TokendialApp : Application
             window.Changed += ApplyDisplay;
             window.PanelModeChanged += mode => panel?.SetMode(mode);
             window.LanguageChanged += ApplyLanguage;
+            window.MascotChanged += ApplyMascot;
             window.AlertsChanged += config => alerts?.Reconfigure(config, settings.Wants);
         }
         window.Show();
         window.Activate();
+    }
+
+    /// <summary>Opens or closes the floating face. Its window is built on demand so an install that never turns it on never makes one.</summary>
+    private void ApplyMascot()
+    {
+        if (!settings.Mascot)
+        {
+            mascot?.Close();
+            mascot = null;
+            return;
+        }
+        if (mascot is null)
+        {
+            mascot = new MascotWindow();
+            mascot.SettingsRequested += ShowSettings;
+            mascot.Moved += (x, y) => { settings.MascotX = x; settings.MascotY = y; Save(); };
+            mascot.Show();
+        }
+        mascot.PlaceAt(settings.MascotX, settings.MascotY);
+        Refresh();
     }
 
     /// <summary>
@@ -297,6 +320,7 @@ public sealed class TokendialApp : Application
         if (store is null || hub is null || panel is null) return;
         var model = PanelModel.Build(store.Readings, store.Summaries, hub.Activities, store.InFlight, 0, store.Forecasts);
         panel.Update(model);
+        mascot?.Apply(model);
 
         // The tray shows the worst reading, because one number in a panel can only answer one question and
         // "how close am I to a limit" is the one worth answering.

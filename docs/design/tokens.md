@@ -144,7 +144,7 @@ same over any window and in either theme. No gradients, sheens or glows.
 | window | 92 × 92: the 72 disc plus a 10 transparent inset to grab |
 | disc | 72 diameter, `faceGround` #101114 opaque (the dark card's hue, so nothing shows through), 1 pt `surfaceEdge` |
 | arc | 240°, stroke 0.085 × diameter, centre-line 0.6 × stroke inside the disc edge; `track` dark, fill in the band colour |
-| glyphs | the platform monospace, bold: Cascadia Mono on Windows, SF Mono on macOS |
+| glyphs | the platform monospace, bold: Cascadia Mono on Windows, SF Mono on macOS, DejaVu Sans Mono (or Noto Sans Mono) on Linux |
 | eyes | 0.25 × diameter, centred at 0.43 of the height; `textPrimary`, `textDisabled` when spent |
 | mouth | 0.22 × diameter, centred at 0.65; `waiting` while an agent waits, otherwise as the eyes |
 
@@ -179,7 +179,7 @@ nobody waits. Same dark colours: `faceGround` with a 1 pt `surfaceEdge`, 12 corn
 you" 13 pt semibold, where it is 11.5 pt `textSecondary`, and a **Take me there**
 button (`track` fill, `textDisabled` on hover, 8 corner). It brings forward the window
 the agent runs inside — the first ancestor of its process that has a window,
-stopping at the shell (Explorer, Finder) — not a tab within it. Once it has, that
+stopping at the shell (Explorer, Finder, init on Linux) — not a tab within it. Once it has, that
 session leaves the bubble, and the bubble closes when nobody else is in it; the
 session comes back only if it stops waiting and later waits again. When none is found
 the button says so instead of doing nothing.
