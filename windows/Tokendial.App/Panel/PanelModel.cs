@@ -69,16 +69,6 @@ public sealed record PanelModel(IReadOnlyList<Tile> Tiles, IReadOnlyList<AgentSe
 
     public bool AnyWaiting => Sessions.Any(s => s.State == SessionState.Waiting);
 
-    /// <summary>The worst band across every provider that has a reading: what the mascot's arc carries.</summary>
-    public Band? WorstBand => Tiles.Where(t => t.HasReading && t.Band is not null).Select(t => t.Band!.Value).DefaultIfEmpty().Max() is var worst
-        && Tiles.Any(t => t.HasReading && t.Band is not null) ? worst : null;
-
-    /// <summary>How full the worst provider is, so the arc shows the reading the band came from rather than an average.</summary>
-    public double WorstFraction => Tiles.Where(t => t.HasReading).Select(t => Math.Clamp(t.Fraction ?? 0, 0, 1)).DefaultIfEmpty(0).Max();
-
-    /// <summary>Waiting outranks working, as everywhere else: the one state that wants something from you.</summary>
-    public SessionState? Mood => Sessions.Count == 0 ? null
-        : Sessions.Any(s => s.State == SessionState.Waiting) ? SessionState.Waiting
-        : Sessions.Any(s => s.State == SessionState.Working) ? SessionState.Working
-        : SessionState.Idle;
+    /// <summary>What the floating face shows. The rule lives in Core so the tests and the other platforms share it.</summary>
+    public Face Face => Face.Of(Tiles.Select(t => t.Reading), Sessions);
 }

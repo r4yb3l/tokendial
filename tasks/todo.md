@@ -105,6 +105,17 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] macOS (2026-09-09): the recipes moved to Homebrew where brew publishes the tool (claude-code, codex, copilot-cli, opencode as well as the two casks that already were), Grok kept on xAI's own installer, and Gemini CLI added through npm, the only route that exists on both platforms; `npm` joins the requires enum. Swift core (catalogue, locator, state, sh script, watcher), the specs bundled beside the translations, rows and sheet on the Chrome components. The terminal is not ours here, so the script drops a marker file on its way out and the watcher polls that instead of waiting on a process
 - [x] Live on the Mac (2026-09-09): the user pressed Install on Grok. Script written executable, terminal opened, tool landed at ~/.grok/bin/grok, marker written, watcher completed with success, auto-connect followed and the reading came back nothingMetered. `which grok` finds nothing in that shell, which is the case the declared paths exist for
 
+## 11 — The floating face (PR #6, Windows first; approved 2026-10-13)
+- [x] Glyph face inside the 240° arc on a dark disc, always drawn in the dark palette so it reads over any window (tube, sheen and gradient removed)
+- [x] Arc colour and fill from the same provider; a blocked provider fills the arc
+- [x] Speech bubble beside the face while a session waits, replacing the waiting banner/toast when the face is on
+- [x] "Take me there": session PID → first ancestor process with a top-level window → brought forward (window, not terminal tab)
+- [x] Placement on the monitor under the face, physical pixels; a click without a drag saves nothing
+- [x] Face and owner-window logic in Core with tests
+- [x] Face spec in docs/design/tokens.md
+- [x] Verified live on Windows (2026-10-13): face in working and waiting states, bubble shown, "Take me there" brought wmux forward, a drag saved physical pixels. Unseen: a second monitor, mixed DPI, Windows Terminal and VS Code as hosts
+- [ ] macOS and Linux in separate PRs, from the spec
+
 ## Review
 - macOS v0.1.0 panel, card, banners, settings and Claude Code reading verified live on the Mac over SSH on 2026-09-08; Swift core passes the same 17 vectors and 25 fixtures as C#.
 - Windows v0.1.0 is functionally complete and verified live on 2026-09-07: welcome, compact and expanded capsule, hover card, settings, toast delivery, published exe.

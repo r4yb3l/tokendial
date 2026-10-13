@@ -4,7 +4,6 @@ using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.Win32;
 using Tokendial.App.Alerts;
 using Tokendial.App.Install;
-using Tokendial.App.Interop;
 using Tokendial.App.Panel;
 using Tokendial.App.Tray;
 using Tokendial.App.Updates;
@@ -73,7 +72,7 @@ public sealed class App : Application
         toasts = new ToastSink(id => store.Readings.FirstOrDefault(r => r.ProviderId == id), hub.For);
         banners = new BannerSink(Dispatcher, id => store.Readings.FirstOrDefault(r => r.ProviderId == id), hub.For);
         banners.Opened += _ => panel.Flash(TimeSpan.FromSeconds(8));
-        router = new AlertRouter(toasts, banners, () => settings.Delivery);
+        router = new AlertRouter(toasts, banners, () => settings.Delivery, faceSpeaks: () => settings.Mascot);
         alerts = new AlertCoordinator(router, settings.AlertConfig, AlertCoordinator.DefaultStateFile, wants: settings.Wants);
 
         panel = new PanelWindow();
@@ -285,7 +284,7 @@ public sealed class App : Application
             mascotWindow.Moved += (x, y) => { settings.MascotX = x; settings.MascotY = y; Save(); };
             mascotWindow.Show();
         }
-        mascotWindow.PlaceAt(settings.MascotX, settings.MascotY, Native.PrimaryScreen());
+        mascotWindow.PlaceAt(settings.MascotX, settings.MascotY);
         RefreshModel();
     }
 

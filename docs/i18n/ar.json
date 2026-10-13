@@ -182,6 +182,8 @@
     "settings.checkForUpdatesHint": "مرة واحدة يوميًا يسأل Tokendial صفحة إصدارات GitHub عن وجود نسخة أحدث. لا يُرسل أي شيء عنك؛ وينتظر التنزيل حتى تعيد التشغيل.",
     "settings.mascot": "وجه عائم",
     "settings.mascotHint": "وجه صغير يمكنك سحبه إلى أي مكان على الشاشة. يعرض المزوّد الأقرب إلى حدّه وما إذا كان أحد الوكلاء يعمل أو ينتظرك. انقر بالزر الأيمن لفتح الإعدادات.",
+    "mascot.takeMeThere": "خذني إليه",
+    "mascot.notFound": "تعذّر العثور على نافذته",
     "settings.license": "برمجية حرة برخصة MIT.",
     "settings.panelSub": "العرض",
     "settings.panel.alwaysHint": "يبقى مفتوحًا مع كل الأقراص وتفاصيلها.",

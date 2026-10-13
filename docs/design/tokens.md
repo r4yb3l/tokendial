@@ -132,6 +132,58 @@ the activity arc in the dial.
 Width 280, corner 16, padding 14, body 12 pt, title 14 pt semibold. Rows: window
 label · reset copy; a 4 pt bar; "N% used · M% left". Sessions under a hairline.
 
+## Floating face
+
+One face for the whole install, in a window the user drags anywhere (off by default).
+It is the dial's 240° arc around a dark disc, with a face typed in glyphs inside. It is
+always drawn in the **dark** colours above, like a device's screen, so it reads the
+same over any window and in either theme. No gradients, sheens or glows.
+
+| Token | Value |
+|---|---|
+| window | 92 × 92: the 72 disc plus a 10 transparent inset to grab |
+| disc | 72 diameter, `faceGround` #101114 opaque (the dark card's hue, so nothing shows through), 1 pt `surfaceEdge` |
+| arc | 240°, stroke 0.085 × diameter, centre-line 0.6 × stroke inside the disc edge; `track` dark, fill in the band colour |
+| glyphs | the platform monospace, bold: Cascadia Mono on Windows, SF Mono on macOS |
+| eyes | 0.25 × diameter, centred at 0.43 of the height; `textPrimary`, `textDisabled` when spent |
+| mouth | 0.22 × diameter, centred at 0.65; `waiting` while an agent waits, otherwise as the eyes |
+
+**What it reads.** The arc takes the one provider closest to running out — highest
+band, then fullest — and both its colour and its fill come from that provider. A
+blocked provider counts as full. Providers that need a sign-in or meter nothing are
+left out. The mood is the strongest session state (waiting, then working, then idle).
+
+| When | Eyes | Mouth |
+|---|---|---|
+| spent (fill 1, or blocked) | `x x` | `_` |
+| an agent waits on you | `O O` | `o` |
+| an agent works | `o o` | by band |
+| critical | `> <` | `~` |
+| watch | `- -` | `_` |
+| ample, or nothing to read | `^ ^` | `◡` |
+
+The first matching row wins, so a waiting agent shows over the band except when
+spent. The rule lives in `Face` in each core and is covered by tests.
+
+**Motion.** A blink every 5.2 s (eyes become `- -` for the last 3 % of the cycle;
+none when spent). While an agent works the eyes glance ±0.05 × diameter on a 2.6 s
+cycle, pausing at each end. While one waits the face bobs 0.04 × diameter on a 0.78 s
+sine, there and back. The arc moves with the dial-reading spring. Reduce motion
+stops all of it; the glyphs alone still say the same thing.
+
+**Speech bubble.** While any agent waits, a bubble sits beside the face on whichever
+side has room, top level with the face, its 8 pt tail pointing at it. It replaces the
+waiting alert (toast or banner) while the face is on, and goes away by itself once
+nobody waits. Same dark colours: `faceGround` with a 1 pt `surfaceEdge`, 12 corner,
+14 × 12 padding, at most 300 wide and three sessions. Each row: "{name} is waiting for
+you" 13 pt semibold, where it is 11.5 pt `textSecondary`, and a **Take me there**
+button (`track` fill, `textDisabled` on hover, 8 corner). It brings forward the window
+the agent runs inside — the first ancestor of its process that has a window,
+stopping at the shell (Explorer, Finder) — not a tab within it. Once it has, that
+session leaves the bubble, and the bubble closes when nobody else is in it; the
+session comes back only if it stops waiting and later waits again. When none is found
+the button says so instead of doing nothing.
+
 ## Type
 
 System UI face: SF Pro on macOS, Segoe UI Variable on Windows. Sizes 11, 12, 14,
