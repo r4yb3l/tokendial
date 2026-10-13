@@ -8,7 +8,7 @@ final class DialView: NSView {
     private let stroke: CGFloat
     private(set) var fraction: Double = 0
 
-    init(diameter: CGFloat, stroke: CGFloat) {
+    init(diameter: CGFloat, stroke: CGFloat, track trackColor: NSColor = Theme.track) {
         self.stroke = stroke
         super.init(frame: NSRect(x: 0, y: 0, width: diameter, height: diameter))
         wantsLayer = true
@@ -21,7 +21,7 @@ final class DialView: NSView {
             shape.path = Self.arc(in: bounds, stroke: stroke)
             layer?.addSublayer(shape)
         }
-        track.strokeColor = Theme.track.cgColor
+        track.strokeColor = trackColor.cgColor
         progress.strokeColor = Theme.textDisabled.cgColor
         progress.strokeEnd = 0
         translatesAutoresizingMaskIntoConstraints = false

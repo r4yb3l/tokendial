@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var installer: InstallAssistant!
     private let panel = PanelController()
     private let statusItem = StatusItemController()
+    private var mascot: MascotController?
     private var settingsWindow: HostedWindow<SettingsView>?
     private var settingsModel: SettingsModel?
     private var welcome: HostedWindow<WelcomeView>?
@@ -43,7 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifications.onOpened = { [weak self] _ in self?.panel.flash(8) }
         banners = BannerSink(reading: reading, activity: activity)
         banners.onOpened = { [weak self] _ in self?.panel.flash(8) }
-        router = AlertRouter(notifications: notifications, banners: banners) { [weak self] in self?.settings.delivery ?? .tokendialBanners }
+        router = AlertRouter(notifications: notifications, banners: banners, mode: { [weak self] in self?.settings.delivery ?? .tokendialBanners },
+                             faceSpeaks: { [weak self] in self?.settings.mascot ?? false })
         let current = settings
         alerts = AlertCoordinator(sink: router, config: current.alertConfig, stateFile: AlertCoordinator.defaultStateFile, wants: { current.wants($0) })
 
@@ -69,10 +71,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         panel.setEdge(settings.edge)
         panel.setMode(settings.panel)
+        applyMascot()
         refreshModel()
         clock = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in self?.refreshModel() }
 
         if settings.firstRunDone { adoptNewProviders() } else { firstRun() }
+    }
+
+    /// Opens or closes the floating face. Its panel is built on demand so an install that never turns it on never makes one.
+    private func applyMascot() {
+        guard settings.mascot else {
+            mascot?.close()
+            mascot = nil
+            return
+        }
+        guard mascot == nil else { return }
+        let face = MascotController()
+        face.onSettingsRequested = { [weak self] in self?.showSettings() }
+        face.onMoved = { [weak self] origin in
+            guard let self else { return }
+            self.settings.mascotX = Double(origin.x)
+            self.settings.mascotY = Double(origin.y)
+            self.save()
+            self.settingsModel?.settings = self.settings
+        }
+        face.place(x: settings.mascotX, y: settings.mascotY)
+        mascot = face
     }
 
     /// A provider this install has never seen (an update added it) is connected only when its tool is already signed in.
@@ -164,6 +188,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func refreshModel() {
         let model = PanelModel.build(readings: store.readings, summaries: store.summaries, activities: hub.activities, inFlight: store.inFlight, muted: muted, forecasts: store.forecasts)
         panel.update(model)
+        mascot?.apply(model, animated: true)
         let worst = model.tiles.filter { $0.hasReading }.compactMap { $0.fraction }.max()
         let lines = model.tiles.filter { $0.hasReading }.map { tile -> String in
             let used: Double = (tile.fraction ?? 0) * 100
@@ -252,6 +277,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let current = settings
         alerts.reconfigure(current.alertConfig, wants: { current.wants($0) })
         if settings.launchAtLogin != LaunchAtLogin.isEnabled { LaunchAtLogin.set(settings.launchAtLogin) }
+        applyMascot()
         refreshModel()
         settingsModel?.settings = settings
     }

@@ -50,6 +50,11 @@ struct Settings: Codable {
     /// A code from Strings.languages, or nil to follow the system.
     var language: String?
     var edge: DockEdge = .top
+    /// The floating face. Off by default: a window that sits over the desktop is opt-in, not something an update drops on someone.
+    var mascot = false
+    /// Where the user last dragged the face: its window's origin in screen points. Nil places it near the top-left of the main screen.
+    var mascotX: Double?
+    var mascotY: Double?
 
     init() {}
 
@@ -57,6 +62,7 @@ struct Settings: Codable {
         case schema, panel, disconnected, known, launchAtLogin, firstRunDone, thresholds
         case alertThresholds, alertResetSoon, alertWaiting, alertLimit, delivery
         case resetLeadMinutes, waitingDebounceSeconds, lastSeenVersion, appearance, language, edge
+        case mascot, mascotX, mascotY
     }
 
     /// Every key is optional on the way in, so a file written by an older build keeps its values and the
@@ -82,6 +88,9 @@ struct Settings: Codable {
         appearance = try box.decodeIfPresent(Appearance.self, forKey: .appearance) ?? appearance
         language = try box.decodeIfPresent(String.self, forKey: .language)
         edge = try box.decodeIfPresent(DockEdge.self, forKey: .edge) ?? edge
+        mascot = try box.decodeIfPresent(Bool.self, forKey: .mascot) ?? mascot
+        mascotX = try box.decodeIfPresent(Double.self, forKey: .mascotX)
+        mascotY = try box.decodeIfPresent(Double.self, forKey: .mascotY)
     }
 
     var alertConfig: AlertConfig {
