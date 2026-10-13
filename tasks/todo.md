@@ -114,6 +114,7 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] Face and owner-window logic in Core with tests
 - [x] Face spec in docs/design/tokens.md
 - [x] Verified live on Windows (2026-10-13): face in working and waiting states, bubble shown, "Take me there" brought wmux forward, a drag saved physical pixels. Unseen: a second monitor, mixed DPI, Windows Terminal and VS Code as hosts
+- [x] macOS (branch floating-face-macos, 2026-10-13): Face and Ancestry in TokendialCore with FaceTests, the face panel, the speech bubble and "take me there" through Launch Services. Written without a Mac: verified only by CI's macOS build and swift test, never run or seen
 - [ ] macOS and Linux in separate PRs, from the spec
 
 ## Review

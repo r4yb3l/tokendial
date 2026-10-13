@@ -15,14 +15,17 @@ public struct AgentSession: Equatable, Sendable {
     public var state: SessionState
     public var waitingFor: String?
     public var since: Date
+    /// The agent's own process, when its tool records one: what "take me there" starts from.
+    public var pid: Int32?
 
-    public init(id: String, name: String, location: String, state: SessionState, waitingFor: String?, since: Date) {
+    public init(id: String, name: String, location: String, state: SessionState, waitingFor: String?, since: Date, pid: Int32? = nil) {
         self.id = id
         self.name = name
         self.location = location
         self.state = state
         self.waitingFor = waitingFor
         self.since = since
+        self.pid = pid
     }
 }
 
@@ -156,7 +159,7 @@ public final class ClaudeSessions: PolledMonitor {
         }
         let started = root.epochMillis("startedAt") ?? procStart(root.str("procStart"))
         let since = root.epochMillis("statusUpdatedAt") ?? root.epochMillis("updatedAt") ?? Date()
-        return (Int(pid), started, AgentSession(id: "claude.\(Int(pid))", name: root.str("name") ?? folder, location: "\(surface) · \(folder)", state: state, waitingFor: root.str("waitingFor") ?? root.str("needs"), since: since))
+        return (Int(pid), started, AgentSession(id: "claude.\(Int(pid))", name: root.str("name") ?? folder, location: "\(surface) · \(folder)", state: state, waitingFor: root.str("waitingFor") ?? root.str("needs"), since: since, pid: Int32(pid)))
     }
 
     private static let ctime: DateFormatter = {
