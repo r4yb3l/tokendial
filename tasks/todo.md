@@ -114,7 +114,8 @@ Plan: `~/.claude/plans/giggly-wobbling-willow.md`.
 - [x] Face and owner-window logic in Core with tests
 - [x] Face spec in docs/design/tokens.md
 - [x] Verified live on Windows (2026-10-13): face in working and waiting states, bubble shown, "Take me there" brought wmux forward, a drag saved physical pixels. Unseen: a second monitor, mixed DPI, Windows Terminal and VS Code as hosts
-- [ ] macOS and Linux in separate PRs, from the spec
+- [x] Linux port on `floating-face-linux` (2026-10-13): face, bubble, take-me-there through `_NET_WM_PID` and `_NET_ACTIVE_WINDOW`, settings switch; builds and passes headless here. **Awaiting verification on @M4ss1ck's hardware** - nothing of it has run on an X server
+- [ ] macOS port, from the spec
 
 ## Review
 - macOS v0.1.0 panel, card, banners, settings and Claude Code reading verified live on the Mac over SSH on 2026-09-08; Swift core passes the same 17 vectors and 25 fixtures as C#.

@@ -27,6 +27,12 @@ public static class Theme
     public static readonly IBrush Working = Rgb(0xF5, 0xF5, 0xF7);
     public static readonly IBrush Waiting = Watch;
 
+    /// <summary>The floating face's disc and speech bubble: the dark card's hue at full opacity, so nothing behind them shows through.</summary>
+    public static readonly IBrush FaceGround = Rgb(16, 17, 20);
+
+    /// <summary>The face's glyphs. Cascadia, which Windows uses, is not shipped here; these are the monospaces Linux desktops do ship.</summary>
+    public static readonly FontFamily FaceFont = new("DejaVu Sans Mono, Noto Sans Mono, Liberation Mono, monospace");
+
     // Segoe UI Variable and Cascadia do not exist here. Inter is Mint's closest metric match among the
     // fonts it ships; embedding the real ones is on the plan, and until then this is the honest stand-in.
     public static readonly FontFamily Font = new("Inter, Ubuntu, DejaVu Sans, sans-serif");
