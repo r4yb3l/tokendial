@@ -5,21 +5,25 @@
   "headline": "rolling",
   "credential": {
     "macos": {
-      "kind": "file",
-      "path": "~/.local/share/opencode/auth.json",
-      "fields": { "token": "$['opencode-go'] as string, or its key | apiKey | api_key | token | accessToken" },
-      "notes": "Only the opencode-go entry. Every other entry (openai, google…) is that vendor's key and is never claimed. OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves it."
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
+      "query": "SELECT value FROM credential WHERE integration_id = 'opencode-go' AND active = 1 ORDER BY time_created DESC, time_updated DESC LIMIT 1",
+      "fields": { "token": "value is {\"type\":\"key\",\"key\":\"<key>\"}: its key | apiKey | api_key | token | accessToken" },
+      "fallback": { "kind": "file", "path": "~/.local/share/opencode/auth.json", "fields": { "token": "$['opencode-go'] as string, or its key | apiKey | api_key | token | accessToken" } },
+      "notes": "opencode v2 writes logins to its SQLite store and no longer to auth.json. Replacing a key adds a row with active = 1 and sets the old row to active = 0, so the newest active row wins. auth.json (opencode v1) is read only when the database is missing or holds no active opencode-go row; a v1 file left behind holds whatever key was current when v2 took over. A store opencode holds busy is transient (credentialExpired), never a fallback to auth.json. Only opencode-go: every other integration (openai, google…) is that vendor's key and is never claimed. OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves both files. Seen on opencode v2.0.32, Linux."
     },
     "windows": {
-      "kind": "file",
-      "path": "~/.local/share/opencode/auth.json",
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
       "fields": { "token": "same" },
-      "notes": "Unverified on Windows; OpenCode may also use %APPDATA%/opencode/auth.json. $XDG_DATA_HOME moves it here too."
+      "fallback": { "kind": "file", "path": "~/.local/share/opencode/auth.json" },
+      "notes": "Same as macOS. Unverified on Windows; OpenCode may also use %APPDATA%/opencode. $XDG_DATA_HOME moves it here too."
     },
     "linux": {
-      "kind": "file",
-      "path": "~/.local/share/opencode/auth.json",
-      "notes": "Already the XDG data directory on every platform, so this is the macOS block unchanged. $XDG_DATA_HOME moves it."
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
+      "fallback": { "kind": "file", "path": "~/.local/share/opencode/auth.json" },
+      "notes": "Already the XDG data directory on every platform, so this is the macOS block unchanged. Confirmed on the maintainer's machine, opencode v2.0.32. $XDG_DATA_HOME moves it."
     }
   },
   "endpoints": [
@@ -29,7 +33,7 @@
       "url": "https://opencode.ai/zen/go/v1/usage",
       "headers": { "Authorization": "Bearer {token}", "Accept": "application/json" },
       "timeoutSeconds": 15,
-      "notes": "401 → needsAuth (a missing Go plan and a bad key look the same upstream). 403 → nothingMetered: a valid key without a Go subscription. Zen pay-as-you-go credit has no API at all."
+      "notes": "401 with error.code = api_key_expired → rejected: the key expired and signing in again does not renew it (OpenCode's own message says so); the card says to create a new key in OpenCode Console and drops the last reading. Any other 401 → needsAuth (a missing Go plan and a bad key look the same upstream, body {\"type\":\"error\",\"error\":{\"type\":\"AuthError\",\"message\":\"Unauthorized\"}}). 403 → nothingMetered: a valid key without a Go subscription. Zen pay-as-you-go credit has no API at all."
     }
   ],
   "response": {
@@ -39,7 +43,7 @@
       { "id": "monthly", "label": "Monthly limit", "usedPath": "$.usage.monthly.percent", "unit": "percent", "resetAtPath": "$.usage.monthly.resetsAt", "resetUnit": "iso8601" }
     ]
   },
-  "errors": { "401": "needsAuth", "403": "nothingMetered", "429": "rateLimited" },
+  "errors": { "401": "needsAuth, or rejected when error.code = api_key_expired", "403": "nothingMetered", "429": "rateLimited" },
   "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
   "sessions": { "kind": "none" },
   "status": { "enabled": true, "termsRisk": "low", "notice": "Plan is always 'Go'." },

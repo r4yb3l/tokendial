@@ -14,7 +14,9 @@ public enum UsageErrorKind
     /// <summary>The account is readable and meters nothing.</summary>
     NothingMetered,
     /// <summary>The endpoint answered with something we do not understand.</summary>
-    BadResponse
+    BadResponse,
+    /// <summary>The vendor refused the credential for a reason signing in again does not fix; the message says what does.</summary>
+    Rejected
 }
 
 public sealed class UsageError : Exception
@@ -32,6 +34,7 @@ public sealed class UsageError : Exception
     public static UsageError CredentialExpired() => new(UsageErrorKind.CredentialExpired, "credential expired");
     public static UsageError RateLimited(TimeSpan retryAfter) => new(UsageErrorKind.RateLimited, $"rate limited for {retryAfter.TotalSeconds:F0}s") { RetryAfter = retryAfter };
     public static UsageError NothingMetered(string why) => new(UsageErrorKind.NothingMetered, why);
+    public static UsageError Rejected(string why) => new(UsageErrorKind.Rejected, why);
     public static UsageError BadResponse(int status) => new(UsageErrorKind.BadResponse, $"bad response ({status})") { Status = status };
 }
 

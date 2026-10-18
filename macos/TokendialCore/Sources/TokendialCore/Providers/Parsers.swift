@@ -188,6 +188,11 @@ public enum OpenCodeUsage {
         if windows.isEmpty { throw UsageError.badResponse(0) }
         return Parsed(windows: windows, headline: "rolling")
     }
+
+    /// A 401 whose body says the key expired. Signing in again does not renew it, so it must not read as signed out.
+    public static func keyExpired(_ data: Data) -> Bool {
+        JSON.object(data)?.obj("error")?.str("code") == "api_key_expired"
+    }
 }
 
 /// Antigravity: the language server reports what remains; the dial shows what is used.

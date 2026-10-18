@@ -60,6 +60,7 @@ final class FixtureTests: XCTestCase {
                 case .rateLimited: kind = "rateLimited"
                 case .nothingMetered: kind = "nothingMetered"
                 case .badResponse: kind = "badResponse"
+                case .rejected: kind = "rejected"
                 }
                 XCTAssertEqual(error, kind, name)
                 if let status = expected.num("status") { XCTAssertEqual(Int(status), thrown.status, name) }

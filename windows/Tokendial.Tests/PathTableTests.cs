@@ -134,6 +134,7 @@ public class PathTableTests
         var roots = xdg is null ? RootsFor(desktop) : RootsFor(desktop, ("XDG_DATA_HOME", xdg));
         Assert.Equal(expected, OpenCodeCredential.FileFor(roots));
         Assert.Equal(expected, GlmCredential.Paths.For(roots).OpenCodeAuth);
+        Assert.Equal(expected[..^"auth.json".Length] + "opencode.db", OpenCodeCredential.DatabaseFor(roots));
     }
 
     [Theory]
@@ -174,7 +175,7 @@ public class PathTableTests
             .Select(s => s.Id)
             .OrderBy(x => x, StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(["antigravity", "cursor"], unusual);
+        Assert.Equal(["antigravity", "cursor", "opencode"], unusual);
     }
 
     /// <summary>

@@ -157,6 +157,7 @@
       "properties": {
         "kind": { "enum": ["file", "sqlite", "keychain", "credman", "secret-service", "none"] },
         "path": { "type": "string", "description": "With ~ for the home directory and %VAR% for Windows environment variables." },
+        "fallback": { "$ref": "#/$defs/credential", "description": "Read only when the primary source is missing or holds no credential, such as a file an older version of the tool left behind." },
         "service": { "type": "string" },
         "account": { "type": "string" },
         "target": { "type": "string" },

@@ -421,21 +421,47 @@ public final class GrokProvider: UsageProvider {
     }
 }
 
-/// Only the opencode-go entry; every other entry is another vendor's key.
+/// Only the opencode-go entry; every other entry is another vendor's key. opencode v2 keeps logins in its
+/// SQLite store and stopped writing auth.json, which then holds whatever key v1 left behind: the database
+/// answers first and auth.json is read only when the database has no active Go key.
 public enum OpenCodeCredential {
     private static let keys = ["key", "apiKey", "api_key", "token", "accessToken"]
     /// OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves it.
     public static var defaultFile: URL { Paths.xdg("XDG_DATA_HOME", orUnder: ".local", "share").appendingPathComponent("opencode").appendingPathComponent("auth.json") }
+    public static var defaultDatabase: URL { defaultFile.deletingLastPathComponent().appendingPathComponent("opencode.db") }
 
-    public static func read(file: URL = defaultFile) -> String? {
+    /// The key opencode is using now. Throws `Sqlite.Busy` while opencode holds its store busy: auth.json may hold
+    /// a key it already replaced, so falling back there would turn a write in progress into a rejected key.
+    public static func read(file: URL = defaultFile, database: URL = defaultDatabase) throws -> String? {
+        try fromDatabase(database) ?? fromFile(file)
+    }
+
+    /// Replacing a key adds a row and sets the old one inactive, so the newest active row is the one opencode uses.
+    public static func fromDatabase(_ database: URL) throws -> String? {
+        do {
+            guard let value = try Sqlite.column(database, "SELECT value FROM credential WHERE integration_id = ? AND active = 1 ORDER BY time_created DESC, time_updated DESC LIMIT 1", parameter: "opencode-go")?.first,
+                  let object = JSON.object(Data(value.utf8)) else { return nil }
+            return entry(object)
+        } catch is Sqlite.Busy {
+            throw Sqlite.Busy()
+        } catch {
+            return nil
+        }
+    }
+
+    private static func fromFile(_ file: URL) -> String? {
         guard let data = try? Data(contentsOf: file), let root = JSON.object(data) else { return nil }
         return pick(root)
     }
 
     public static func pick(_ root: JSONObject) -> String? {
-        guard let entry = root["opencode-go"] else { return nil }
-        if let s = entry as? String { return s.isEmpty ? nil : s }
-        guard let object = entry as? JSONObject else { return nil }
+        guard let value = root["opencode-go"] else { return nil }
+        return entry(value)
+    }
+
+    private static func entry(_ value: Any) -> String? {
+        if let s = value as? String { return s.isEmpty ? nil : s }
+        guard let object = value as? JSONObject else { return nil }
         return keys.lazy.compactMap { object.str($0) }.first
     }
 }
@@ -445,26 +471,38 @@ public final class OpenCodeProvider: UsageProvider {
     private let transport: Transport
     private let archive: ReadingArchive
     private let file: URL
+    private let database: URL
     private let now: () -> Date
     private var retryAt: Date?
     private var consecutive429 = 0
 
-    public init(transport: Transport = SessionTransport(), archive: ReadingArchive = ReadingArchive(), file: URL = OpenCodeCredential.defaultFile, now: @escaping () -> Date = Date.init) {
+    public init(transport: Transport = SessionTransport(), archive: ReadingArchive = ReadingArchive(), file: URL = OpenCodeCredential.defaultFile, now: @escaping () -> Date = Date.init, database: URL = OpenCodeCredential.defaultDatabase) {
         self.transport = transport
         self.archive = archive
         self.file = file
         self.now = now
+        self.database = database
         retryAt = archive.backoffUntil(id)
     }
 
     public var id: String { "opencode" }
     public var displayName: String { "OpenCode" }
     public var signIn: SignInRoute { .guidance("signin.opencode") }
-    public func account() -> ProviderAccount? { OpenCodeCredential.read(file: file) == nil ? nil : ProviderAccount(label: nil, plan: "Go", source: "OpenCode", manageURL: URL(string: "https://opencode.ai")) }
+
+    public func account() -> ProviderAccount? {
+        let signedIn = ProviderAccount(label: nil, plan: "Go", source: "OpenCode", manageURL: URL(string: "https://opencode.ai"))
+        do { return try OpenCodeCredential.read(file: file, database: database) == nil ? nil : signedIn } catch is Sqlite.Busy { return signedIn } catch { return nil }
+    }
 
     public func read() async throws -> ProviderReading {
         if let at = retryAt, at > now() { throw UsageError.rateLimited(at.timeIntervalSince(now())) }
-        guard let token = OpenCodeCredential.read(file: file) else { throw UsageError.needsSignIn() }
+        let token: String
+        do {
+            guard let key = try OpenCodeCredential.read(file: file, database: database) else { throw UsageError.needsSignIn() }
+            token = key
+        } catch is Sqlite.Busy {
+            throw UsageError.credentialExpired()
+        }
         let (data, response) = try await transport.send(HTTP.request(Self.endpoint, headers: ["Authorization": "Bearer \(token)"]))
         Log.usage.debug("opencode: usage \(response.statusCode)")
         if response.statusCode == 403 { throw UsageError.nothingMetered("No OpenCode Go subscription on this key") }
@@ -475,6 +513,7 @@ public final class OpenCodeProvider: UsageProvider {
             archive.setBackoff(id, until: retryAt)
             throw UsageError.rateLimited(delay)
         }
+        if response.statusCode == 401, OpenCodeUsage.keyExpired(data) { throw UsageError.rejected(Strings.t("card.opencodeKeyExpired")) }
         try HTTP.throwUnlessOK(response)
         let parsed = try OpenCodeUsage.parse(data)
         consecutive429 = 0

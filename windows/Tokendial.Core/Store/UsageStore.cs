@@ -294,7 +294,7 @@ public sealed class UsageStore : IDisposable
         var status = StatusFor(error);
         lock (gate)
         {
-            if (Supersedes(status))
+            if (Supersedes(status) || error is UsageError { Kind: UsageErrorKind.Rejected })
             {
                 if (remembered.Remove(provider.Id)) archive.Save(remembered);
                 return Placeholder(provider) with { Status = status };
@@ -305,7 +305,7 @@ public sealed class UsageStore : IDisposable
         }
     }
 
-    /// <summary>A sign-out or an unmetered plan makes the old number untrue, not merely old.</summary>
+    /// <summary>A sign-out or an unmetered plan makes the old number untrue, not merely old. So does a rejected key, checked in <see cref="Degrade"/>.</summary>
     public static bool Supersedes(ReadingStatus status) => status is ReadingStatus.NeedsSignIn or ReadingStatus.Unsupported;
 
     public static ReadingStatus StatusFor(Exception error) => error switch
