@@ -43,7 +43,7 @@
       { "id": "monthly", "label": "Monthly limit", "usedPath": "$.usage.monthly.percent", "unit": "percent", "resetAtPath": "$.usage.monthly.resetsAt", "resetUnit": "iso8601" }
     ]
   },
-  "errors": { "401": "needsAuth, or rejected when error.code = api_key_expired", "403": "nothingMetered", "429": "rateLimited" },
+  "errors": { "401": "needsAuth", "403": "nothingMetered", "429": "rateLimited" },
   "polling": { "activeSeconds": 60, "idleSeconds": 300, "staleSeconds": 900, "backoff": "exponential" },
   "sessions": { "kind": "none" },
   "status": { "enabled": true, "termsRisk": "low", "notice": "Plan is always 'Go'." },
