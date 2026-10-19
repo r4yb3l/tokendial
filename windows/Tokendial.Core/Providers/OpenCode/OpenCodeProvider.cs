@@ -8,16 +8,20 @@ using Tokendial.Core.Store;
 namespace Tokendial.Core.Providers.OpenCode;
 
 /// <summary>
-/// Only the opencode-go entry; every other entry is another vendor's key. opencode v2 keeps logins in its
-/// SQLite store and stopped writing auth.json, which then holds whatever key v1 left behind: the database
-/// answers first and auth.json is read only when the database has no active Go key.
+/// The usage endpoint answers to the OpenCode Console key (integration "opencode") and refuses Go keys that
+/// opencode itself still runs on, so the Console key goes first and the opencode-go key is the fallback. Every
+/// other integration is another vendor's key. opencode v2 keeps logins in its SQLite store and stopped writing
+/// auth.json, which then holds whatever key v1 left behind: it is read only when the database has neither.
 /// </summary>
 public static class OpenCodeCredential
 {
     private static readonly string[] Keys = ["key", "apiKey", "api_key", "token", "accessToken"];
 
+    /// <summary>In the order the usage endpoint should see them: the Console key it accepts, then the Go key.</summary>
+    private static readonly string[] Integrations = ["opencode", "opencode-go"];
+
     /// <summary>Replacing a key adds a row and sets the old one inactive, so the newest active row is the one opencode uses.</summary>
-    private const string ActiveGoKey =
+    private const string ActiveKey =
         "SELECT value FROM credential WHERE integration_id = $p AND active = 1 ORDER BY time_created DESC, time_updated DESC LIMIT 1";
 
     public static string DefaultFile => FileFor(Roots.Here);
@@ -36,11 +40,14 @@ public static class OpenCodeCredential
     public static string? Read(string? file = null, string? database = null) =>
         FromDatabase(database ?? DefaultDatabase) ?? FromFile(file ?? DefaultFile);
 
-    public static string? FromDatabase(string database)
+    public static string? FromDatabase(string database) =>
+        Integrations.Select(integration => FromDatabase(database, integration)).FirstOrDefault(key => key is not null);
+
+    private static string? FromDatabase(string database, string integration)
     {
         try
         {
-            var value = Sqlite.CurrentColumn(database, ActiveGoKey, "opencode-go")?.FirstOrDefault();
+            var value = Sqlite.CurrentColumn(database, ActiveKey, integration)?.FirstOrDefault();
             if (value is null) return null;
             using var document = Json.Parse(value);
             return document is null ? null : Entry(document.RootElement);
@@ -94,10 +101,11 @@ public static class OpenCodeUsage
     }
 
     /// <summary>
-    /// A 401 whose body says the key expired. Signing in again does not renew it - only a new key from the
-    /// console does - so it must not read as signed out. Any other 401 body is a key that was never valid.
+    /// A 401 with code api_key_expired. The endpoint sends it for Go keys opencode itself runs on without
+    /// trouble, so it says nothing about the key: it means usage wants the Console key. Never tell the user
+    /// their key expired from it. Any other 401 body is a key that was never valid.
     /// </summary>
-    public static bool KeyExpired(string body)
+    public static bool RefusesGoKey(string body)
     {
         using var document = Json.Parse(body);
         return document?.RootElement.Obj("error")?.Str("code") == "api_key_expired";
@@ -155,8 +163,8 @@ public sealed class OpenCodeProvider : IUsageProvider, IDisposable
             archive.SetBackoff(Id, retryAt);
             throw UsageError.RateLimited(delay);
         }
-        if (status == 401 && OpenCodeUsage.KeyExpired(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)))
-            throw UsageError.Rejected(Strings.T("card.opencodeKeyExpired"));
+        if (status == 401 && OpenCodeUsage.RefusesGoKey(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)))
+            throw UsageError.Rejected(Strings.T("card.opencodeNeedsConsole"));
         Http.ThrowUnlessOk(response);
         var parsed = OpenCodeUsage.Parse(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
         consecutive429 = 0;

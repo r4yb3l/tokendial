@@ -67,7 +67,7 @@
     "signin.claude": "Ejecuta `{command}` una vez; inicia sesión y refresca el token que se lee aquí.",
     "signin.grok": "Ejecuta `grok login`; inicia sesión y refresca el token que se lee aquí.",
     "signin.opencode": "Conecta el plan Go dentro de OpenCode (`opencode auth login`); el dial lee la clave que guarda.",
-    "card.opencodeKeyExpired": "La clave de API caducó. Volver a iniciar sesión no la renueva: crea una clave nueva en OpenCode Console e introdúcela con `opencode auth login`",
+    "card.opencodeNeedsConsole": "El servicio de uso de OpenCode no acepta tu clave de OpenCode Go, aunque OpenCode funcione con ella. Conecta OpenCode Console con `opencode auth login` y el dial leerá el uso a través de ella",
     "signin.glm": "El consumo depende de una clave del GLM Coding Plan de Z.ai guardada por una herramienta: el settings.json de Claude Code, ZCode u OpenCode.",
     "signin.copilot": "Inicia sesión en GitHub Copilot desde tu editor o la CLI de Copilot; el dial lee el token que guarda.",
     "signin.gemini": "Ejecuta `gemini` una vez y elige Login with Google; el dial lee el token que guarda. Google solo sirve Gemini CLI a cuentas Code Assist Standard y Enterprise.",

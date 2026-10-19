@@ -9,7 +9,8 @@ namespace Tokendial.Tests;
 
 /// <summary>
 /// opencode v2 keeps logins in opencode.db and stopped writing auth.json, so a replaced key never reached the
-/// dial; and an expired key read as signed out, sending the user to a sign-in that OpenCode says will not help.
+/// dial. And the usage endpoint answers api_key_expired for Go keys opencode itself runs on, while it accepts
+/// the OpenCode Console key: reading only the Go key told a working user their key had expired.
 /// </summary>
 public class OpenCodeTests : IDisposable
 {
@@ -73,14 +74,35 @@ public class OpenCodeTests : IDisposable
         Assert.Equal("sk-db", Read());
     }
 
-    /// <summary>The shape seen on the reporting machine: a replaced key goes inactive and a newer row holds the live one.</summary>
+    /// <summary>The newest active Go row wins over a replaced one, and other vendors' rows are never claimed.</summary>
     [Fact]
-    public void TheNewestActiveGoRowWinsAndOtherIntegrationsAreIgnored()
+    public void TheNewestActiveGoRowWinsAndOtherVendorsAreIgnored()
     {
         Store(("opencode-go", 0, 1790305105303, 1792337464370, "sk-replaced"),
               ("opencode-go", 1, 1792337464370, 1792337464370, "sk-current"),
-              ("opencode", 1, 1792338050439, 1792338050439, "oc-zen-not-go"));
+              ("openai", 1, 1792338050439, 1792338050439, "not-ours"));
         Assert.Equal("sk-current", Read());
+    }
+
+    /// <summary>
+    /// The shape on the reporting machine: a legacy Go key, a new Go key, and the Console key. Usage answered 200
+    /// only to the Console key; both Go keys got api_key_expired while opencode ran on them.
+    /// </summary>
+    [Fact]
+    public void TheConsoleKeyWinsOverEveryGoKey()
+    {
+        Store(("opencode-go", 0, 1790305105303, 1792337464370, "sk-legacy"),
+              ("opencode-go", 1, 1792337464370, 1792337464370, "sk-go"),
+              ("opencode", 1, 1792338050439, 1792338050439, "sk-console"));
+        Auth("sk-v1-stale");
+        Assert.Equal("sk-console", Read());
+    }
+
+    [Fact]
+    public void AnInactiveConsoleKeyIsNotUsed()
+    {
+        Store(("opencode", 0, 1, 1, "sk-console-old"), ("opencode-go", 1, 2, 2, "sk-go"));
+        Assert.Equal("sk-go", Read());
     }
 
     [Fact]
@@ -130,20 +152,33 @@ public class OpenCodeTests : IDisposable
     [InlineData(UnauthorizedBody, false)]
     [InlineData("not json", false)]
     [InlineData("", false)]
-    public void OnlyTheApiKeyExpiredCodeReadsAsExpired(string body, bool expired) =>
-        Assert.Equal(expired, OpenCodeUsage.KeyExpired(body));
+    public void OnlyTheApiKeyExpiredCodeReadsAsARefusedGoKey(string body, bool refused) =>
+        Assert.Equal(refused, OpenCodeUsage.RefusesGoKey(body));
 
     private OpenCodeProvider Provider(HttpStatusCode status, string body) =>
         new(new Answering(status, body), new ReadingArchive(Path.Combine(root, "archive")), AuthFile, database: Database);
 
+    /// <summary>The key works in opencode, so the card must point at the Console, never say the key expired.</summary>
     [Fact]
-    public async Task AnExpiredKeyIsRejectedNotSignedOut()
+    public async Task ARefusedGoKeyAsksForTheConsoleAndNeverSaysExpired()
     {
-        Store(("opencode-go", 1, 1, 1, "sk-expired"));
+        Store(("opencode-go", 1, 1, 1, "sk-go"));
         using var provider = Provider(HttpStatusCode.Unauthorized, ExpiredBody);
         var error = await Assert.ThrowsAsync<UsageError>(() => provider.ReadAsync());
         Assert.Equal(UsageErrorKind.Rejected, error.Kind);
-        Assert.IsType<ReadingStatus.Failed>(UsageStore.StatusFor(error));
+        var why = Assert.IsType<ReadingStatus.Failed>(UsageStore.StatusFor(error)).Why;
+        Assert.Contains("OpenCode Console", why);
+        Assert.DoesNotContain("expired", why, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task TheConsoleKeyIsTheOneSent()
+    {
+        Store(("opencode-go", 1, 1, 1, "sk-go"), ("opencode", 1, 2, 2, "sk-console"));
+        var handler = new Answering(HttpStatusCode.OK, UsageBody);
+        using var provider = new OpenCodeProvider(handler, new ReadingArchive(Path.Combine(root, "archive")), AuthFile, database: Database);
+        await provider.ReadAsync();
+        Assert.Equal("Bearer sk-console", handler.Authorization);
     }
 
     [Fact]
@@ -173,12 +208,12 @@ public class OpenCodeTests : IDisposable
         var calls = 0;
         var provider = new Scripted(() => calls++ == 0
             ? Task.FromResult(new ProviderReading("opencode", "OpenCode", Fidelity.Official, ReadingStatus.LiveNow, [new UsageWindow("rolling", "5h limit", 0.3)], "rolling"))
-            : throw UsageError.Rejected("key expired"));
+            : throw UsageError.Rejected("usage wants the Console"));
         using var store = new UsageStore([provider], new ReadingArchive(Path.Combine(root, "archive")));
         await store.PollAsync();
         await store.PollAsync();
         var reading = Assert.Single(store.Readings);
-        Assert.Equal("key expired", Assert.IsType<ReadingStatus.Failed>(reading.Status).Why);
+        Assert.Equal("usage wants the Console", Assert.IsType<ReadingStatus.Failed>(reading.Status).Why);
         Assert.Empty(reading.Windows);
     }
 

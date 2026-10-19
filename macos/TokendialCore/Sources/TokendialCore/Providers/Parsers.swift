@@ -189,8 +189,9 @@ public enum OpenCodeUsage {
         return Parsed(windows: windows, headline: "rolling")
     }
 
-    /// A 401 whose body says the key expired. Signing in again does not renew it, so it must not read as signed out.
-    public static func keyExpired(_ data: Data) -> Bool {
+    /// A 401 with code api_key_expired. The endpoint sends it for Go keys opencode itself runs on, so it says
+    /// nothing about the key: it means usage wants the Console key. Never tell the user their key expired from it.
+    public static func refusesGoKey(_ data: Data) -> Bool {
         JSON.object(data)?.obj("error")?.str("code") == "api_key_expired"
     }
 }

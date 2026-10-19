@@ -67,7 +67,7 @@
     "signin.claude": "Führe `{command}` einmal aus; das meldet dich an und erneuert das hier gelesene Token.",
     "signin.grok": "Führe `grok login` aus; das meldet dich an und erneuert das hier gelesene Token.",
     "signin.opencode": "Verbinde den Go-Plan in OpenCode (`opencode auth login`); die Anzeige liest den gespeicherten Schlüssel.",
-    "card.opencodeKeyExpired": "API-Schlüssel abgelaufen. Erneutes Anmelden erneuert ihn nicht: Erstelle in der OpenCode Console einen neuen Schlüssel und gib ihn mit `opencode auth login` ein",
+    "card.opencodeNeedsConsole": "Der Nutzungsdienst von OpenCode akzeptiert deinen OpenCode-Go-Schlüssel nicht, obwohl OpenCode damit läuft. Verbinde OpenCode Console mit `opencode auth login`, dann liest die Anzeige die Nutzung darüber",
     "signin.glm": "Der Verbrauch beruht auf einem GLM-Coding-Plan-Schlüssel von Z.ai, den ein Werkzeug hält: die settings.json von Claude Code, ZCode oder OpenCode.",
     "signin.copilot": "Melde dich in deinem Editor oder der Copilot-CLI bei GitHub Copilot an; die Anzeige liest das gespeicherte Token.",
     "signin.gemini": "Führe `gemini` einmal aus und wähle Login with Google; die Anzeige liest das gespeicherte Token. Google bedient mit Gemini CLI nur Code-Assist-Standard- und -Enterprise-Konten.",

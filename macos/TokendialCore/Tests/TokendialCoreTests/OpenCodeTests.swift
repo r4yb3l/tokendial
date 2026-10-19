@@ -4,7 +4,8 @@ import XCTest
 @testable import TokendialCore
 
 /// opencode v2 keeps logins in opencode.db and stopped writing auth.json, so a replaced key never reached the
-/// dial; and an expired key read as signed out, sending the user to a sign-in that OpenCode says will not help.
+/// dial. And the usage endpoint answers api_key_expired for Go keys opencode itself runs on, while it accepts
+/// the OpenCode Console key: reading only the Go key told a working user their key had expired.
 final class OpenCodeTests: XCTestCase {
     private var root: URL!
 
@@ -52,12 +53,28 @@ final class OpenCodeTests: XCTestCase {
         XCTAssertEqual(try read(), "sk-db")
     }
 
-    /// The shape seen on the reporting machine: a replaced key goes inactive and a newer row holds the live one.
-    func testTheNewestActiveGoRowWinsAndOtherIntegrationsAreIgnored() throws {
+    /// The newest active Go row wins over a replaced one, and other vendors' rows are never claimed.
+    func testTheNewestActiveGoRowWinsAndOtherVendorsAreIgnored() throws {
         store([(integration: "opencode-go", active: 0, created: 1790305105303, updated: 1792337464370, key: "sk-replaced"),
                (integration: "opencode-go", active: 1, created: 1792337464370, updated: 1792337464370, key: "sk-current"),
-               (integration: "opencode", active: 1, created: 1792338050439, updated: 1792338050439, key: "oc-zen-not-go")])
+               (integration: "openai", active: 1, created: 1792338050439, updated: 1792338050439, key: "not-ours")])
         XCTAssertEqual(try read(), "sk-current")
+    }
+
+    /// The shape on the reporting machine: usage answered 200 only to the Console key; both Go keys got
+    /// api_key_expired while opencode ran on them.
+    func testTheConsoleKeyWinsOverEveryGoKey() throws {
+        store([(integration: "opencode-go", active: 0, created: 1790305105303, updated: 1792337464370, key: "sk-legacy"),
+               (integration: "opencode-go", active: 1, created: 1792337464370, updated: 1792337464370, key: "sk-go"),
+               (integration: "opencode", active: 1, created: 1792338050439, updated: 1792338050439, key: "sk-console")])
+        try writeAuth("sk-v1-stale")
+        XCTAssertEqual(try read(), "sk-console")
+    }
+
+    func testAnInactiveConsoleKeyIsNotUsed() throws {
+        store([(integration: "opencode", active: 0, created: 1, updated: 1, key: "sk-console-old"),
+               (integration: "opencode-go", active: 1, created: 2, updated: 2, key: "sk-go")])
+        XCTAssertEqual(try read(), "sk-go")
     }
 
     func testOfTwoActiveGoRowsTheNewestWins() throws {
@@ -87,15 +104,15 @@ final class OpenCodeTests: XCTestCase {
         XCTAssertEqual(try read(), "sk-v1")
     }
 
-    func testAnApiKeyExpiredBodyIsExpired() {
-        XCTAssertTrue(OpenCodeUsage.keyExpired(Data(#"{"error":{"type":"authentication_error","code":"api_key_expired","message":"x"}}"#.utf8)))
+    func testAnApiKeyExpiredBodyIsARefusedGoKey() {
+        XCTAssertTrue(OpenCodeUsage.refusesGoKey(Data(#"{"error":{"type":"authentication_error","code":"api_key_expired","message":"x"}}"#.utf8)))
     }
 
-    func testAnUnauthorizedBodyIsNotExpired() {
-        XCTAssertFalse(OpenCodeUsage.keyExpired(Data(#"{"type":"error","error":{"type":"AuthError","message":"Unauthorized"}}"#.utf8)))
+    func testAnUnauthorizedBodyIsNotARefusedGoKey() {
+        XCTAssertFalse(OpenCodeUsage.refusesGoKey(Data(#"{"type":"error","error":{"type":"AuthError","message":"Unauthorized"}}"#.utf8)))
     }
 
-    func testANonJSONBodyIsNotExpired() {
-        XCTAssertFalse(OpenCodeUsage.keyExpired(Data("not json".utf8)))
+    func testANonJSONBodyIsNotARefusedGoKey() {
+        XCTAssertFalse(OpenCodeUsage.refusesGoKey(Data("not json".utf8)))
     }
 }

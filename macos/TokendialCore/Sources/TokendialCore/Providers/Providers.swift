@@ -421,11 +421,14 @@ public final class GrokProvider: UsageProvider {
     }
 }
 
-/// Only the opencode-go entry; every other entry is another vendor's key. opencode v2 keeps logins in its
-/// SQLite store and stopped writing auth.json, which then holds whatever key v1 left behind: the database
-/// answers first and auth.json is read only when the database has no active Go key.
+/// The usage endpoint answers to the OpenCode Console key (integration "opencode") and refuses Go keys that
+/// opencode itself still runs on, so the Console key goes first and the opencode-go key is the fallback. Every
+/// other integration is another vendor's key. opencode v2 keeps logins in its SQLite store and stopped writing
+/// auth.json, which then holds whatever key v1 left behind: it is read only when the database has neither.
 public enum OpenCodeCredential {
     private static let keys = ["key", "apiKey", "api_key", "token", "accessToken"]
+    /// In the order the usage endpoint should see them: the Console key it accepts, then the Go key.
+    private static let integrations = ["opencode", "opencode-go"]
     /// OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves it.
     public static var defaultFile: URL { Paths.xdg("XDG_DATA_HOME", orUnder: ".local", "share").appendingPathComponent("opencode").appendingPathComponent("auth.json") }
     public static var defaultDatabase: URL { defaultFile.deletingLastPathComponent().appendingPathComponent("opencode.db") }
@@ -438,8 +441,15 @@ public enum OpenCodeCredential {
 
     /// Replacing a key adds a row and sets the old one inactive, so the newest active row is the one opencode uses.
     public static func fromDatabase(_ database: URL) throws -> String? {
+        for integration in integrations {
+            if let key = try fromDatabase(database, integration) { return key }
+        }
+        return nil
+    }
+
+    private static func fromDatabase(_ database: URL, _ integration: String) throws -> String? {
         do {
-            guard let value = try Sqlite.column(database, "SELECT value FROM credential WHERE integration_id = ? AND active = 1 ORDER BY time_created DESC, time_updated DESC LIMIT 1", parameter: "opencode-go")?.first,
+            guard let value = try Sqlite.column(database, "SELECT value FROM credential WHERE integration_id = ? AND active = 1 ORDER BY time_created DESC, time_updated DESC LIMIT 1", parameter: integration)?.first,
                   let object = JSON.object(Data(value.utf8)) else { return nil }
             return entry(object)
         } catch is Sqlite.Busy {
@@ -513,7 +523,7 @@ public final class OpenCodeProvider: UsageProvider {
             archive.setBackoff(id, until: retryAt)
             throw UsageError.rateLimited(delay)
         }
-        if response.statusCode == 401, OpenCodeUsage.keyExpired(data) { throw UsageError.rejected(Strings.t("card.opencodeKeyExpired")) }
+        if response.statusCode == 401, OpenCodeUsage.refusesGoKey(data) { throw UsageError.rejected(Strings.t("card.opencodeNeedsConsole")) }
         try HTTP.throwUnlessOK(response)
         let parsed = try OpenCodeUsage.parse(data)
         consecutive429 = 0
