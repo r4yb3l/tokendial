@@ -229,7 +229,7 @@ public final class UsageStore {
     private func degrade(_ provider: UsageProvider, _ error: Error) -> ProviderReading {
         let status = Self.status(for: error, now: now())
         lock.lock(); defer { lock.unlock() }
-        if Self.supersedes(status) {
+        if Self.supersedes(status) || (error as? UsageError)?.kind == .rejected {
             if remembered.removeValue(forKey: provider.id) != nil { archive.save(remembered) }
             var placeholder = Self.placeholder(provider); placeholder.status = status
             return placeholder
@@ -255,6 +255,7 @@ public final class UsageStore {
         case .credentialExpired, .rateLimited: return .stale(since: now)
         case .nothingMetered: return .unsupported(why: usage.message)
         case .badResponse: return .failed(why: "HTTP \(usage.status)")
+        case .rejected: return .failed(why: usage.message)
         }
     }
 

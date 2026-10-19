@@ -5,21 +5,25 @@
   "headline": "rolling",
   "credential": {
     "macos": {
-      "kind": "file",
-      "path": "~/.local/share/opencode/auth.json",
-      "fields": { "token": "$['opencode-go'] as string, or its key | apiKey | api_key | token | accessToken" },
-      "notes": "Only the opencode-go entry. Every other entry (openai, google…) is that vendor's key and is never claimed. OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves it."
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
+      "query": "SELECT value FROM credential WHERE integration_id = $id AND active = 1 ORDER BY time_created DESC, time_updated DESC LIMIT 1, run for $id = 'opencode' (OpenCode Console) first and 'opencode-go' second; the first key found wins",
+      "fields": { "token": "value is {\"type\":\"key\",\"key\":\"<key>\"}: its key | apiKey | api_key | token | accessToken" },
+      "fallback": { "kind": "file", "path": "~/.local/share/opencode/auth.json", "fields": { "token": "$['opencode-go'] as string, or its key | apiKey | api_key | token | accessToken" } },
+      "notes": "opencode v2 writes logins to its SQLite store and no longer to auth.json. Replacing a key adds a row with active = 1 and sets the old row to active = 0, so the newest active row wins. auth.json (opencode v1) is read only when the database is missing or holds no active opencode-go row; a v1 file left behind holds whatever key was current when v2 took over. A store opencode holds busy is transient (credentialExpired), never a fallback to auth.json. The Console key comes first because the usage endpoint accepts it and refuses Go keys that opencode still runs on (seen 2026-10-18: both Go keys, legacy and new, answered api_key_expired while opencode worked; the Console key answered 200). Only opencode and opencode-go: every other integration (openai, google…) is that vendor's key and is never claimed. OpenCode keeps its data in the XDG data directory on every platform, so $XDG_DATA_HOME moves both files. Seen on opencode v2.0.32, Linux."
     },
     "windows": {
-      "kind": "file",
-      "path": "~/.local/share/opencode/auth.json",
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
       "fields": { "token": "same" },
-      "notes": "Unverified on Windows; OpenCode may also use %APPDATA%/opencode/auth.json. $XDG_DATA_HOME moves it here too."
+      "fallback": { "kind": "file", "path": "~/.local/share/opencode/auth.json" },
+      "notes": "Same as macOS. Unverified on Windows; OpenCode may also use %APPDATA%/opencode. $XDG_DATA_HOME moves it here too."
     },
     "linux": {
-      "kind": "file",
-      "path": "~/.local/share/opencode/auth.json",
-      "notes": "Already the XDG data directory on every platform, so this is the macOS block unchanged. $XDG_DATA_HOME moves it."
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
+      "fallback": { "kind": "file", "path": "~/.local/share/opencode/auth.json" },
+      "notes": "Already the XDG data directory on every platform, so this is the macOS block unchanged. Confirmed on the maintainer's machine, opencode v2.0.32. $XDG_DATA_HOME moves it."
     }
   },
   "endpoints": [
@@ -29,7 +33,7 @@
       "url": "https://opencode.ai/zen/go/v1/usage",
       "headers": { "Authorization": "Bearer {token}", "Accept": "application/json" },
       "timeoutSeconds": 15,
-      "notes": "401 → needsAuth (a missing Go plan and a bad key look the same upstream). 403 → nothingMetered: a valid key without a Go subscription. Zen pay-as-you-go credit has no API at all."
+      "notes": "401 with error.code = api_key_expired → rejected. The body says the key expired, but the endpoint sends it for Go keys opencode itself runs on without trouble, so it is not evidence about the key: it means usage wants the OpenCode Console key. The card never says the key expired; it says to connect OpenCode Console with opencode auth login, and drops the last reading. Any other 401 → needsAuth (a missing Go plan and a bad key look the same upstream, body {\"type\":\"error\",\"error\":{\"type\":\"AuthError\",\"message\":\"Unauthorized\"}}). 403 → nothingMetered: a valid key without a Go subscription. Zen pay-as-you-go credit has no API at all."
     }
   ],
   "response": {

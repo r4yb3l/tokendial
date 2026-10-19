@@ -11,6 +11,8 @@ public enum UsageErrorKind: Sendable {
     case nothingMetered
     /// The endpoint answered with something we do not understand.
     case badResponse
+    /// The vendor refused the credential for a reason signing in again does not fix; the message says what does.
+    case rejected
 }
 
 public struct UsageError: Error, Equatable, Sendable {
@@ -23,6 +25,7 @@ public struct UsageError: Error, Equatable, Sendable {
     public static func credentialExpired() -> UsageError { UsageError(kind: .credentialExpired, message: "credential expired") }
     public static func rateLimited(_ retryAfter: TimeInterval) -> UsageError { UsageError(kind: .rateLimited, message: "rate limited for \(Int(retryAfter))s", retryAfter: retryAfter) }
     public static func nothingMetered(_ why: String) -> UsageError { UsageError(kind: .nothingMetered, message: why) }
+    public static func rejected(_ why: String) -> UsageError { UsageError(kind: .rejected, message: why) }
     public static func badResponse(_ status: Int) -> UsageError { UsageError(kind: .badResponse, message: "bad response (\(status))", status: status) }
 }
 
